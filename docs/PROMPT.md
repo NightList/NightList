@@ -1,4 +1,4 @@
-# Prompt: NightList — เว็บแอปรวมร้านกลางคืน + Tier List + จองโต๊ะ (v2.5)
+# Prompt: NightList — เว็บแอปรวมร้านกลางคืน + Tier List + จองโต๊ะ (v2.6)
 
 > คัดลอกทั้งหมดด้านล่างไปใช้กับ AI สร้างโค้ด (Claude, Cursor, v0, Lovable, Bolt ฯลฯ)
 
@@ -356,11 +356,11 @@ Age Gate (20+) → Onboarding (ความชอบ) → Home / Tier List / Sea
 night-list/
 ├── apps/
 │   ├── web/                # React (Vite) — ฝั่งลูกค้า + ฝั่งร้าน (/merchant) + Staff Scanner (PWA)
-│   │   └── api/og/         # Vercel Function สร้าง meta/OG image ให้ /restaurants/:slug และ /share/:token
+│   │   └── api/og/         # Vercel Function สร้าง meta/OG image ให้ /bars/:slug และ /share/:token
 │   └── admin/              # React (Vite) + Ant Design v6 + ProComponents — Backoffice ทีม NightList (อนุมัติร้าน, Safety, ดาว, โปรโมท, Review, Billing, Audit)
 │
 ├── packages/
-│   ├── ui/                 # shadcn/ui components + theme (dark nightlife) ใช้ร่วมกัน 2 แอป
+│   ├── ui/                 # antd theme + Tailwind preset + คอมโพเนนต์ร่วม (dark nightlife) ใช้ร่วมกัน 2 แอป
 │   ├── types/              # TypeScript types + Zod schemas (BookingStatus, DTO, API contracts) ใช้ร่วม frontend/NestJS
 │   ├── config/             # eslint, tsconfig, tailwind preset, env schema
 │   └── utils/              # price calculator, star calculator, date/timezone (Asia/Bangkok), status transition map, formatters
@@ -391,37 +391,13 @@ night-list/
 - `apps/admin` deploy แยกโดเมน (เช่น admin.nightlist.app) และเข้าได้เฉพาะ role ADMIN
 
 ## Sitemap
-**apps/web** (React Router)
-```
-/
-├── age-gate, onboarding, home
-├── ranking (/:category/:district)     ← จัดอันดับดาว
-├── search
-├── restaurants/:slug
-├── booking/:id, booking/:id/deposit, booking/success
-├── share/:token                        ← บัตรจองสาธารณะ
-├── notifications, favorites, reviews, profile, settings/notifications
-└── merchant/
-    ├── dashboard, tonight (scanner + crowd), restaurant, hours, safety, links
-    ├── menu, pricing, packages, zones-tables, deposits
-    ├── promote (ซื้อ/ดูสถานะโปรโมท)
-    └── bookings, reviews, analytics, staff
-```
-**apps/admin**
-```
-/
-├── dashboard, restaurants, merchants, safety-verification
-├── ranking (ดาว + Editor's Pick), promotions (แพ็กเกจ + อนุมัติสลิป)
-├── users, bookings, reviews
-├── commission-rules, billing-events
-└── audit-logs
-```
+รายชื่อหน้าทั้งหมด (path, access, ส่วนประกอบหลัก, สถานะใน Figma) และ user flow อยู่ใน **[`SITEMAP.md`](SITEMAP.md)** ให้ยึดไฟล์นั้นเป็นหลัก
 
 ## Tech Stack
 | ชั้น | เทคโนโลยี |
 |---|---|
-| **Frontend (web)** | **React** 18 + TypeScript + Vite + React Router + TanStack Query + Tailwind CSS + shadcn/ui + **Motion** (`motion/react`) + React Hook Form + Zod (`apps/web`) |
-| **Frontend (admin)** | **React** 18 + TypeScript + Vite + React Router + TanStack Query + **Ant Design v6** (`antd@^6`) + **ProComponents** (`@ant-design/pro-components`: ProLayout, ProTable, ProForm) + Zod (`apps/admin`) |
+| **Frontend (web)** | **React** 18 + TypeScript + Vite + React Router + TanStack Query + **Ant Design v6** + **Tailwind CSS** (layout/ตกแต่ง) + **Phosphor Icons** + **Motion** (`motion/react`) + Zod (`apps/web`) |
+| **Frontend (admin)** | **React** 18 + TypeScript + Vite + React Router + TanStack Query + **Ant Design v6** (`antd@^6`) + **ProComponents** (`@ant-design/pro-components`: ProLayout, ProTable, ProForm) + Tailwind CSS + Phosphor Icons + Zod (`apps/admin`) |
 | **Backend** | **NestJS** (TypeScript) + nestjs-zod (ใช้ schema ร่วมจาก `packages/types`) + Swagger/OpenAPI + Guards สำหรับ RBAC |
 | **DB** | **Supabase** — PostgreSQL (+ btree_gist, pg_cron, pg_net), Auth, Storage (รูปร้าน/สลิป), Realtime, RLS |
 | **Infra** | **Terraform** — provider `vercel/vercel` และ `supabase/supabase`, remote state (Terraform Cloud หรือ S3 + lock) |
@@ -443,7 +419,7 @@ night-list/
 - แจ้งเตือนใช้ outbox pattern: บันทึกลง `notification_deliveries` สถานะ QUEUED ใน transaction เดียวกับ event แล้วให้ job ส่งพร้อม retry
 
 **SEO / แชร์ลิงก์ (เพราะ React SPA)**
-- `apps/web` เป็น SPA ส่วนหน้า `/restaurants/:slug` และ `/share/:token` ใช้ Vercel rewrites ส่ง bot/crawler (LINE, Facebook, X) ไปที่ `api/og` เพื่อคืน HTML ที่มี meta/OG tags และรูป OG ที่สร้างด้วย `@vercel/og`
+- `apps/web` เป็น SPA ส่วนหน้า `/bars/:slug` และ `/share/:token` ใช้ Vercel rewrites ส่ง bot/crawler (LINE, Facebook, X) ไปที่ `api/og` เพื่อคืน HTML ที่มี meta/OG tags และรูป OG ที่สร้างด้วย `@vercel/og`
 - ทำ `sitemap.xml` ของหน้าร้านจาก Vercel Function
 
 ## Infrastructure as Code (Terraform)
@@ -506,7 +482,8 @@ night-list/
 - ข้อความตกแต่งลายมือ (เช่น slogan ใน hero) ใช้ได้ไม่เกิน 1 จุดต่อหน้า
 
 **ไอคอนและโลโก้**
-- ไอคอนเส้น (lucide) สีตาม `--muted`, ส่วนที่เลือกหรือ active ใช้ `--gold-text`
+- ใช้ **Phosphor Icons** (`@phosphor-icons/react`) ทั้งหมด (ไม่ใช้ `@ant-design/icons`) ไอคอนปกติ weight `regular` สี `--muted` ส่วนที่เลือกหรือ active ใช้ weight `fill` + `--gold-text`
+- ดาวคะแนนใช้ `<Star weight="fill" />` สี `--gold-text` และดาวที่ยังว่างใช้ `<Star weight="regular" />` สี `--border`
 - ไอคอนมงกุฎ 👑 ใช้เป็นสัญลักษณ์ ranking / Tier (เส้นทอง)
 
 ### Light / Dark Mode
@@ -574,21 +551,23 @@ night-list/
 - ร้านที่ขึ้นเป็น "ร้านใหม่" (รีวิวน้อยกว่า 5) ยังไม่อยู่ใน Tier List
 - **หน้า Tier List:** แสดงป้าย Tier เป็นช่องสี่เหลี่ยมใหญ่ด้านซ้ายของแต่ละแถว และการ์ดร้านเรียงแนวนอน เลื่อนได้บนมือถือ
 
-### Ant Design ใน Backoffice (`apps/admin`)
-- **เหตุผล:** Backoffice เน้นตาราง ฟอร์ม และ CRUD เยอะ จึงใช้ **antd v6 + ProComponents** เพื่อความเร็ว ส่วน `apps/web` (หน้าลูกค้าและร้าน) ยังใช้ Tailwind + shadcn/ui เพื่อคุม look ของแบรนด์ได้เต็มที่
+### Ant Design + Tailwind (ทั้ง `apps/web` และ `apps/admin`)
+- **antd v6** เป็นคอมโพเนนต์หลักทั้ง 2 แอป (`apps/admin` ใช้ ProComponents เพิ่ม) ส่วน **Tailwind** ใช้กับ layout, spacing, responsive และของตกแต่ง (gradient, glow) ไม่ใช้สร้างคอมโพเนนต์ซ้ำกับ antd
 - **Theme:** มี `ConfigProvider` ตัวเดียวที่ root ใช้ `theme.darkAlgorithm` / `theme.defaultAlgorithm` ตามธีมที่เลือก และ map Midnight Gold token:
   - `colorPrimary: '#E8B64C'`, `colorLink: '#B86BFA'` (Light: `#7E22CE`), `colorInfo: '#A738F5'`
   - `colorBgBase: '#07070D'` (Light: `#FAF8F3`), `colorBgContainer: '#171520'` (Light: `#FFFFFF`)
   - `colorBorder: '#34283F'` (Light: `#E4DCCF`), `colorTextBase: '#F5F1E8'` (Light: `#1A1523`)
   - `borderRadius: 12`
-  - ค่าสีทั้งหมดอ่านจาก `packages/ui/tokens` เพื่อให้ web และ admin ตรงกัน
-- **Layout:** `ProLayout` (เมนูซ้าย + access ตาม role ADMIN) และหน้า CRUD ใช้ `ProTable` + `ProForm`/`ModalForm`
+  - ค่าสีทั้งหมดมาจาก `packages/ui/tokens.ts` ไฟล์เดียว แล้วสร้างทั้ง antd theme และ Tailwind CSS variables จากไฟล์นี้
+- **ลำดับ CSS:** ใช้ `StyleProvider layer` ของ antd คู่กับ Tailwind v4 `@layer theme, base, antd, components, utilities` เพื่อไม่ให้ Tailwind preflight ไปทับ antd
+- **Layout (admin):** `ProLayout` (เมนูซ้าย + access ตาม role ADMIN) และหน้า CRUD ใช้ `ProTable` + `ProForm`/`ModalForm`
 - **กฎ:**
-  - ปรับ theme ด้วย token ก่อน แล้วค่อยใช้ `classNames` / `styles` ห้าม override `.ant-*` แบบ global
+  - ปรับ theme ด้วย token ก่อน แล้วค่อยใช้ `classNames` / `styles` / Tailwind class ห้าม override `.ant-*` แบบ global
   - `Table` ต้องมี `rowKey` เสมอ และใช้ server-side pagination/sort/filter ผ่าน NestJS API
-  - เมนูและ access ใน `ProLayout` ต้องตรงกับการตรวจสิทธิ์ฝั่ง backend
-- **ห้ามใช้ antd ใน `apps/web`** และห้ามใช้ shadcn/ui ใน `apps/admin` เพื่อไม่ให้ bundle บวมและ style ชนกัน
-- **Agent Skill:** repo มี skill `ant-design` และ `antd` อยู่ใน `.claude/skills/` (จาก [ant-design/antd-skill](https://github.com/ant-design/antd-skill)) ก่อนเขียนหรือแก้โค้ด antd ให้ค้น API ด้วย `antd info <Component> --format json` และหลังแก้ให้รัน `antd lint <path> --format json`
+  - เมนูและ access ต้องตรงกับการตรวจสิทธิ์ฝั่ง backend
+  - ห้ามใช้ shadcn/ui หรือ UI library อื่นเพิ่ม
+- **Agent Skill:** repo มี skill `ant-design` และ `antd` อยู่ใน `.claude/skills/` ก่อนเขียนหรือแก้โค้ด antd ให้ค้น API ด้วย `antd info <Component> --format json` และหลังแก้ให้รัน `antd lint <path> --format json`
+- **เอกสารประกอบ:** [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`SITEMAP.md`](SITEMAP.md)
 
 ### คอมโพเนนต์หลัก
 - **Header:** โลโก้ + เมนู (หน้าแรก / จัดอันดับ / ร้าน / รีวิว / เกี่ยวกับเรา) + ช่องค้นหาทรงแคปซูล + ปุ่มสลับธีม + โปรไฟล์ โดยเมนูที่เลือกอยู่เป็นสีทองพร้อมขีดล่างทอง

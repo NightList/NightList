@@ -32,8 +32,7 @@
 
 | ชั้น | เทคโนโลยี |
 |---|---|
-| Frontend (web) | React + TypeScript + Vite + React Router + TanStack Query + Tailwind CSS + shadcn/ui + Motion |
-| Frontend (admin) | React + TypeScript + Vite + Ant Design v6 + ProComponents |
+| Frontend | React + TypeScript + Vite + React Router + TanStack Query + **Ant Design v6** (+ ProComponents ใน admin) + Tailwind CSS + Phosphor Icons + Motion |
 | Backend | NestJS (TypeScript) + nestjs-zod + Swagger |
 | Database | Supabase (PostgreSQL, Auth, Storage, Realtime, RLS, pg_cron) |
 | Infra | Terraform (Vercel + Supabase providers) |
@@ -48,9 +47,9 @@
 night-list/
 ├── apps/
 │   ├── web/          # React — ลูกค้า + ร้าน (/merchant) + Staff Scanner (PWA)
-│   └── admin/        # React + Ant Design v6 — Backoffice ทีม NightList
+│   └── admin/        # React + antd Pro — Backoffice ทีม NightList
 ├── packages/
-│   ├── ui/           # shadcn/ui + theme ดำ·ทอง·ม่วง
+│   ├── ui/           # antd theme + Tailwind preset (Midnight Gold)
 │   ├── types/        # TypeScript types + Zod schemas
 │   ├── config/       # eslint, tsconfig, tailwind preset
 │   └── utils/        # price/star calculator, status transitions
@@ -60,7 +59,9 @@ night-list/
 │   └── database/     # Supabase migrations, RLS, seed
 ├── infra/terraform/  # Vercel + Supabase (dev/staging/prod)
 └── docs/
-    └── PROMPT.md     # สเปคเต็ม + prompt สำหรับ AI
+    ├── PROMPT.md       # สเปคเต็ม + prompt สำหรับ AI
+    ├── ARCHITECTURE.md # สถาปัตยกรรมระบบ
+    └── SITEMAP.md      # รายชื่อหน้าและ route
 CLAUDE.md             # กติกาสำหรับ Claude (branch, commit, skills)
 .claude/skills/       # Agent skills: ant-design, antd
 ```
