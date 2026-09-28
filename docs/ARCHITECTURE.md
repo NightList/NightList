@@ -66,6 +66,7 @@ flowchart LR
 | Presentation | `apps/web`, `apps/admin` | UI, routing, state ฝั่ง client และ form validation |
 | Shared UI / Contract | `packages/ui`, `packages/types` | theme tokens, คอมโพเนนต์ร่วม, Zod schema / DTO |
 | Domain logic (pure) | `packages/utils` | price calculator, star → tier, status transition map |
+| Demo data | `packages/mock` | โหมดเดโม: ข้อมูลสมมติ + store ในเบราว์เซอร์ (ใช้เมื่อยังไม่ตั้ง Supabase) |
 | API | `backend/api` | controller, guard, pipe, Swagger |
 | Application / Domain | `backend/services` | booking, billing, notification ฯลฯ (NestJS modules) |
 | Data | `backend/database` | migrations, RLS, DB functions, seed |

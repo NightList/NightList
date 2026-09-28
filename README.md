@@ -4,7 +4,17 @@
 
 ร้านแบ่งเป็น 3 ประเภท: **ผับ/บาร์** · **ร้านนั่งชิล** · **ร้านอาหารที่มีเครื่องดื่ม**
 
-> **สถานะ:** 🏗️ Scaffold — มีโครง monorepo ที่ build / test ผ่านแล้ว ยังไม่มีฟีเจอร์จริง (หน้าส่วนใหญ่เป็น placeholder ตาม [`docs/SITEMAP.md`](docs/SITEMAP.md))
+> **สถานะ:** 🧪 Demo — ทุกหน้าตาม [`docs/SITEMAP.md`](docs/SITEMAP.md) ใช้งานได้ด้วย **โหมดเดโม** (ข้อมูลร้านสมมติ 15 ร้าน เก็บในเบราว์เซอร์) ยังไม่ได้ต่อ Supabase / NestJS จริง
+
+### 🧪 ลองใช้โหมดเดโม
+
+1. `pnpm install` แล้ว `pnpm dev` → เปิด http://localhost:5173 (ลูกค้า + ร้าน) และ http://localhost:5174 (แอดมิน)
+2. ไม่ต้องตั้ง `.env` — ถ้าไม่มี `VITE_SUPABASE_URL` แอปจะเข้าโหมดเดโมเอง (มีแถบม่วงด้านบน + ปุ่มรีเซ็ตข้อมูล)
+3. หน้า `/login` มีปุ่มเข้าเร็ว **ลูกค้า / เจ้าของร้าน / Staff** · แอดมินกดปุ่มเข้าสู่ระบบ (เดโม) ที่ :5174
+
+**ลองเส้นทางหลัก:** ลูกค้าจอง Moonlit Cellar → จ่ายมัดจำ (อัปโหลดรูปอะไรก็ได้) → สลับเป็นเจ้าของร้าน ยืนยันสลิปที่ `/merchant/deposits` → เปิด `/merchant/tonight` กรอกรหัสจองเพื่อเช็กอิน → กลับเป็นลูกค้า เขียนรีวิว
+
+> web กับ admin เป็นคนละ origin จึงเก็บข้อมูลเดโมแยกกัน · ข้อมูลเดโมอยู่ใน `packages/mock` (แทนที่ด้วย API จริงทีละหน้า)
 
 ---
 
@@ -69,6 +79,7 @@ night-list/
 │   └── admin/        # React + antd Pro — Backoffice ทีม NightList
 ├── packages/
 │   ├── ui/           # antd theme + Tailwind preset (Midnight Gold)
+│   ├── mock/         # โหมดเดโม: ข้อมูลสมมติ + store ในเบราว์เซอร์
 │   ├── types/        # TypeScript types + Zod schemas
 │   ├── config/       # eslint, tsconfig, tailwind preset
 │   └── utils/        # price/star calculator, status transitions
@@ -123,24 +134,13 @@ Motion ใช้ [Motion](https://motion.dev) (`motion/react`) ดูราย�
 
 ## 🌿 Git Branching
 
-- `main` คือโค้ดที่พร้อมใช้งาน ห้าม push งานตรงเข้า `main` ให้ทำใน branch แล้วเปิด Pull Request
-- **Branch ที่ Claude ทำ:** ใช้รูปแบบ `claude-แสน-<module>` โดย 1 module ต่อ 1 branch
-
-| Module | Branch |
+| Branch | ใช้ทำอะไร |
 |---|---|
-| เอกสาร / prompt | `claude-แสน-docs` |
-| `apps/web` | `claude-แสน-web` |
-| `apps/admin` | `claude-แสน-admin` |
-| `backend/api` | `claude-แสน-api` |
-| `backend/services` | `claude-แสน-services` |
-| `backend/database` | `claude-แสน-database` |
-| `infra/terraform` | `claude-แสน-infra` |
-| `packages/ui` | `claude-แสน-ui` |
-| `packages/types` | `claude-แสน-types` |
-| `packages/config` | `claude-แสน-config` |
-| `packages/utils` | `claude-แสน-utils` |
+| `demo` | ตัว dev — งานใหม่ทั้งหมดขึ้นที่นี่ก่อน ลองใช้ / ทดสอบบน branch นี้ |
+| `main` | ตัวจริง — ใช้ deploy ขึ้นเว็บ · merge จาก `demo` เมื่อทุกอย่างโอเคแล้ว (ผ่าน Pull Request `demo → main`) |
 
-ถ้างานเป็น feature ย่อยใน module ให้ต่อท้ายชื่อ เช่น `claude-แสน-api-booking`, `claude-แสน-web-checkin`
+- ไม่แตก branch ย่อย · ห้าม push ตรงเข้า `main`
+- Vercel: production = `main`, preview = `demo`
 
 ## 🗺️ Roadmap
 

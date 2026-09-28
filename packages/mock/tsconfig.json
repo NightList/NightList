@@ -1,0 +1,1 @@
+{ "extends": "@nightlist/config/tsconfig/library.json", "include": ["src"] }

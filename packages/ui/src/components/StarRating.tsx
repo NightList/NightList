@@ -13,10 +13,7 @@ export interface StarRatingProps {
 export function StarRating({ value, size = 16, showValue = true, reviewCount }: StarRatingProps) {
   const full = Math.round(value);
   return (
-    <span
-      className="inline-flex items-center gap-1"
-      aria-label={`คะแนน ${value.toFixed(1)} จาก 5`}
-    >
+    <span className="inline-flex items-center gap-1" aria-label={`คะแนน ${value.toFixed(1)} จาก 5`}>
       <span className="inline-flex text-(--gold-text)" aria-hidden>
         {[1, 2, 3, 4, 5].map((i) => (
           <Star
@@ -27,9 +24,7 @@ export function StarRating({ value, size = 16, showValue = true, reviewCount }: 
           />
         ))}
       </span>
-      {showValue && (
-        <span className="font-semibold text-(--gold-text)">{value.toFixed(1)}</span>
-      )}
+      {showValue && <span className="font-semibold text-(--gold-text)">{value.toFixed(1)}</span>}
       {reviewCount !== undefined && (
         <span className="text-(--muted)">({reviewCount.toLocaleString('th-TH')})</span>
       )}

@@ -1,8 +1,17 @@
-import { EnvelopeSimple, LockSimple, MoonStars, SignIn } from '@phosphor-icons/react';
-import { App, Button, Card, Divider, Flex, Form, Input, Typography } from 'antd';
-import { motion, useReducedMotion } from 'motion/react';
+import {
+  EnvelopeSimple,
+  LockSimple,
+  SignIn,
+  Storefront,
+  User,
+  ShieldStar,
+} from '@phosphor-icons/react';
+import { demoLogin, demoLoginAs } from '@nightlist/mock';
+import { App, Button, Divider, Flex, Form, Input } from 'antd';
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
+import { AuthCard } from '@/features/auth/AuthCard';
+import { useAuth } from '@/shared/auth/AuthProvider';
 import { supabase } from '@/shared/lib/supabase';
 
 interface LoginForm {
@@ -10,130 +19,130 @@ interface LoginForm {
   password: string;
 }
 
-/**
- * /login — email + password (Supabase Auth)
- * ดีไซน์: การ์ดกระจก (glass) + ไอคอนแอปลอยเหนือการ์ด บนท้องฟ้ากลางคืน (ดู AuthLayout)
- */
+/** /login — email + password (Supabase Auth) · โหมดเดโมมีปุ่มเข้าเร็ว */
 export function LoginPage() {
   const { message } = App.useApp();
+  const { isDemo } = useAuth();
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const reduce = useReducedMotion();
   const [loading, setLoading] = useState(false);
+  const next = params.get('next') ?? '/';
 
   const onFinish = async (values: LoginForm) => {
-    if (!supabase) {
-      message.warning('ยังไม่ได้ตั้งค่า Supabase ในไฟล์ .env');
-      return;
-    }
     setLoading(true);
-    // TODO: Cloudflare Turnstile → options: { captchaToken }
-    const { error } = await supabase.auth.signInWithPassword(values);
-    setLoading(false);
-    if (error) {
+    try {
+      if (isDemo) {
+        demoLogin(values.email);
+      } else {
+        // TODO: Cloudflare Turnstile → options: { captchaToken }
+        const { error } = await supabase!.auth.signInWithPassword(values);
+        if (error) throw error;
+      }
+      navigate(next, { replace: true });
+    } catch {
       message.error('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
-      return;
+    } finally {
+      setLoading(false);
     }
-    navigate(params.get('next') ?? '/', { replace: true });
+  };
+
+  const quick = (role: 'customer' | 'merchant' | 'staff') => {
+    demoLoginAs(role);
+    navigate(role === 'customer' ? next : role === 'staff' ? '/merchant/tonight' : '/merchant', {
+      replace: true,
+    });
   };
 
   return (
-    <motion.div
-      className="relative w-full max-w-[440px] pt-10"
-      initial={reduce ? false : { opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+    <AuthCard
+      title="ยินดีต้อนรับกลับ"
+      subtitle="เข้าสู่ระบบเพื่อจองโต๊ะและดูการจองของคุณ"
+      footer={
+        <>
+          20+ เท่านั้น · ดื่มไม่ขับ · การเข้าสู่ระบบถือว่ายอมรับ <Link to="/terms">เงื่อนไข</Link>{' '}
+          และ <Link to="/privacy">นโยบายความเป็นส่วนตัว</Link>
+        </>
+      }
     >
-      {/* ไอคอนแอปลอยเหนือการ์ด */}
-      <div className="animate-float absolute left-1/2 top-0 z-10 -translate-x-1/2">
-        <div className="grid h-20 w-20 place-items-center rounded-3xl border border-white/20 bg-gradient-to-br from-purple via-[#7C3AED] to-gold shadow-[0_12px_40px_-8px_var(--purple)]">
-          <MoonStars size={40} weight="fill" className="text-white drop-shadow" />
-        </div>
-      </div>
-
-      <Card
-        variant="borderless"
-        classNames={{
-          root: 'glass-card !rounded-3xl',
-          body: '!px-7 !pb-8 !pt-14 sm:!px-9',
-        }}
+      <Form<LoginForm>
+        layout="vertical"
+        size="large"
+        variant="filled"
+        requiredMark={false}
+        onFinish={onFinish}
       >
-        <Flex vertical align="center" className="mb-7 text-center">
-          <Typography.Title level={2} className="!mb-1 !font-display">
-            ยินดีต้อนรับกลับ
-          </Typography.Title>
-          <Typography.Text type="secondary">เข้าสู่ระบบเพื่อจองโต๊ะและดูการจองของคุณ</Typography.Text>
-        </Flex>
-
-        <Form<LoginForm>
-          layout="vertical"
-          size="large"
-          variant="filled"
-          requiredMark={false}
-          onFinish={onFinish}
+        <Form.Item
+          name="email"
+          label="อีเมล"
+          rules={[{ required: true, type: 'email', message: 'กรอกอีเมลให้ถูกต้อง' }]}
         >
-          <Form.Item
-            name="email"
-            label="อีเมล"
-            rules={[{ required: true, type: 'email', message: 'กรอกอีเมลให้ถูกต้อง' }]}
-          >
-            <Input
-              prefix={<EnvelopeSimple className="text-muted" />}
-              placeholder="you@example.com"
-              autoComplete="email"
-              inputMode="email"
-            />
-          </Form.Item>
+          <Input
+            prefix={<EnvelopeSimple className="text-muted" />}
+            placeholder="you@example.com"
+            autoComplete="email"
+            inputMode="email"
+          />
+        </Form.Item>
+        <Form.Item
+          name="password"
+          label="รหัสผ่าน"
+          rules={[{ required: true, message: 'กรอกรหัสผ่าน' }]}
+          className="!mb-2"
+        >
+          <Input.Password
+            prefix={<LockSimple className="text-muted" />}
+            placeholder="••••••••••"
+            autoComplete="current-password"
+          />
+        </Form.Item>
+        <Flex justify="end" className="mb-6">
+          <Link to="/forgot-password" className="text-sm">
+            ลืมรหัสผ่าน?
+          </Link>
+        </Flex>
+        <Button
+          type="primary"
+          htmlType="submit"
+          block
+          loading={loading}
+          icon={<SignIn weight="bold" />}
+          iconPlacement="end"
+          className="!h-12 !rounded-xl !text-base shadow-[0_8px_30px_-6px_var(--gold)]"
+        >
+          เข้าสู่ระบบ
+        </Button>
+      </Form>
 
-          <Form.Item
-            name="password"
-            label="รหัสผ่าน"
-            rules={[{ required: true, message: 'กรอกรหัสผ่าน' }]}
-            className="!mb-2"
-          >
-            <Input.Password
-              prefix={<LockSimple className="text-muted" />}
-              placeholder="••••••••••"
-              autoComplete="current-password"
-            />
-          </Form.Item>
+      {isDemo && (
+        <>
+          <Divider plain className="!my-5 !text-muted">
+            โหมดเดโม · เข้าเร็ว
+          </Divider>
+          <div className="grid grid-cols-3 gap-2">
+            <Button icon={<User />} onClick={() => quick('customer')}>
+              ลูกค้า
+            </Button>
+            <Button icon={<Storefront />} onClick={() => quick('merchant')}>
+              เจ้าของร้าน
+            </Button>
+            <Button icon={<ShieldStar />} onClick={() => quick('staff')}>
+              Staff
+            </Button>
+          </div>
+          <p className="mt-2 text-center text-xs text-muted">
+            หรือใช้อีเมล demo@nightlist.app รหัสอะไรก็ได้
+          </p>
+        </>
+      )}
 
-          <Flex justify="end" className="mb-6">
-            <Link to="/forgot-password" className="text-sm">
-              ลืมรหัสผ่าน?
-            </Link>
-          </Flex>
-
-          {/* ที่วาง Cloudflare Turnstile (VITE_TURNSTILE_SITE_KEY) */}
-
-          <Button
-            type="primary"
-            htmlType="submit"
-            block
-            loading={loading}
-            icon={<SignIn weight="bold" />}
-            iconPlacement="end"
-            className="!h-12 !rounded-xl !text-base shadow-[0_8px_30px_-6px_var(--gold)]"
-          >
-            เข้าสู่ระบบ
-          </Button>
-        </Form>
-
-        <Divider plain className="!my-6 !text-muted">
-          ยังไม่มีบัญชี?
-        </Divider>
-
-        <Link to="/register">
-          <Button block size="large" className="!h-12 !rounded-xl">
-            สร้างบัญชีใหม่
-          </Button>
-        </Link>
-      </Card>
-
-      <p className="mt-6 text-center text-xs text-muted">
-        20+ เท่านั้น · ดื่มไม่ขับ · การเข้าสู่ระบบถือว่ายอมรับ{' '}
-        <Link to="/terms">เงื่อนไข</Link> และ <Link to="/privacy">นโยบายความเป็นส่วนตัว</Link>
-      </p>
-    </motion.div>
+      <Divider plain className="!my-5 !text-muted">
+        ยังไม่มีบัญชี?
+      </Divider>
+      <Link to="/register">
+        <Button block size="large" className="!h-12 !rounded-xl">
+          สร้างบัญชีใหม่
+        </Button>
+      </Link>
+    </AuthCard>
   );
 }
