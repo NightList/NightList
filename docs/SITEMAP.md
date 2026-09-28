@@ -1,6 +1,6 @@
 # NightList — Sitemap
 
-> สถานะ: **Draft v0.2** · ใช้คู่กับ [`ARCHITECTURE.md`](ARCHITECTURE.md) · **Figma:** ✅ มีแบบแล้ว · 🟡 มี wireframe · ⬜ ยังไม่มี
+> สถานะ: **Draft v0.3** · ใช้คู่กับ [`ARCHITECTURE.md`](ARCHITECTURE.md) · **Figma:** ✅ มีแบบแล้ว · 🟡 มี wireframe · ⬜ ยังไม่มี
 
 ## 1. ภาพรวม
 
@@ -70,12 +70,12 @@ flowchart TD
 ### เข้าสู่ระบบ
 | Path | หน้า | Access | ส่วนประกอบหลัก | Figma |
 |---|---|---|---|---|
-| `/login` | เข้าสู่ระบบ | 🌐 | username/อีเมล + password, ลืมรหัสผ่าน, ลิงก์ไปสมัคร, Turnstile (หลังผิด 3 ครั้ง) | 🟡 Login, Login-P |
-| `/register` | สมัครสมาชิก | 🌐 | username, อีเมล, password + ยืนยัน, วันเกิด (20+), ยอมรับ Terms/Privacy | 🟡 |
+| `/login` | เข้าสู่ระบบ | 🌐 | อีเมล + password, ลืมรหัสผ่าน, ลิงก์ไปสมัคร, Turnstile | 🟡 Login, Login-P |
+| `/register` | สมัครสมาชิก | 🌐 | อีเมล, password + ยืนยัน, ชื่อที่แสดง, วันเกิด (20+), ยอมรับ Terms/Privacy, Turnstile | 🟡 |
 | `/verify-email` | ยืนยันอีเมล | 🌐 | แจ้งให้เช็กอีเมล + ส่งใหม่ | ⬜ |
-| `/forgot-password` | ลืมรหัสผ่าน | 🌐 | username หรืออีเมล | ⬜ |
+| `/forgot-password` | ลืมรหัสผ่าน | 🌐 | อีเมล | ⬜ |
 | `/reset-password` | ตั้งรหัสใหม่ | 🌐 | password + ยืนยัน | ⬜ |
-| `/change-password` | เปลี่ยนรหัส (บังคับครั้งแรก) | 🧑‍🍳 | สำหรับบัญชี Staff ที่ร้านสร้างให้ | ⬜ |
+| `/accept-invite` | รับคำเชิญ Staff | 🌐 | ตั้งรหัสผ่านจากลิงก์เชิญทางอีเมล | ⬜ |
 | `/onboarding` | ตั้งค่าความชอบ | 👤 | สไตล์ร้าน, งบ, จำนวนคน, ย่าน | ⬜ |
 
 ### ลูกค้า (ล็อกอินแล้ว)
@@ -123,7 +123,7 @@ flowchart TD
 
 | Path | หน้า | ส่วนประกอบหลัก (ProComponents) |
 |---|---|---|
-| `/login` | เข้าสู่ระบบ (username + password) + TOTP MFA | Form |
+| `/login` | เข้าสู่ระบบ (email + password) + TOTP MFA | Form |
 | `/` | แดชบอร์ด | ยอดจอง, ร้านใหม่, รายการรอตรวจ |
 | `/merchants` | ร้านรออนุมัติ | ProTable + Drawer ตรวจเอกสาร |
 | `/bars` · `/bars/:id` | จัดการร้าน | ProTable, ระงับ / เปิด, Editor's Pick |
@@ -159,4 +159,4 @@ flowchart TD
 3. `/bars/:slug/book` → `/bookings/:id/deposit` → `/bookings/:id`
 4. `/ranking`
 5. `/merchant/tonight` (Scanner)
-6. `/login`, `/register`: ใช้ wireframe เดิมได้ แต่เปลี่ยนช่อง email เป็น "username หรืออีเมล" และเพิ่มลิงก์ลืมรหัสผ่าน
+6. `/login`, `/register`: ใช้ wireframe เดิม (email + password) ได้เลย เพิ่มลิงก์ลืมรหัสผ่าน และช่อง Turnstile

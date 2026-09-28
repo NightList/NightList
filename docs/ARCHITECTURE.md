@@ -1,6 +1,6 @@
 # NightList — Architecture
 
-> สถานะ: **Draft v0.2** · ใช้คู่กับ [`PROMPT.md`](PROMPT.md) (สเปค) และ [`SITEMAP.md`](SITEMAP.md) (หน้าเว็บ)
+> สถานะ: **Draft v0.3** · ใช้คู่กับ [`PROMPT.md`](PROMPT.md) (สเปค) และ [`SITEMAP.md`](SITEMAP.md) (หน้าเว็บ)
 
 ## 1. ภาพรวมระบบ
 
@@ -21,7 +21,7 @@ flowchart LR
   end
 
   subgraph Supabase["Supabase (ap-southeast-1)"]
-    AUTH["Auth<br/>username + password<br/>(Email provider · MFA)"]
+    AUTH["Auth<br/>email + password<br/>(Turnstile · MFA)"]
     DB[("PostgreSQL<br/>+ RLS · btree_gist")]
     ST["Storage<br/>รูปร้าน · สลิป · รีวิว"]
     RT["Realtime<br/>Crowd · สถานะจอง"]
@@ -208,27 +208,23 @@ sequenceDiagram
 ---
 
 ## 6. Auth & Security
-- **วิธีล็อกอิน:** **username + password** (ไม่มี OTP / Google / LINE) โดยใช้ Supabase Auth Email provider เก็บรหัสผ่าน (อีเมลเป็น key ภายใน) และ NestJS ตรวจ JWT ด้วย JWKS
+- **วิธีล็อกอิน:** **email + password** ของ Supabase Auth (ไม่มี OTP / social login) frontend เรียก supabase-js ตรง และ NestJS แค่ตรวจ JWT ด้วย JWKS
 
 ```mermaid
 sequenceDiagram
   actor U as ผู้ใช้
   participant W as apps/web
-  participant A as NestJS /auth
-  participant D as Postgres
   participant SA as Supabase Auth
-  U->>W: username + password
-  W->>A: POST /auth/login
-  A->>D: ตรวจ rate limit / lockout (login_attempts)
-  A->>D: หา email จาก username (citext)
-  A->>SA: signInWithPassword(email, password)
-  SA-->>A: session หรือ error
-  A->>D: บันทึก login_attempts
-  A-->>W: session (access + refresh) หรือ "username หรือรหัสผ่านไม่ถูกต้อง"
-  W->>W: supabase.auth.setSession()
+  participant A as NestJS
+  U->>W: email + password (+ Turnstile)
+  W->>SA: signInWithPassword()
+  SA-->>W: session (access + refresh)
+  W->>A: API call + Authorization: Bearer <access token>
+  A->>A: ตรวจ JWT (JWKS) → โหลด role จาก public.users
 ```
-- **ป้องกันการเดารหัส:** rate limit ต่อ IP + username, ผิด 5 ครั้งล็อก 15 นาที, Turnstile ตั้งแต่ครั้งที่ 3 และข้อความ error เป็นแบบเดียวกันเสมอ
-- **Staff:** เจ้าของร้านสร้างบัญชีให้ และ Staff ต้องเปลี่ยนรหัสตอนเข้าครั้งแรก · **Admin:** บังคับ TOTP MFA
+- **สมัคร:** `signUp()` → trigger สร้าง `public.users` → ยืนยันอีเมลก่อนจอง
+- **ป้องกันการเดารหัส:** rate limit ของ Supabase Auth + Turnstile CAPTCHA + Leaked Password Protection
+- **Staff:** เจ้าของร้านเชิญทางอีเมล (`inviteUserByEmail` ผ่าน NestJS) · **Admin:** บังคับ TOTP MFA (AAL2)
 - **Role:** เก็บที่ `users.role` (CUSTOMER / MERCHANT / STAFF / ADMIN) และ `bar_staff` สำหรับผูก Staff กับร้าน
 - **RLS:** เปิดทุกตาราง
   - อ่านสาธารณะได้เฉพาะข้อมูลร้านที่ `APPROVED`
@@ -268,4 +264,4 @@ sequenceDiagram
 | 4 | DB access ใน NestJS | Kysely + Supavisor | 🟡 เสนอ |
 | 5 | Jobs | pg_cron → `/jobs/*` | ✅ |
 | 6 | Component style | Function component + hooks (standard React) และ HOC เฉพาะ cross-cutting | ✅ |
-| 7 | วิธีล็อกอิน | username + password (+ อีเมลสำหรับรีเซ็ตรหัสผ่าน) และ MFA สำหรับ Admin | ✅ |
+| 7 | วิธีล็อกอิน | email + password (Supabase Auth) + Turnstile และ MFA สำหรับ Admin | ✅ |

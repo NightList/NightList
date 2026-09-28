@@ -26,4 +26,4 @@
 - HOC ใช้เฉพาะเรื่องที่ครอบหลายหน้า ส่วนเรื่องสิทธิ์ใช้ layout route `<RequireAuth>` / `<RequireRole>`
 
 ## Auth
-- เข้าสู่ระบบด้วย username + password ผ่าน NestJS `/auth/*` เท่านั้น ห้ามเพิ่ม OTP / social login โดยไม่ได้ตกลงกันก่อน
+- เข้าสู่ระบบด้วย email + password ของ Supabase Auth (supabase-js) ส่วน NestJS แค่ตรวจ JWT ห้ามเพิ่ม OTP / social login โดยไม่ได้ตกลงกันก่อน
