@@ -1,4 +1,4 @@
-# Prompt: NightList — เว็บแอปรวมร้านกลางคืน + Tier List + จองโต๊ะ (v2.3)
+# Prompt: NightList — เว็บแอปรวมร้านกลางคืน + Tier List + จองโต๊ะ (v2.7)
 
 > คัดลอกทั้งหมดด้านล่างไปใช้กับ AI สร้างโค้ด (Claude, Cursor, v0, Lovable, Bolt ฯลฯ)
 
@@ -68,6 +68,7 @@ Age Gate (20+) → Onboarding (ความชอบ) → Home / Tier List / Sea
 - จัดอันดับร้านเป็น **ระดับดาว 1–5 ดาว (⭐–⭐⭐⭐⭐⭐)** แยกตามประเภท (ผับ/บาร์, นั่งชิล, ร้านอาหารที่มีเครื่องดื่ม) และตามย่าน
   - ระบบคำนวณคะแนนรวม 0–100 แล้วแปลงเป็นดาว: 90+ = 5 ดาว, 75–89 = 4 ดาว, 60–74 = 3 ดาว, 40–59 = 2 ดาว, ต่ำกว่า 40 = 1 ดาว
   - ร้านที่มีรีวิวจากการเช็กอินจริงน้อยกว่า 5 รีวิว ให้แสดงเป็น "ร้านใหม่" แทนดาว
+  - หน้า Tier List แบ่งแถวเป็น **S / A / B / C** โดยแปลงจากดาว (S = 5★, A = 4★, B = 3★, C = 1–2★) ดูสีได้ที่หัวข้อ "Tier Badge" ในส่วนดีไซน์
   - ดาวของ NightList ต่างจากคะแนนรีวิว (rating ที่ลูกค้าให้) ต้องแสดงแยกกันให้ชัด
 - **คะแนนคำนวณจาก:**
   - รีวิวที่มาจากการเช็กอินจริงเท่านั้น (ถ่วงน้ำหนักตามความใหม่ของรีวิว)
@@ -261,9 +262,34 @@ Age Gate (20+) → Onboarding (ความชอบ) → Home / Tier List / Sea
   - `read_at` สำหรับ In-app
   - retry แบบ exponential backoff สูงสุด 5 ครั้ง ถ้ายังไม่ผ่านให้เป็น FAILED แล้วส่งช่องทางสำรอง (In-app)
 - **แยก Authentication กับ Notification:**
-  - LINE Login ใช้สำหรับยืนยันตัวตนเท่านั้น การส่ง LINE ต้องให้ผู้ใช้เพิ่มเพื่อน LINE OA และยินยอม (opt-in) แยกต่างหาก
-  - เก็บช่องทางแจ้งเตือนไว้ใน `notification_channels` (user_id, channel, line_user_id / push_subscription, opted_in_at, opted_out_at) ไม่ปนกับตาราง auth
-  - ผู้ใช้ที่ล็อกอินด้วยเบอร์โทรหรือ Google ก็เปิดรับ LINE ได้ และผู้ใช้ LINE Login ปิดการแจ้งเตือนได้
+  - เข้าสู่ระบบด้วย **username + password** เท่านั้น (ดูหัวข้อ "Authentication") ส่วน LINE ไม่ได้ใช้ล็อกอิน
+  - การรับแจ้งเตือนทาง LINE ผู้ใช้ต้องกด "เชื่อม LINE" ในหน้า `/profile` (LINE Login ใช้เพื่อเอา `line_user_id` มาเท่านั้น) แล้วเพิ่มเพื่อน LINE OA และยินยอม (opt-in)
+  - เก็บช่องทางแจ้งเตือนไว้ใน `notification_channels` (user_id, channel, line_user_id / push_subscription, opted_in_at, opted_out_at) ไม่ปนกับตาราง auth และปิดรับได้ทุกเมื่อ
+
+### 16. Authentication (username + password)
+- **สมัคร (`/register`):**
+  - username: 3–20 ตัว ใช้ได้แค่ `a-z 0-9 _` ไม่ซ้ำ และไม่สนตัวพิมพ์เล็ก/ใหญ่
+  - อีเมล: บังคับ ใช้สำหรับรีเซ็ตรหัสผ่านและแจ้งเตือน
+  - password: อย่างน้อย 10 ตัว และต้องไม่อยู่ในรายชื่อรหัสผ่านที่หลุดหรือใช้กันบ่อย
+  - วันเกิด: ต้องอายุ 20+
+  - ต้องยอมรับ Terms และ Privacy
+  - ต้องยืนยันอีเมลก่อนจองโต๊ะ (ดูเมนูและร้านได้ทันที)
+- **เข้าสู่ระบบ (`/login`):**
+  - ใส่ username หรืออีเมล + password
+  - `POST /auth/login` ใน NestJS จะหาอีเมลจาก username แล้วเรียก Supabase Auth `signInWithPassword` ฝั่ง server และคืน session (access + refresh token)
+  - ข้อความ error ใช้แบบเดียวกันเสมอ คือ "username หรือรหัสผ่านไม่ถูกต้อง" เพื่อไม่ให้เดาได้ว่ามี username นี้หรือไม่
+- **ป้องกันการเดารหัส:**
+  - rate limit ต่อ IP และต่อ username
+  - ผิด 5 ครั้งใน 15 นาที ล็อก 15 นาที
+  - ตั้งแต่ครั้งที่ 3 ต้องผ่าน Cloudflare Turnstile
+  - บันทึกลง `login_attempts`
+- **ลืมรหัสผ่าน:** ใส่ username หรืออีเมลที่ `/forgot-password` → ระบบส่งลิงก์รีเซ็ตไปอีเมล → `/reset-password`
+- **Staff ของร้าน:**
+  - เจ้าของร้านสร้างบัญชี Staff (username + รหัสชั่วคราว)
+  - Staff ต้องเปลี่ยนรหัสตอนล็อกอินครั้งแรก (`must_change_password`)
+- **Admin:** username + password + **TOTP MFA** (Supabase MFA) บังคับทุกบัญชี
+- **Session:** access token อายุสั้น + refresh token และมีปุ่มออกจากระบบทุกอุปกรณ์ใน `/settings`
+- Supabase Auth เปิดเฉพาะ Email provider (ใช้อีเมลเป็น key ภายใน) ส่วน Phone / Google / LINE provider ปิด
 
 ---
 
@@ -301,7 +327,7 @@ Age Gate (20+) → Onboarding (ความชอบ) → Home / Tier List / Sea
 ---
 
 ## Database (MVP Schema)
-- **ผู้ใช้และสิทธิ์:** users, user_preferences, user_consents, auth_identities (provider: PHONE / GOOGLE / LINE)
+- **ผู้ใช้และสิทธิ์:** users, user_preferences, user_consents, login_attempts
 - **แจ้งเตือน (แยกจาก auth):** notification_channels, notifications, notification_deliveries
 - **ร้าน:** bars, bar_hours, styles, bar_styles, bar_media, bar_links, bar_verifications, bar_staff, bar_safety_features, safety_reports, crowd_status_logs
 - **จัดอันดับ:** tier_scores, tier_history
@@ -313,8 +339,8 @@ Age Gate (20+) → Onboarding (ความชอบ) → Home / Tier List / Sea
 - **ไม่อยู่ใน MVP schema:** campaigns, campaign_clicks และตารางที่ใช้ดึงข้อมูลจากโซเชียล
 
 **ฟิลด์สำคัญ**
-- `users`: id, name, phone, birthdate, role (CUSTOMER / MERCHANT / STAFF / ADMIN), age_verified, age_verified_at, age_verification_method
-- `auth_identities`: id, user_id, provider, provider_user_id, created_at (ใช้ยืนยันตัวตนเท่านั้น)
+- `users`: id (= auth.users.id), username (citext unique), display_name, email (citext unique), phone (optional), birthdate, role (CUSTOMER / MERCHANT / STAFF / ADMIN), must_change_password, email_verified_at, age_verified, age_verified_at, age_verification_method
+- `login_attempts`: id, username_or_email, ip, user_agent, success, created_at (ใช้กับ rate limit / lockout และเก็บ 90 วัน)
 - `notification_channels`: id, user_id, channel (LINE / WEB_PUSH / IN_APP), line_user_id, push_subscription, opted_in_at, opted_out_at
 - `notifications`: id, user_id, event_type, booking_id, payload, read_at, created_at
 - `notification_deliveries`: id, notification_id, channel, status (QUEUED / SENT / FAILED / RETRYING), attempt_count, last_error, next_retry_at, sent_at
@@ -325,7 +351,7 @@ Age Gate (20+) → Onboarding (ความชอบ) → Home / Tier List / Sea
 - `bar_links`: id, bar_id, type (INSTAGRAM / TIKTOK / FACEBOOK / LINE_OA / WEBSITE / REVIEW_CLIP), url, sort_order
 - `bar_safety_features`: id, bar_id, feature_key, value (YES / NO / UNKNOWN), source (SELF_DECLARED / ADMIN_VERIFIED), evidence_url, verified_by, verified_at
 - `crowd_status_logs`: id, bar_id, status (AVAILABLE / ALMOST_FULL / FULL), updated_by, created_at
-- `tier_scores`: id, bar_id, period, category, review_score, checkin_score, safety_score, price_info_score, total_score, stars (1–5), is_new (boolean)
+- `tier_scores`: id, bar_id, period, category, review_score, checkin_score, safety_score, price_info_score, total_score, stars (1–5), tier (S / A / B / C — คำนวณจาก stars), is_new (boolean)
 - `table_zones`: id, bar_id, name, capacity_pax, default_duration_minutes, allow_zone_only_booking
 - `tables`: id, zone_id, name, seats, active
 - `price_packages`: id, bar_id, name, pax_min, pax_max, total_price, active
@@ -342,6 +368,7 @@ Age Gate (20+) → Onboarding (ความชอบ) → Home / Tier List / Sea
 - `commission_rules`: id, bar_id, calculation_type, rate, charge_on_no_show, no_show_rate, effective_from, effective_to, created_by
 - `billing_events`: id, booking_id, bar_id, event_type (CHECK_IN / NO_SHOW), commission_rule_id, base_amount, amount, status (PENDING / INVOICED / PAID / WAIVED), period, created_at, unique (booking_id, event_type)
 - `user_consents`: id, user_id, consent_type, version, granted, granted_at, revoked_at
+- `user_preferences`: user_id, preferred_styles[], budget_per_person, usual_pax, preferred_districts[], theme (LIGHT / DARK / SYSTEM, ค่าเริ่มต้น SYSTEM), reduced_motion (boolean, nullable = ตามระบบ)
 - `promotion_packages`: id, name, placement (HOME_BANNER / HOME_RECOMMENDED / SEARCH_TOP), duration_days, price, max_slots_per_area, active
 - `promoted_listings`: id, bar_id, package_id, placement, district, category, starts_at, ends_at, status (PENDING_PAYMENT / PAYMENT_SUBMITTED / ACTIVE / EXPIRED / REJECTED / CANCELLED), approved_by
 - `promoted_listing_payments`: id, promoted_listing_id, amount, slip_image_url, status (SUBMITTED / VERIFIED / REJECTED), verified_by, verified_at
@@ -354,11 +381,11 @@ Age Gate (20+) → Onboarding (ความชอบ) → Home / Tier List / Sea
 night-list/
 ├── apps/
 │   ├── web/                # React (Vite) — ฝั่งลูกค้า + ฝั่งร้าน (/merchant) + Staff Scanner (PWA)
-│   │   └── api/og/         # Vercel Function สร้าง meta/OG image ให้ /restaurants/:slug และ /share/:token
-│   └── admin/              # React (Vite) — Backoffice ทีม NightList (อนุมัติร้าน, Safety, ดาว, โปรโมท, Review, Billing, Audit)
+│   │   └── api/og/         # Vercel Function สร้าง meta/OG image ให้ /bars/:slug และ /share/:token
+│   └── admin/              # React (Vite) + Ant Design v6 + ProComponents — Backoffice ทีม NightList (อนุมัติร้าน, Safety, ดาว, โปรโมท, Review, Billing, Audit)
 │
 ├── packages/
-│   ├── ui/                 # shadcn/ui components + theme (dark nightlife) ใช้ร่วมกัน 2 แอป
+│   ├── ui/                 # antd theme + Tailwind preset + คอมโพเนนต์ร่วม (dark nightlife) ใช้ร่วมกัน 2 แอป
 │   ├── types/              # TypeScript types + Zod schemas (BookingStatus, DTO, API contracts) ใช้ร่วม frontend/NestJS
 │   ├── config/             # eslint, tsconfig, tailwind preset, env schema
 │   └── utils/              # price calculator, star calculator, date/timezone (Asia/Bangkok), status transition map, formatters
@@ -389,43 +416,20 @@ night-list/
 - `apps/admin` deploy แยกโดเมน (เช่น admin.nightlist.app) และเข้าได้เฉพาะ role ADMIN
 
 ## Sitemap
-**apps/web** (React Router)
-```
-/
-├── age-gate, onboarding, home
-├── ranking (/:category/:district)     ← จัดอันดับดาว
-├── search
-├── restaurants/:slug
-├── booking/:id, booking/:id/deposit, booking/success
-├── share/:token                        ← บัตรจองสาธารณะ
-├── notifications, favorites, reviews, profile, settings/notifications
-└── merchant/
-    ├── dashboard, tonight (scanner + crowd), restaurant, hours, safety, links
-    ├── menu, pricing, packages, zones-tables, deposits
-    ├── promote (ซื้อ/ดูสถานะโปรโมท)
-    └── bookings, reviews, analytics, staff
-```
-**apps/admin**
-```
-/
-├── dashboard, restaurants, merchants, safety-verification
-├── ranking (ดาว + Editor's Pick), promotions (แพ็กเกจ + อนุมัติสลิป)
-├── users, bookings, reviews
-├── commission-rules, billing-events
-└── audit-logs
-```
+รายชื่อหน้าทั้งหมด (path, access, ส่วนประกอบหลัก, สถานะใน Figma) และ user flow อยู่ใน **[`SITEMAP.md`](SITEMAP.md)** ให้ยึดไฟล์นั้นเป็นหลัก
 
 ## Tech Stack
 | ชั้น | เทคโนโลยี |
 |---|---|
-| **Frontend** | **React** 18 + TypeScript + Vite + React Router + TanStack Query + Tailwind CSS + shadcn/ui + React Hook Form + Zod (`apps/web`, `apps/admin`) |
+| **Frontend (web)** | **React** 18 + TypeScript + Vite + React Router + TanStack Query + **Ant Design v6** + **Tailwind CSS** (layout/ตกแต่ง) + **Phosphor Icons** + **Motion** (`motion/react`) + Zod (`apps/web`) |
+| **Frontend (admin)** | **React** 18 + TypeScript + Vite + React Router + TanStack Query + **Ant Design v6** (`antd@^6`) + **ProComponents** (`@ant-design/pro-components`: ProLayout, ProTable, ProForm) + Tailwind CSS + Phosphor Icons + Zod (`apps/admin`) |
 | **Backend** | **NestJS** (TypeScript) + nestjs-zod (ใช้ schema ร่วมจาก `packages/types`) + Swagger/OpenAPI + Guards สำหรับ RBAC |
 | **DB** | **Supabase** — PostgreSQL (+ btree_gist, pg_cron, pg_net), Auth, Storage (รูปร้าน/สลิป), Realtime, RLS |
 | **Infra** | **Terraform** — provider `vercel/vercel` และ `supabase/supabase`, remote state (Terraform Cloud หรือ S3 + lock) |
 | **Hosting** | **Vercel** — 3 projects: `web`, `admin` (static + Vercel Functions สำหรับ OG) และ `api` (NestJS เป็น Vercel Function) |
 | Monorepo | pnpm + Turborepo |
 | แผนที่ | Google Maps หรือ Leaflet + OpenStreetMap |
-| Auth | Supabase Auth: Phone OTP, Google, LINE Login (ใช้ยืนยันตัวตนเท่านั้น) — NestJS ตรวจ Supabase JWT ทุก request |
+| Auth | **username + password** ผ่าน NestJS `/auth/*` บน Supabase Auth (Email provider) + TOTP MFA สำหรับ Admin — NestJS ตรวจ Supabase JWT ทุก request |
 | แจ้งเตือน | Web Push, LINE Messaging API (ผ่าน LINE OA opt-in) และ In-app |
 | แชร์ | LINE share URL / LIFF + Web Share API |
 | QR | สร้าง QR ใน NestJS (signed JWT) + สแกนด้วยกล้องผ่านเว็บ (เช่น html5-qrcode) |
@@ -440,13 +444,13 @@ night-list/
 - แจ้งเตือนใช้ outbox pattern: บันทึกลง `notification_deliveries` สถานะ QUEUED ใน transaction เดียวกับ event แล้วให้ job ส่งพร้อม retry
 
 **SEO / แชร์ลิงก์ (เพราะ React SPA)**
-- `apps/web` เป็น SPA ส่วนหน้า `/restaurants/:slug` และ `/share/:token` ใช้ Vercel rewrites ส่ง bot/crawler (LINE, Facebook, X) ไปที่ `api/og` เพื่อคืน HTML ที่มี meta/OG tags และรูป OG ที่สร้างด้วย `@vercel/og`
+- `apps/web` เป็น SPA ส่วนหน้า `/bars/:slug` และ `/share/:token` ใช้ Vercel rewrites ส่ง bot/crawler (LINE, Facebook, X) ไปที่ `api/og` เพื่อคืน HTML ที่มี meta/OG tags และรูป OG ที่สร้างด้วย `@vercel/og`
 - ทำ `sitemap.xml` ของหน้าร้านจาก Vercel Function
 
 ## Infrastructure as Code (Terraform)
 - **จัดการด้วย Terraform:**
   - Vercel: สร้าง 3 projects (`web`, `admin`, `api`) ผูก Git repo, root directory, build command, environment variables ต่อ environment, custom domains (nightlist.app, admin.nightlist.app, api.nightlist.app)
-  - Supabase: project ต่อ environment (dev / staging / prod), region `ap-southeast-1` (Singapore), ตั้งค่า Auth providers, redirect URLs, storage buckets
+  - Supabase: project ต่อ environment (dev / staging / prod), region `ap-southeast-1` (Singapore), ตั้งค่า Auth (เปิดเฉพาะ Email provider, MFA TOTP), redirect URLs, storage buckets
   - Secrets (Supabase keys, LINE channel secret/token, JOB_SECRET, QR signing key) ส่งเป็นตัวแปร `sensitive` จาก Terraform Cloud / GitHub Secrets และห้าม commit ลง repo
 - **ไม่ใช้ Terraform จัดการ schema:** migrations, RLS และ DB functions อยู่ใน `backend/database` แล้วรันด้วย `supabase db push` ใน CI
 - **CI/CD (GitHub Actions):**
@@ -456,44 +460,168 @@ night-list/
 - **Environments:** dev / staging / prod แยก Supabase project และ Vercel environment กันชัดเจน
 
 ## ดีไซน์
-- **สไตล์:** Dark, Nightlife, Premium, Minimal, Modern
-- **สี: โทน ดำ · ทอง · ม่วง** (ดำเป็นพื้น ใช้ทองเป็นสีหลัก และม่วงเป็นสีรอง)
-  - **ดำ (พื้นหลัง):**
-    - Background #09090B
-    - Surface/การ์ด #111113
-    - Surface ยกระดับ (modal, bottom sheet) #18181B
-    - Border #27272A
-  - **ทอง (Primary):**
-    - Gold #D4AF37 และ Gold Light #E9C46A (hover, ตัวอักษรบนพื้นดำ)
-    - ใช้กับปุ่ม CTA หลัก ("จองเลย"), ดาว ⭐, ป้าย "แนะนำ · โฆษณา" และ Editor's Pick
-    - ตัวอักษรบนปุ่มทองใช้ #09090B
-  - **ม่วง (Secondary):**
-    - Purple #7C3AED สำหรับพื้นปุ่มรอง/ขอบ/focus ring (ตัวอักษรบนพื้นม่วงใช้ #F5F5F5) และ Purple Light #A78BFA สำหรับลิงก์/ข้อความบนพื้นดำ (ห้ามใช้ #7C3AED เป็นตัวอักษรบนพื้นดำ เพราะ contrast ไม่พอ)
-    - ใช้กับแท็บที่เลือก, chip ตัวกรอง, focus ring, ลิงก์, badge สไตล์ร้าน และ glow/gradient ตกแต่ง
-    - gradient หัวข้อหรือแบนเนอร์: #7C3AED → #D4AF37
-  - **ตัวอักษร:** Text #F5F5F5 และ Text รอง #A1A1AA
-  - **สีสถานะ Crowd Status:** 🟢 #22C55E / 🟡 #EAB308 / 🔴 #EF4444 (ใส่ไอคอนหรือข้อความคู่ด้วย ไม่ใช้สีอย่างเดียว)
-  - ทุกคู่สีตัวอักษรกับพื้นต้องผ่าน WCAG AA (contrast ≥ 4.5:1)
-  - ทองและม่วงใช้เป็นสีเน้นเท่านั้น ไม่ใช้เต็มพื้นที่ใหญ่
-  - กำหนดเป็น design tokens ใน `packages/ui` (Tailwind preset) เช่น `bg`, `surface`, `gold`, `gold-light`, `purple`, `purple-light`
-- **การ์ดร้าน:** รูป, ชื่อ, ดาว (1–5) หรือป้าย "ร้านใหม่", ป้าย "แนะนำ · โฆษณา" (ถ้าโปรโมท), ประเภท/สไตล์, ระยะทาง, ราคาต่อหัว, คะแนน, Safety Score, Crowd Status และป้ายโต๊ะว่าง
-- **หน้าร้าน:** ปุ่ม "ประเมินราคา" และ "จองเลย" ติดด้านล่างจอ
-- **Staff Scanner:** ปุ่มใหญ่ ใช้มือเดียวได้ในที่มืด
+- **สไตล์:** Nightlife, Premium, Minimal, Modern · Mobile-first
+- **ธีมหลัก: Midnight Gold** (ดำ · ทอง · ม่วง) ใช้ Gold กับปุ่มหลักและคะแนน ส่วน Purple ใช้กับ accent และลิงก์
+- รองรับ **Light / Dark mode** พร้อม motion ตอนสลับธีม (รายละเอียดด้านล่าง)
+- **ไฟล์ออกแบบ (Figma):** https://www.figma.com/design/FtXQS2NeyuHQZIA3chcvLL/NightList?node-id=7-4 ใช้เป็น reference ของ layout และคอมโพเนนต์ แต่ถ้าสีหรือข้อความใน Figma ไม่ตรงกับ token และกฎในเอกสารนี้ ให้ยึดเอกสารนี้
 
-### Layout อ้างอิงจาก Mockup (ปรับเป็นธีม ดำ · ทอง · ม่วง)
+### Design Tokens — Midnight Gold
+ประกาศเป็น CSS variables ใน `packages/ui` แล้วใช้ผ่าน Tailwind preset เช่น `bg-background`, `text-muted`, `bg-gold`, `text-link` ห้าม hard-code hex ในคอมโพเนนต์
+
+| Token | Dark (ค่าเริ่มต้น) | Light | ใช้กับ |
+|---|---|---|---|
+| `--background` | `#07070D` | `#FAF8F3` | พื้นหน้า |
+| `--surface` | `#11111A` | `#FFFFFF` | header, sidebar, bottom bar |
+| `--card` | `#171520` | `#F4F1EA` | การ์ดร้าน, modal, bottom sheet |
+| `--border` | `#34283F` | `#E4DCCF` | ขอบการ์ด, input, divider |
+| `--text` | `#F5F1E8` | `#1A1523` | ตัวอักษรหลัก |
+| `--muted` | `#A7A1B3` | `#5E5670` | ตัวอักษรรอง, placeholder |
+| `--gold` | `#E8B64C` | `#E8B64C` | **พื้น**ปุ่มหลัก ("จองเลย", "บันทึก"), ป้ายโฆษณา, Tier S |
+| `--gold-highlight` | `#FFD77A` | `#F5C85E` | hover ของปุ่มทอง, glow, ไฮไลต์ในหัวข้อ |
+| `--gold-text` | `#E8B64C` | `#8A5A00` | ดาว ⭐, คะแนน, ยอดเงิน, ตัวอักษรทองบนพื้น |
+| `--on-gold` | `#07070D` | `#1A1523` | ตัวอักษรบนปุ่มทอง |
+| `--purple` | `#A738F5` | `#A738F5` | accent: แท็บที่เลือก, chip ที่เลือก, focus ring, ขอบ glow, ไอคอน |
+| `--link` | `#B86BFA` | `#7E22CE` | ลิงก์และข้อความสีม่วงขนาดเล็ก |
+| `--tier-s` | `#E8B64C` | `#E8B64C` | Tier S (Legendary) |
+| `--tier-a` | `#963BE8` | `#963BE8` | Tier A (Excellent) |
+| `--tier-b` | `#5869C8` | `#5869C8` | Tier B (Good) |
+| `--tier-c` | `#74788B` | `#74788B` | Tier C (Normal) |
+| `--crowd-available` / `almost-full` / `full` | `#22C55E` / `#EAB308` / `#EF4444` | `#16A34A` / `#CA8A04` / `#DC2626` | Crowd Status (ใส่ข้อความคู่เสมอ) |
+
+**กฎ contrast (WCAG AA)**
+- ข้อความขนาดปกติต้องได้ ≥ 4.5:1
+- `#A738F5` บนพื้นดำได้แค่ 4.3:1 จึงใช้เป็นสี accent / ขอบ / ไอคอน / ตัวอักษรใหญ่เท่านั้น ส่วนลิงก์และข้อความม่วงขนาดเล็กให้ใช้ `--link`
+- **ป้าย Tier:** S ใช้ตัวอักษร `#07070D`, A ใช้ `#F5F1E8`, B ใช้ `#F5F1E8` แบบตัวหนาหรือตัวใหญ่, C ใช้ `#07070D`
+- ใน Light mode ห้ามใช้ `#E8B64C` เป็นตัวอักษรบนพื้นขาว ให้ใช้ `--gold-text` (`#8A5A00`) แทน
+- ทองและม่วงใช้เป็นสีเน้น ไม่ใช้เต็มพื้นที่ใหญ่ ยกเว้น gradient ใน hero
+
+**Gradient และเอฟเฟกต์**
+- **Hero:** รูปบรรยากาศบาร์ + overlay `linear-gradient(90deg, #07070D 0%, rgba(7,7,13,.6) 50%, transparent)` และเส้นแสงม่วง `#A738F5` แนวทแยง
+- **หัวข้อใหญ่:** ตัวอักษร serif ครึ่งแรกเป็น `--text` ครึ่งหลังเป็น gradient ทอง `#FFD77A → #E8B64C` (เช่น "NIGHT**LIST**")
+- **Glow:** การ์ดตอน hover ใช้ `box-shadow: 0 0 0 1px var(--gold), 0 8px 32px rgba(167,56,245,.25)`
+- **Light mode:** ลด glow เหลือเงานุ่ม `0 8px 24px rgba(26,21,35,.08)` และ hero overlay ใช้ `#FAF8F3` แทน
+
+**Typography**
+- หัวข้อแบรนด์ / hero: serif หรือ display เช่น **Playfair Display** หรือ **Cinzel** (ภาษาอังกฤษเท่านั้น)
+- ภาษาไทยและเนื้อหา: **IBM Plex Sans Thai** หรือ **Noto Sans Thai** (UI) และ **Mitr** / **Prompt** สำหรับหัวข้อไทย
+- ข้อความตกแต่งลายมือ (เช่น slogan ใน hero) ใช้ได้ไม่เกิน 1 จุดต่อหน้า
+
+**ไอคอนและโลโก้**
+- ใช้ **Phosphor Icons** (`@phosphor-icons/react`) ทั้งหมด (ไม่ใช้ `@ant-design/icons`) ไอคอนปกติ weight `regular` สี `--muted` ส่วนที่เลือกหรือ active ใช้ weight `fill` + `--gold-text`
+- ดาวคะแนนใช้ `<Star weight="fill" />` สี `--gold-text` และดาวที่ยังว่างใช้ `<Star weight="regular" />` สี `--border`
+- ไอคอนมงกุฎ 👑 ใช้เป็นสัญลักษณ์ ranking / Tier (เส้นทอง)
+
+### Light / Dark Mode
+- **ตัวเลือก 3 แบบ:** 🌙 มืด / ☀️ สว่าง / 💻 ตามระบบ
+  - ค่าเริ่มต้นคือ "ตามระบบ" (`prefers-color-scheme`) ถ้าอ่านค่าไม่ได้ให้ใช้ **Dark**
+- **ปุ่มสลับ:** อยู่ใน header (ไอคอนพระจันทร์/ดวงอาทิตย์) และในหน้า `settings`
+- **การบันทึก:**
+  - ผู้ใช้ทั่วไป: เก็บใน `localStorage` (`nightlist-theme`)
+  - ถ้าล็อกอิน: sync ไปที่ `user_preferences.theme` (`LIGHT` / `DARK` / `SYSTEM`) ด้วย
+- **Implementation:**
+  - Tailwind `darkMode: 'class'`: ใส่ class `dark` / `light` ที่ `<html>` และสลับค่า CSS variables ตาม class
+  - **กันจอกะพริบ (FOUC):** ใส่ inline script เล็กๆ ใน `<head>` ของ `index.html` ให้อ่านค่าธีมแล้วตั้ง class ก่อน React render
+  - ตั้ง `<meta name="theme-color">` ให้เปลี่ยนตามธีม (`#07070D` / `#FAF8F3`)
+  - `ThemeProvider` + hook `useTheme()` อยู่ใน `packages/ui` ใช้ร่วมกันทั้ง `apps/web` และ `apps/admin`
+  - `apps/admin` (antd): map token เดียวกันเข้า `ConfigProvider` (ดูหัวข้อ "Ant Design ใน Backoffice")
+- **หน้าที่ต้องเป็น Dark เสมอ:** Staff Scanner (`/merchant/tonight`) เพราะใช้ในร้านที่มืด เพื่อไม่ให้แสบตา
+- **รูปภาพ:** รูปร้านไม่ต้องปรับตามธีม แต่ overlay และ gradient บนรูปต้องเปลี่ยนตามธีม
+
+### Motion
+ใช้ **Motion** (`motion/react`, เดิมชื่อ Framer Motion) และกำหนด motion tokens ใน `packages/ui`
+
+| Token | ค่า | ใช้กับ |
+|---|---|---|
+| `duration.fast` | 150ms | hover, กดปุ่ม, toggle |
+| `duration.base` | 250ms | เปิด/ปิด dropdown, tab, การ์ด |
+| `duration.slow` | 400ms | page transition, bottom sheet, เปลี่ยนธีม |
+| `ease.out` | `cubic-bezier(0.22, 1, 0.36, 1)` | ค่าเริ่มต้น |
+| `spring.sheet` | `{ type: 'spring', stiffness: 380, damping: 32 }` | bottom sheet, modal |
+
+**Motion สำหรับสลับธีม (Light ↔ Dark)** ⭐
+- ใช้ **View Transitions API** ทำ circular reveal ขยายวงกลมออกจากตำแหน่งปุ่มสลับธีม ใช้เวลา 400ms ด้วย `ease.out`
+- ไอคอนพระจันทร์ ↔ ดวงอาทิตย์ หมุน 90° พร้อม fade/scale ใช้เวลา 250ms
+- **Fallback** (browser ที่ไม่รองรับ View Transitions): ใส่ `transition: background-color, color, border-color 300ms` ที่ตัวแปรสีหลัก
+- ห้ามใส่ transition สีให้ทุก element ตลอดเวลา ให้เปิด class `theme-transition` เฉพาะช่วงที่กำลังสลับ แล้วเอาออก เพื่อไม่ให้ UI หน่วง
+
+**Motion ใน UI**
+- **Page transition:** fade + เลื่อนขึ้น 8px (250ms)
+- **Tier List:** แถว S → A → B → C ค่อยๆ ปรากฏแบบ stagger ห่างกัน 60ms และการ์ดในแถวไล่ต่อกันทีละ 40ms
+- **การ์ดร้าน:** hover แล้วยกขึ้น `y: -4px` + ขอบทอง + glow ม่วง ส่วนกด (tap) ให้ `scale: 0.98`
+- **ดาว / คะแนน:** ดาวค่อยๆ เติมสีทองจากซ้ายไปขวาเมื่อเลื่อนมาเห็นในจอ และตัวเลขคะแนนนับขึ้น (count-up)
+- **ปุ่ม ♥ Favorite:** เด้ง (scale 1 → 1.25 → 1) + เปลี่ยนเป็นสีทอง
+- **Crowd Status:** จุดสีมี pulse เบาๆ เฉพาะสถานะ 🟢 ว่าง (2 วินาทีต่อรอบ)
+- **Hero:** ภาพพื้นหลัง parallax เบาๆ (ไม่เกิน 20px) และแสงบนแก้วมี shimmer 1 ครั้งตอนโหลด
+- **Bottom sheet ประเมินราคา:** เลื่อนขึ้นแบบ `spring.sheet` และยอด Estimated Total นับตัวเลขเมื่อค่าเปลี่ยน
+- **จองสำเร็จ:** เครื่องหมายถูกวาดเส้น (path draw) พร้อมประกายทองเล็กๆ รวมไม่เกิน 1 วินาที
+- **Skeleton loading:** shimmer ไล่จาก `--card` ไป `--border`
+- **Toast / แจ้งเตือน:** slide-in จากบนบนมือถือ และจากมุมขวาล่างบน desktop
+
+**กฎ Motion**
+- เคารพ `prefers-reduced-motion`: ถ้าผู้ใช้ปิด motion ให้ตัด parallax, stagger, count-up และ circular reveal เหลือแค่ fade 150ms หรือเปลี่ยนทันที ใช้ `useReducedMotion()` ของ Motion
+- animate เฉพาะ `transform` และ `opacity` (ยกเว้นตอนสลับธีม) เพื่อให้ได้ 60fps บนมือถือ
+- motion ต้องไม่ขวางการใช้งาน ผู้ใช้ต้องกดปุ่มได้ทันทีโดยไม่ต้องรอ animation จบ
+- Staff Scanner ใช้ motion น้อยที่สุด เน้นความเร็ว
+
+### Tier Badge (S / A / B / C)
+ดาวใช้แสดงคะแนนของร้าน ส่วน Tier ใช้แบ่งแถวในหน้า Tier List โดยแปลงจากดาว:
+
+| Tier | ป้าย | เงื่อนไข | สีพื้น |
+|---|---|---|---|
+| **S** | Legendary | 5 ดาว | `--tier-s` #E8B64C |
+| **A** | Excellent | 4 ดาว | `--tier-a` #963BE8 |
+| **B** | Good | 3 ดาว | `--tier-b` #5869C8 |
+| **C** | Normal | 1–2 ดาว | `--tier-c` #74788B |
+
+- ร้านที่ขึ้นเป็น "ร้านใหม่" (รีวิวน้อยกว่า 5) ยังไม่อยู่ใน Tier List
+- **หน้า Tier List:** แสดงป้าย Tier เป็นช่องสี่เหลี่ยมใหญ่ด้านซ้ายของแต่ละแถว และการ์ดร้านเรียงแนวนอน เลื่อนได้บนมือถือ
+
+### Ant Design + Tailwind (ทั้ง `apps/web` และ `apps/admin`)
+- **antd v6** เป็นคอมโพเนนต์หลักทั้ง 2 แอป (`apps/admin` ใช้ ProComponents เพิ่ม) ส่วน **Tailwind** ใช้กับ layout, spacing, responsive และของตกแต่ง (gradient, glow) ไม่ใช้สร้างคอมโพเนนต์ซ้ำกับ antd
+- **Theme:** มี `ConfigProvider` ตัวเดียวที่ root ใช้ `theme.darkAlgorithm` / `theme.defaultAlgorithm` ตามธีมที่เลือก และ map Midnight Gold token:
+  - `colorPrimary: '#E8B64C'`, `colorLink: '#B86BFA'` (Light: `#7E22CE`), `colorInfo: '#A738F5'`
+  - `colorBgBase: '#07070D'` (Light: `#FAF8F3`), `colorBgContainer: '#171520'` (Light: `#FFFFFF`)
+  - `colorBorder: '#34283F'` (Light: `#E4DCCF`), `colorTextBase: '#F5F1E8'` (Light: `#1A1523`)
+  - `borderRadius: 12`
+  - ค่าสีทั้งหมดมาจาก `packages/ui/tokens.ts` ไฟล์เดียว แล้วสร้างทั้ง antd theme และ Tailwind CSS variables จากไฟล์นี้
+- **ลำดับ CSS:** ใช้ `StyleProvider layer` ของ antd คู่กับ Tailwind v4 `@layer theme, base, antd, components, utilities` เพื่อไม่ให้ Tailwind preflight ไปทับ antd
+- **Layout (admin):** `ProLayout` (เมนูซ้าย + access ตาม role ADMIN) และหน้า CRUD ใช้ `ProTable` + `ProForm`/`ModalForm`
+- **กฎ:**
+  - ปรับ theme ด้วย token ก่อน แล้วค่อยใช้ `classNames` / `styles` / Tailwind class ห้าม override `.ant-*` แบบ global
+  - `Table` ต้องมี `rowKey` เสมอ และใช้ server-side pagination/sort/filter ผ่าน NestJS API
+  - เมนูและ access ต้องตรงกับการตรวจสิทธิ์ฝั่ง backend
+  - ห้ามใช้ shadcn/ui หรือ UI library อื่นเพิ่ม
+- **Agent Skill:** repo มี skill `ant-design` และ `antd` อยู่ใน `.claude/skills/` ก่อนเขียนหรือแก้โค้ด antd ให้ค้น API ด้วย `antd info <Component> --format json` และหลังแก้ให้รัน `antd lint <path> --format json`
+- **React:** ใช้ **function component + hooks** ทั้งหมด (standard React) ห้ามเขียน class component ยกเว้น `ErrorBoundary` HOC ใช้เฉพาะเรื่องที่ครอบหลายหน้า เช่น `withErrorBoundary` ส่วนการกันสิทธิ์เข้าหน้าให้ใช้ layout route (`<RequireAuth>`, `<RequireRole>`)
+- **เอกสารประกอบ:** [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`SITEMAP.md`](SITEMAP.md)
+
+### คอมโพเนนต์หลัก
+- **Header:** โลโก้ + เมนู (หน้าแรก / จัดอันดับ / ร้าน / รีวิว / เกี่ยวกับเรา) + ช่องค้นหาทรงแคปซูล + ปุ่มสลับธีม + โปรไฟล์ โดยเมนูที่เลือกอยู่เป็นสีทองพร้อมขีดล่างทอง
+- **ปุ่ม:**
+  - Primary: พื้น `--gold` ตัวอักษร `--on-gold`
+  - Secondary: ขอบทอง ตัวอักษร `--gold-text` พื้นโปร่ง
+  - Tertiary: ตัวอักษร `--link`
+  - ทุกปุ่มมุมโค้งแบบ pill (9999px) หรือ 12px
+- **การ์ดร้าน:** รูป, ชื่อ, ดาว (1–5) หรือป้าย "ร้านใหม่", ป้าย Tier, ป้าย "แนะนำ · โฆษณา" (ถ้าโปรโมท), ประเภท/สไตล์, ระยะทาง, ราคาต่อหัว, Safety Score, Crowd Status, ปุ่ม ♥ และปุ่ม "ดูรายละเอียด →" ขอบทอง
+- **Chip หมวดหมู่ / ตัวกรอง:** ขอบ `--border` ส่วนที่เลือกอยู่เป็นพื้น `--purple` ตัวอักษรขาว
+- **แผงรายละเอียดร้าน (desktop):** เปิดเป็น side panel ด้านขวา มีรูป, ชื่อ + ป้าย Tier, ดาว, tag, คำอธิบาย, เวลาเปิด-ปิด, ราคาเฉลี่ย, ที่จอดรถ และปุ่ม "ดูรีวิวทั้งหมด"
+- **หน้าร้าน:** ปุ่ม "ประเมินราคา" และ "จองเลย" ติดด้านล่างจอ
+- **Staff Scanner:** ปุ่มใหญ่ ใช้มือเดียวได้ในที่มืด และบังคับเป็น Dark mode
+
+### Layout อ้างอิงจาก Mockup (ใช้ token ของธีม Midnight Gold)
 **Desktop (Home)**
 - **Header:** โลโก้ NightList (พระจันทร์เสี้ยว gradient ม่วง→ทอง) + เมนู: จัดอันดับ / จองโต๊ะ / แนะนำ / ค้นหา / โปรไฟล์
-  - เมนูปกติเป็นสีเทา #A1A1AA ส่วนเมนูที่เลือกอยู่เป็นทอง พร้อมขีดล่างทอง
+  - เมนูปกติเป็นสีเทา var(--muted) ส่วนเมนูที่เลือกอยู่เป็นทอง พร้อมขีดล่างทอง
 - **Hero "ร้านแนะนำสุดฮอตในกรุงเทพฯ":**
-  - พื้น gradient ดำ → ม่วงเข้ม (#09090B → #2E1065) และขอบบาง ทองจาง (rgba ของ #D4AF37 ที่ 30%)
+  - พื้น gradient ดำ → ม่วงเข้ม (var(--background) → #1E0B33) และขอบบาง ทองจาง (rgba ของ #E8B64C ที่ 30%)
   - ป้าย "แนะนำ · โฆษณา" เป็นขอบทอง ตัวอักษรทอง
 - **"อันดับร้านดังประจำสัปดาห์ (⭐–⭐⭐⭐⭐⭐)":** grid การ์ดร้าน 3 คอลัมน์ เลื่อนแนวนอนได้
 - **การ์ดร้าน:**
-  - พื้น #111113, ขอบ #27272A, hover ขอบทอง + เงา glow ม่วงจางๆ
-  - ดาวเป็นทอง ชื่อร้านเป็น #F5F5F5 และรายละเอียด (ประเภท, ราคาเฉลี่ย, Safety Score) เป็น #A1A1AA
+  - พื้น var(--card), ขอบ var(--border), hover ขอบทอง + เงา glow ม่วงจางๆ
+  - ดาวเป็นทอง ชื่อร้านเป็น #F5F5F5 และรายละเอียด (ประเภท, ราคาเฉลี่ย, Safety Score) เป็น var(--muted)
   - Crowd Status มีจุดสี + ข้อความ (ว่าง / ใกล้เต็ม / โต๊ะเต็ม)
 - **แถบค้นหา + ตัวกรอง (ย่าน / ประเภท / งบ / เวลาว่าง):**
-  - chip ปกติขอบ #27272A ส่วน chip ที่เลือกเป็นพื้นม่วง #7C3AED ตัวอักษรขาว
+  - chip ปกติขอบ var(--border) ส่วน chip ที่เลือกเป็นพื้นม่วง #A738F5 ตัวอักษรขาว
 - **"ร้านใกล้ฉัน":** แผนที่ธีมมืด หมุดร้านสีทอง ร้านที่โปรโมทเป็นหมุดทองมีวงม่วงรอบ
 - **Sidebar ขวา (sticky):**
   - **การ์ด "ประเมินราคา & จองโต๊ะ":**
@@ -509,18 +637,18 @@ night-list/
 - **Bottom bar (sticky):**
   - ปุ่มรอง "ประเมินราคา & จองโต๊ะ" ขอบทอง ตัวอักษรทอง
   - ปุ่มหลัก "คำนวณและจองโต๊ะ" พื้นทอง ตัวอักษรดำ
-  - ตัวประเมินราคาเปิดเป็น bottom sheet (#18181B)
+  - ตัวประเมินราคาเปิดเป็น bottom sheet (var(--card))
 
 **การใช้สีตามองค์ประกอบ (สรุป)**
 | องค์ประกอบ | สี |
 |---|---|
-| พื้นหน้า / การ์ด / modal | #09090B / #111113 / #18181B |
-| ปุ่มหลัก (จอง, คำนวณ), ดาว, ยอดเงิน, ป้ายโฆษณา, Editor's Pick | ทอง #D4AF37 (hover #E9C46A) |
-| ปุ่มรอง, chip ที่เลือก, focus ring, badge สไตล์ร้าน | ม่วง #7C3AED |
-| ลิงก์, ข้อความเน้นบนพื้นดำ | ม่วงอ่อน #A78BFA |
-| Hero / แบนเนอร์ / โลโก้ | gradient ม่วง #7C3AED → ทอง #D4AF37 หรือ ดำ → ม่วงเข้ม #2E1065 |
+| พื้นหน้า / การ์ด / modal | var(--background) / var(--card) / var(--card) |
+| ปุ่มหลัก (จอง, คำนวณ), ดาว, ยอดเงิน, ป้ายโฆษณา, Editor's Pick | ทอง #E8B64C (hover #FFD77A) |
+| ปุ่มรอง, chip ที่เลือก, focus ring, badge สไตล์ร้าน | ม่วง #A738F5 |
+| ลิงก์, ข้อความเน้นบนพื้นดำ | ม่วงอ่อน `--link` #B86BFA |
+| Hero / แบนเนอร์ / โลโก้ | gradient ม่วง #A738F5 → ทอง #E8B64C หรือ ดำ → ม่วงเข้ม #1E0B33 |
 | Crowd Status | 🟢 #22C55E / 🟡 #EAB308 / 🔴 #EF4444 (ใส่ข้อความคู่ด้วยเสมอ) |
-| ห้ามใช้ | สีส้ม/อำพัน (Amber) และม่วง #7C3AED เป็นตัวอักษรบนพื้นดำ |
+| ห้ามใช้ | สีส้ม/อำพัน (Amber), hex ตรงๆ ในคอมโพเนนต์ และม่วง #A738F5 กับข้อความขนาดเล็ก |
 
 **ข้อความใน UI:** ใช้ภาษาไทยให้ถูกต้องทั้งหมด (mockup มีข้อความภาษาไทยเพี้ยนหลายจุด) ส่วนชื่อร้านใน seed data ต้องเป็นชื่อสมมติ ห้ามใช้ชื่อร้านจริง
 

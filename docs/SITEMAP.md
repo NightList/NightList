@@ -1,0 +1,162 @@
+# NightList — Sitemap
+
+> สถานะ: **Draft v0.2** · ใช้คู่กับ [`ARCHITECTURE.md`](ARCHITECTURE.md) · **Figma:** ✅ มีแบบแล้ว · 🟡 มี wireframe · ⬜ ยังไม่มี
+
+## 1. ภาพรวม
+
+```mermaid
+flowchart TD
+  ROOT(("nightlist.app"))
+  ROOT --> PUB["สาธารณะ"]
+  ROOT --> AUTH["เข้าสู่ระบบ"]
+  ROOT --> ME["ลูกค้า (ล็อกอินแล้ว)"]
+  ROOT --> MER["ร้าน /merchant"]
+  ADMIN(("admin.nightlist.app")) --> ADM["Backoffice"]
+
+  PUB --> HOME["/ หน้าแรก"]
+  PUB --> RANK["/ranking จัดอันดับ"]
+  PUB --> SEARCH["/search ค้นหา"]
+  PUB --> BAR["/bars/:slug หน้าร้าน"]
+  PUB --> SHARE["/share/:token บัตรจอง"]
+  PUB --> INFO["/about · /terms · /privacy · /cookies"]
+
+  AUTH --> LOGIN["/login"]
+  AUTH --> REG["/register"]
+  AUTH --> FGT["/forgot-password · /reset-password"]
+  AUTH --> VER["/verify-email"]
+  AUTH --> ONB["/onboarding"]
+
+  BAR --> BOOK["/bars/:slug/book จอง"]
+  BOOK --> DEP["/bookings/:id/deposit มัดจำ"]
+  DEP --> DONE["/bookings/:id บัตรจอง + QR"]
+
+  ME --> MYB["/bookings การจองของฉัน"]
+  ME --> FAV["/favorites"]
+  ME --> MYR["/reviews รีวิวของฉัน"]
+  ME --> NOTI["/notifications"]
+  ME --> PROF["/profile · /settings"]
+
+  MER --> MD["/merchant แดชบอร์ด"]
+  MER --> TON["/merchant/tonight Scanner"]
+  MER --> MB["/merchant/bookings"]
+  MER --> MS["/merchant/store ข้อมูลร้าน"]
+  MER --> MP["/merchant/promote"]
+
+  ADM --> AD["/ แดชบอร์ด"]
+  ADM --> AR["/bars · /merchants · /safety"]
+  ADM --> AB["/billing · /promotions"]
+```
+
+**Access:** 🌐 ทุกคน · 👤 ลูกค้าที่ล็อกอิน · 🏪 เจ้าของร้าน · 🧑‍🍳 Staff · 🛡️ Admin
+
+> ทุกหน้าใน `apps/web` ต้องผ่าน **Age Gate 20+** ก่อน (แสดงเป็น modal ครั้งแรกที่เข้า) ยกเว้น `/terms`, `/privacy` และ `/cookies`
+
+---
+
+## 2. apps/web — ลูกค้า
+
+### สาธารณะ
+| Path | หน้า | Access | ส่วนประกอบหลัก | Figma |
+|---|---|---|---|---|
+| `/` | หน้าแรก | 🌐 | Hero, ร้านแนะนำ (โปรโมท), Tier List ย่อ, หมวดหมู่, ร้านใกล้ฉัน | ⬜ (มีภาพ mockup) |
+| `/ranking` | จัดอันดับ | 🌐 | ตัวกรอง ประเภท / ย่าน, แถว Tier S–C | ⬜ |
+| `/ranking/:category/:district?` | จัดอันดับตามหมวด/ย่าน | 🌐 | เหมือนด้านบน (URL แชร์ได้, SEO) | ⬜ |
+| `/search` | ค้นหา | 🌐 | ช่องค้นหา, ตัวกรอง (ย่าน/ประเภท/งบ/เวลาว่าง/ความปลอดภัย), ผลแบบ list + แผนที่ | ⬜ |
+| `/bars/:slug` | หน้าร้าน | 🌐 | รูป, ดาว + Tier, Crowd, Safety, เมนู, ราคา, แพ็กเกจ, รีวิว, ลิงก์โซเชียล, แถบ "ประเมินราคา / จองเลย" | ✅ Card ร้าน |
+| `/bars/:slug/reviews` | รีวิวทั้งหมด | 🌐 | รายการรีวิว + แกลเลอรีรูป | ⬜ |
+| `/share/:token` | บัตรจองที่แชร์ | 🌐 | ร้าน, เวลา, โซน, แผนที่, ปุ่ม "ไปด้วย" (ไม่มีข้อมูลส่วนตัว) | ⬜ |
+| `/about` · `/terms` · `/privacy` · `/cookies` | ข้อมูล / นโยบาย | 🌐 | เนื้อหา | ⬜ |
+
+### เข้าสู่ระบบ
+| Path | หน้า | Access | ส่วนประกอบหลัก | Figma |
+|---|---|---|---|---|
+| `/login` | เข้าสู่ระบบ | 🌐 | username/อีเมล + password, ลืมรหัสผ่าน, ลิงก์ไปสมัคร, Turnstile (หลังผิด 3 ครั้ง) | 🟡 Login, Login-P |
+| `/register` | สมัครสมาชิก | 🌐 | username, อีเมล, password + ยืนยัน, วันเกิด (20+), ยอมรับ Terms/Privacy | 🟡 |
+| `/verify-email` | ยืนยันอีเมล | 🌐 | แจ้งให้เช็กอีเมล + ส่งใหม่ | ⬜ |
+| `/forgot-password` | ลืมรหัสผ่าน | 🌐 | username หรืออีเมล | ⬜ |
+| `/reset-password` | ตั้งรหัสใหม่ | 🌐 | password + ยืนยัน | ⬜ |
+| `/change-password` | เปลี่ยนรหัส (บังคับครั้งแรก) | 🧑‍🍳 | สำหรับบัญชี Staff ที่ร้านสร้างให้ | ⬜ |
+| `/onboarding` | ตั้งค่าความชอบ | 👤 | สไตล์ร้าน, งบ, จำนวนคน, ย่าน | ⬜ |
+
+### ลูกค้า (ล็อกอินแล้ว)
+| Path | หน้า | Access | ส่วนประกอบหลัก | Figma |
+|---|---|---|---|---|
+| `/bars/:slug/book` | จองโต๊ะ | 👤 | วัน/เวลา/คน/โซน, ตัวประเมินราคา, แพ็กเกจ, สรุป | ⬜ |
+| `/bookings` | การจองของฉัน | 👤 | แท็บ กำลังจะถึง / ที่ผ่านมา / ยกเลิก | ⬜ |
+| `/bookings/:id` | บัตรจอง | 👤 | สถานะ, QR เช็กอิน, นับถอยหลัง auto-cancel, แชร์ LINE, ยกเลิก | ⬜ |
+| `/bookings/:id/deposit` | จ่ายมัดจำ | 👤 | PromptPay QR ของร้าน, นโยบายมัดจำ, อัปโหลดสลิป | ⬜ |
+| `/reviews/new?booking=:id` | เขียนรีวิว | 👤 | ดาว, ความเห็น, รูป | ⬜ |
+| `/reviews` | รีวิวของฉัน | 👤 | รายการ + แก้ไข | ⬜ |
+| `/favorites` | ร้านโปรด | 👤 | การ์ดร้าน | ⬜ |
+| `/notifications` | แจ้งเตือน | 👤 | รายการ + อ่านแล้ว | ⬜ |
+| `/profile` | โปรไฟล์ | 👤 | ข้อมูลส่วนตัว, ช่องทางแจ้งเตือน (LINE opt-in) | ⬜ |
+| `/settings` | ตั้งค่า | 👤 | ธีม Light/Dark/ระบบ, ลด motion, consent, ลบบัญชี | ⬜ |
+
+---
+
+## 3. apps/web — ร้าน (`/merchant`)
+
+| Path | หน้า | Access | ส่วนประกอบหลัก |
+|---|---|---|---|
+| `/merchant/join` | สมัครเป็นร้าน | 👤 | ข้อมูลร้าน, เอกสาร, ส่งตรวจ |
+| `/merchant/status` | สถานะการตรวจ | 🏪 | DRAFT / PENDING_REVIEW / APPROVED / REJECTED |
+| `/merchant` | แดชบอร์ด | 🏪 | จองวันนี้, อัตราเช็กอิน / No-show, ดาว, ช่วงทดลองใช้ |
+| `/merchant/tonight` | คืนนี้ (Scanner) | 🏪🧑‍🍳 | สแกน QR, รายการจองคืนนี้, ปุ่ม Crowd Status · **Dark เสมอ** |
+| `/merchant/bookings` | การจอง | 🏪 | ปฏิทิน / รายการ, ยืนยัน / ปฏิเสธ, assign โต๊ะ |
+| `/merchant/bookings/:id` | รายละเอียดการจอง | 🏪 | ประวัติสถานะ, price snapshot, มัดจำ |
+| `/merchant/deposits` | ตรวจสลิป | 🏪 | รายการสลิปที่รอตรวจ |
+| `/merchant/store` | ข้อมูลร้าน | 🏪 | ชื่อ, รูป, เวลาเปิด-ปิด, styles, ลิงก์ |
+| `/merchant/safety` | ความปลอดภัย | 🏪 | checklist + อัปโหลดหลักฐาน |
+| `/merchant/menu` | เมนู | 🏪 | หมวด, รายการ, รูป, ราคา |
+| `/merchant/pricing` | ค่าธรรมเนียม + แพ็กเกจ | 🏪 | service charge, VAT, ค่าเปิดขวด, แพ็กเกจ |
+| `/merchant/tables` | โซน / โต๊ะ | 🏪 | โซน, ความจุ, ระยะเวลาจอง |
+| `/merchant/settings` | ตั้งค่าการจอง | 🏪 | มัดจำ, PromptPay, grace period, นโยบายยกเลิก |
+| `/merchant/promote` | โปรโมทร้าน | 🏪 | เลือกแพ็กเกจ, จ่าย, สถานะ, สถิติ |
+| `/merchant/reviews` | รีวิว | 🏪 | รายการรีวิว, รายงานรีวิว |
+| `/merchant/analytics` | สถิติ | 🏪 | กราฟการจอง, ช่วงเวลายอดนิยม |
+| `/merchant/billing` | ค่าคอม | 🏪 | billing events รายเดือน |
+| `/merchant/staff` | พนักงาน | 🏪 | เชิญ / ลบ Staff |
+
+---
+
+## 4. apps/admin — Backoffice (`admin.nightlist.app`)
+
+| Path | หน้า | ส่วนประกอบหลัก (ProComponents) |
+|---|---|---|
+| `/login` | เข้าสู่ระบบ (username + password) + TOTP MFA | Form |
+| `/` | แดชบอร์ด | ยอดจอง, ร้านใหม่, รายการรอตรวจ |
+| `/merchants` | ร้านรออนุมัติ | ProTable + Drawer ตรวจเอกสาร |
+| `/bars` · `/bars/:id` | จัดการร้าน | ProTable, ระงับ / เปิด, Editor's Pick |
+| `/safety` | ยืนยัน Safety | ProTable + หลักฐาน + รายงานจากลูกค้า |
+| `/ranking` | ดาว / Tier | คะแนนรายเดือน, ปักหมุด |
+| `/promotions` | โปรโมท | แพ็กเกจ, ตรวจสลิป, ช่องว่างต่อย่าน |
+| `/users` | ผู้ใช้ | ProTable, role |
+| `/bookings` | การจอง | ค้นหา / ดูประวัติสถานะ |
+| `/reviews` | รีวิวที่ถูกรายงาน | moderation |
+| `/billing` | ค่าคอม | commission rules, billing events, invoice |
+| `/audit-logs` | Audit Log | ProTable |
+| `/settings` | ตั้งค่าระบบ | styles master, แอดมิน |
+
+---
+
+## 5. Navigation
+
+- **Header (desktop):** โลโก้ · หน้าแรก · จัดอันดับ · ค้นหา · (ร้านของฉัน ถ้าเป็นร้าน) · ปุ่มสลับธีม · แจ้งเตือน · โปรไฟล์
+- **Bottom nav (mobile):** หน้าแรก · จัดอันดับ · ค้นหา · การจอง · โปรไฟล์
+- **Merchant:** เมนูซ้าย (desktop) / แท็บล่าง (mobile) มีปุ่ม "คืนนี้" เด่นที่สุด
+- **Footer:** เกี่ยวกับเรา · เงื่อนไข · ความเป็นส่วนตัว · คุกกี้ · "20+ · ดื่มไม่ขับ"
+
+## 6. Flow หลักของผู้ใช้
+
+1. **ลูกค้าใหม่:** `/` → Age Gate → `/bars/:slug` → "จองเลย" → `/register` → `/verify-email` → `/onboarding` → `/bars/:slug/book` → `/bookings/:id/deposit` → `/bookings/:id` → แชร์ LINE
+2. **คืนวันจอง:** `/bookings/:id` (QR) → Staff สแกนใน `/merchant/tonight` → รีวิวใน `/reviews/new`
+3. **ร้านใหม่:** `/merchant/join` → `/merchant/status` → แอดมินอนุมัติใน `admin/merchants` → `/merchant`
+
+## 7. สิ่งที่ต้องออกแบบใน Figma เพิ่ม (เรียงตามลำดับความสำคัญ)
+
+1. `/` หน้าแรก (เฟรม "Main / Desktop - 2" ยังว่าง)
+2. `/bars/:slug` หน้าร้าน + bottom sheet ประเมินราคา
+3. `/bars/:slug/book` → `/bookings/:id/deposit` → `/bookings/:id`
+4. `/ranking`
+5. `/merchant/tonight` (Scanner)
+6. `/login`, `/register`: ใช้ wireframe เดิมได้ แต่เปลี่ยนช่อง email เป็น "username หรืออีเมล" และเพิ่มลิงก์ลืมรหัสผ่าน
