@@ -1,0 +1,59 @@
+{
+  "name": "@nightlist/ui",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Midnight Gold design tokens, antd theme, ThemeProvider and shared components",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./theme.css": "./src/theme.css"
+  },
+  "files": [
+    "dist",
+    "src/theme.css"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean --external react --external react-dom --external antd --external @phosphor-icons/react --external motion",
+    "dev": "tsup src/index.ts --format esm,cjs --dts --watch --external react --external react-dom --external antd --external @phosphor-icons/react --external motion",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@ant-design/cssinjs": "^2.1.2",
+    "@phosphor-icons/react": "^2.1.10",
+    "antd": "^6.6.5",
+    "motion": "^13.4.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "dependencies": {
+    "@nightlist/types": "workspace:*",
+    "@nightlist/utils": "workspace:*"
+  },
+  "devDependencies": {
+    "@ant-design/cssinjs": "^2.1.2",
+    "@nightlist/config": "workspace:*",
+    "@phosphor-icons/react": "^2.1.10",
+    "@types/node": "^22.20.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.2.0",
+    "antd": "^6.6.5",
+    "motion": "^13.4.4",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "tsup": "^8.5.1",
+    "typescript": "~5.9.3",
+    "vitest": "^5.0.2"
+  }
+}

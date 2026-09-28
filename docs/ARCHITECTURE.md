@@ -76,7 +76,7 @@ flowchart LR
 ## 3. Frontend (`apps/web`, `apps/admin`)
 
 ### Stack
-- React 18 + TypeScript + Vite + React Router
+- React 19 + TypeScript + Vite + React Router
 - **antd v6** เป็นคอมโพเนนต์หลักทั้ง 2 แอป (`apps/admin` ใช้ ProComponents เพิ่ม)
 - **Tailwind CSS** ใช้กับ layout / spacing / responsive / ตัวตกแต่ง (gradient, glow) เท่านั้น ไม่ใช้สร้างคอมโพเนนต์ซ้ำกับ antd
 - **Phosphor Icons** (`@phosphor-icons/react`) ใช้ทั้งหมด รวมถึงดาวคะแนน (`<Star weight="fill" />`)

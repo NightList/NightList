@@ -414,8 +414,8 @@ night-list/
 ## Tech Stack
 | ชั้น | เทคโนโลยี |
 |---|---|
-| **Frontend (web)** | **React** 18 + TypeScript + Vite + React Router + TanStack Query + **Ant Design v6** + **Tailwind CSS** (layout/ตกแต่ง) + **Phosphor Icons** + **Motion** (`motion/react`) + Zod (`apps/web`) |
-| **Frontend (admin)** | **React** 18 + TypeScript + Vite + React Router + TanStack Query + **Ant Design v6** (`antd@^6`) + **ProComponents** (`@ant-design/pro-components`: ProLayout, ProTable, ProForm) + Tailwind CSS + Phosphor Icons + Zod (`apps/admin`) |
+| **Frontend (web)** | **React** 19 + TypeScript + Vite + React Router + TanStack Query + **Ant Design v6** + **Tailwind CSS** (layout/ตกแต่ง) + **Phosphor Icons** + **Motion** (`motion/react`) + Zod (`apps/web`) |
+| **Frontend (admin)** | **React** 19 + TypeScript + Vite + React Router + TanStack Query + **Ant Design v6** (`antd@^6`) + **ProComponents** (`@ant-design/pro-components`: ProLayout, ProTable, ProForm) + Tailwind CSS + Phosphor Icons + Zod (`apps/admin`) |
 | **Backend** | **NestJS** (TypeScript) + nestjs-zod (ใช้ schema ร่วมจาก `packages/types`) + Swagger/OpenAPI + Guards สำหรับ RBAC |
 | **DB** | **Supabase** — PostgreSQL (+ btree_gist, pg_cron, pg_net), Auth, Storage (รูปร้าน/สลิป), Realtime, RLS |
 | **Infra** | **Terraform** — provider `vercel/vercel` และ `supabase/supabase`, remote state (Terraform Cloud หรือ S3 + lock) |

@@ -1,0 +1,21 @@
+node_modules/
+dist/
+.turbo/
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+.vercel/
+# Terraform
+infra/terraform/**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+# Supabase local
+backend/database/supabase/.branches/
+backend/database/supabase/.temp/
+# deploy key (never commit)
+nightlist_deploy_key*
