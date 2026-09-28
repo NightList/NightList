@@ -79,6 +79,8 @@ CLAUDE.md             # กติกาสำหรับ Claude (branch, commit
 
 **Tier:** S `#E8B64C` · A `#963BE8` · B `#5869C8` · C `#74788B`
 
+🖼️ **Figma:** [NightList Design](https://www.figma.com/design/FtXQS2NeyuHQZIA3chcvLL/NightList?node-id=7-4)
+
 Motion ใช้ [Motion](https://motion.dev) (`motion/react`) ดูรายละเอียดทั้งหมดใน [`docs/PROMPT.md`](docs/PROMPT.md#ดีไซน์)
 
 ---|---|---|
