@@ -60,6 +60,7 @@ night-list/
 ├── infra/terraform/  # Vercel + Supabase (dev/staging/prod)
 └── docs/
     └── PROMPT.md     # สเปคเต็ม + prompt สำหรับ AI
+CLAUDE.md             # กติกาสำหรับ Claude (branch, commit)
 ```
 
 ## 🎨 ดีไซน์
@@ -82,6 +83,27 @@ night-list/
 1. เปิดไฟล์ [`docs/PROMPT.md`](docs/PROMPT.md)
 2. คัดลอกทั้งหมดไปวางใน AI สร้างโค้ด (Claude, Cursor, v0, Lovable, Bolt ฯลฯ)
 3. AI จะเริ่มจากการเสนอ Sitemap + User Flow แล้วทำตาม "ลำดับการส่งงาน" ในไฟล์ทีละขั้น
+
+## 🌿 Git Branching
+
+- `main` คือโค้ดที่พร้อมใช้งาน ห้าม push งานตรงเข้า `main` ให้ทำใน branch แล้วเปิด Pull Request
+- **Branch ที่ Claude ทำ:** ใช้รูปแบบ `claude-แสน-<module>` โดย 1 module ต่อ 1 branch
+
+| Module | Branch |
+|---|---|
+| เอกสาร / prompt | `claude-แสน-docs` |
+| `apps/web` | `claude-แสน-web` |
+| `apps/admin` | `claude-แสน-admin` |
+| `backend/api` | `claude-แสน-api` |
+| `backend/services` | `claude-แสน-services` |
+| `backend/database` | `claude-แสน-database` |
+| `infra/terraform` | `claude-แสน-infra` |
+| `packages/ui` | `claude-แสน-ui` |
+| `packages/types` | `claude-แสน-types` |
+| `packages/config` | `claude-แสน-config` |
+| `packages/utils` | `claude-แสน-utils` |
+
+ถ้างานเป็น feature ย่อยใน module ให้ต่อท้ายชื่อ เช่น `claude-แสน-api-booking`, `claude-แสน-web-checkin`
 
 ## 🗺️ Roadmap
 
