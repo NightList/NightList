@@ -1,4 +1,4 @@
-# Prompt: NightList — เว็บแอปรวมร้านกลางคืน + Tier List + จองโต๊ะ (v2.4)
+# Prompt: NightList — เว็บแอปรวมร้านกลางคืน + Tier List + จองโต๊ะ (v2.5)
 
 > คัดลอกทั้งหมดด้านล่างไปใช้กับ AI สร้างโค้ด (Claude, Cursor, v0, Lovable, Bolt ฯลฯ)
 
@@ -357,7 +357,7 @@ night-list/
 ├── apps/
 │   ├── web/                # React (Vite) — ฝั่งลูกค้า + ฝั่งร้าน (/merchant) + Staff Scanner (PWA)
 │   │   └── api/og/         # Vercel Function สร้าง meta/OG image ให้ /restaurants/:slug และ /share/:token
-│   └── admin/              # React (Vite) — Backoffice ทีม NightList (อนุมัติร้าน, Safety, ดาว, โปรโมท, Review, Billing, Audit)
+│   └── admin/              # React (Vite) + Ant Design v6 + ProComponents — Backoffice ทีม NightList (อนุมัติร้าน, Safety, ดาว, โปรโมท, Review, Billing, Audit)
 │
 ├── packages/
 │   ├── ui/                 # shadcn/ui components + theme (dark nightlife) ใช้ร่วมกัน 2 แอป
@@ -420,7 +420,8 @@ night-list/
 ## Tech Stack
 | ชั้น | เทคโนโลยี |
 |---|---|
-| **Frontend** | **React** 18 + TypeScript + Vite + React Router + TanStack Query + Tailwind CSS + shadcn/ui + **Motion** (`motion/react`) + React Hook Form + Zod (`apps/web`, `apps/admin`) |
+| **Frontend (web)** | **React** 18 + TypeScript + Vite + React Router + TanStack Query + Tailwind CSS + shadcn/ui + **Motion** (`motion/react`) + React Hook Form + Zod (`apps/web`) |
+| **Frontend (admin)** | **React** 18 + TypeScript + Vite + React Router + TanStack Query + **Ant Design v6** (`antd@^6`) + **ProComponents** (`@ant-design/pro-components`: ProLayout, ProTable, ProForm) + Zod (`apps/admin`) |
 | **Backend** | **NestJS** (TypeScript) + nestjs-zod (ใช้ schema ร่วมจาก `packages/types`) + Swagger/OpenAPI + Guards สำหรับ RBAC |
 | **DB** | **Supabase** — PostgreSQL (+ btree_gist, pg_cron, pg_net), Auth, Storage (รูปร้าน/สลิป), Realtime, RLS |
 | **Infra** | **Terraform** — provider `vercel/vercel` และ `supabase/supabase`, remote state (Terraform Cloud หรือ S3 + lock) |
@@ -520,6 +521,7 @@ night-list/
   - **กันจอกะพริบ (FOUC):** ใส่ inline script เล็กๆ ใน `<head>` ของ `index.html` ให้อ่านค่าธีมแล้วตั้ง class ก่อน React render
   - ตั้ง `<meta name="theme-color">` ให้เปลี่ยนตามธีม (`#07070D` / `#FAF8F3`)
   - `ThemeProvider` + hook `useTheme()` อยู่ใน `packages/ui` ใช้ร่วมกันทั้ง `apps/web` และ `apps/admin`
+  - `apps/admin` (antd): map token เดียวกันเข้า `ConfigProvider` (ดูหัวข้อ "Ant Design ใน Backoffice")
 - **หน้าที่ต้องเป็น Dark เสมอ:** Staff Scanner (`/merchant/tonight`) เพราะใช้ในร้านที่มืด เพื่อไม่ให้แสบตา
 - **รูปภาพ:** รูปร้านไม่ต้องปรับตามธีม แต่ overlay และ gradient บนรูปต้องเปลี่ยนตามธีม
 
@@ -571,6 +573,22 @@ night-list/
 
 - ร้านที่ขึ้นเป็น "ร้านใหม่" (รีวิวน้อยกว่า 5) ยังไม่อยู่ใน Tier List
 - **หน้า Tier List:** แสดงป้าย Tier เป็นช่องสี่เหลี่ยมใหญ่ด้านซ้ายของแต่ละแถว และการ์ดร้านเรียงแนวนอน เลื่อนได้บนมือถือ
+
+### Ant Design ใน Backoffice (`apps/admin`)
+- **เหตุผล:** Backoffice เน้นตาราง ฟอร์ม และ CRUD เยอะ จึงใช้ **antd v6 + ProComponents** เพื่อความเร็ว ส่วน `apps/web` (หน้าลูกค้าและร้าน) ยังใช้ Tailwind + shadcn/ui เพื่อคุม look ของแบรนด์ได้เต็มที่
+- **Theme:** มี `ConfigProvider` ตัวเดียวที่ root ใช้ `theme.darkAlgorithm` / `theme.defaultAlgorithm` ตามธีมที่เลือก และ map Midnight Gold token:
+  - `colorPrimary: '#E8B64C'`, `colorLink: '#B86BFA'` (Light: `#7E22CE`), `colorInfo: '#A738F5'`
+  - `colorBgBase: '#07070D'` (Light: `#FAF8F3`), `colorBgContainer: '#171520'` (Light: `#FFFFFF`)
+  - `colorBorder: '#34283F'` (Light: `#E4DCCF`), `colorTextBase: '#F5F1E8'` (Light: `#1A1523`)
+  - `borderRadius: 12`
+  - ค่าสีทั้งหมดอ่านจาก `packages/ui/tokens` เพื่อให้ web และ admin ตรงกัน
+- **Layout:** `ProLayout` (เมนูซ้าย + access ตาม role ADMIN) และหน้า CRUD ใช้ `ProTable` + `ProForm`/`ModalForm`
+- **กฎ:**
+  - ปรับ theme ด้วย token ก่อน แล้วค่อยใช้ `classNames` / `styles` ห้าม override `.ant-*` แบบ global
+  - `Table` ต้องมี `rowKey` เสมอ และใช้ server-side pagination/sort/filter ผ่าน NestJS API
+  - เมนูและ access ใน `ProLayout` ต้องตรงกับการตรวจสิทธิ์ฝั่ง backend
+- **ห้ามใช้ antd ใน `apps/web`** และห้ามใช้ shadcn/ui ใน `apps/admin` เพื่อไม่ให้ bundle บวมและ style ชนกัน
+- **Agent Skill:** repo มี skill `ant-design` และ `antd` อยู่ใน `.claude/skills/` (จาก [ant-design/antd-skill](https://github.com/ant-design/antd-skill)) ก่อนเขียนหรือแก้โค้ด antd ให้ค้น API ด้วย `antd info <Component> --format json` และหลังแก้ให้รัน `antd lint <path> --format json`
 
 ### คอมโพเนนต์หลัก
 - **Header:** โลโก้ + เมนู (หน้าแรก / จัดอันดับ / ร้าน / รีวิว / เกี่ยวกับเรา) + ช่องค้นหาทรงแคปซูล + ปุ่มสลับธีม + โปรไฟล์ โดยเมนูที่เลือกอยู่เป็นสีทองพร้อมขีดล่างทอง

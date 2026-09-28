@@ -32,7 +32,8 @@
 
 | ชั้น | เทคโนโลยี |
 |---|---|
-| Frontend | React + TypeScript + Vite + React Router + TanStack Query + Tailwind CSS + shadcn/ui |
+| Frontend (web) | React + TypeScript + Vite + React Router + TanStack Query + Tailwind CSS + shadcn/ui + Motion |
+| Frontend (admin) | React + TypeScript + Vite + Ant Design v6 + ProComponents |
 | Backend | NestJS (TypeScript) + nestjs-zod + Swagger |
 | Database | Supabase (PostgreSQL, Auth, Storage, Realtime, RLS, pg_cron) |
 | Infra | Terraform (Vercel + Supabase providers) |
@@ -47,7 +48,7 @@
 night-list/
 ├── apps/
 │   ├── web/          # React — ลูกค้า + ร้าน (/merchant) + Staff Scanner (PWA)
-│   └── admin/        # React — Backoffice ทีม NightList
+│   └── admin/        # React + Ant Design v6 — Backoffice ทีม NightList
 ├── packages/
 │   ├── ui/           # shadcn/ui + theme ดำ·ทอง·ม่วง
 │   ├── types/        # TypeScript types + Zod schemas
@@ -60,7 +61,8 @@ night-list/
 ├── infra/terraform/  # Vercel + Supabase (dev/staging/prod)
 └── docs/
     └── PROMPT.md     # สเปคเต็ม + prompt สำหรับ AI
-CLAUDE.md             # กติกาสำหรับ Claude (branch, commit)
+CLAUDE.md             # กติกาสำหรับ Claude (branch, commit, skills)
+.claude/skills/       # Agent skills: ant-design, antd
 ```
 
 ## 🎨 ดีไซน์

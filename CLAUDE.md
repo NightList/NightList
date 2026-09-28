@@ -14,3 +14,8 @@
 
 ## สเปค
 - สเปคหลักอยู่ที่ `docs/PROMPT.md` ถ้าสเปคเปลี่ยน ให้อัปเดตไฟล์นี้ใน branch `claude-แสน-docs`
+
+## Skills
+- `.claude/skills/ant-design` และ `.claude/skills/antd` (จาก ant-design/antd-skill) ใช้เมื่อทำงานใน `apps/admin` ที่ใช้ antd v6 + ProComponents
+- ก่อนเขียนโค้ด antd: `antd info <Component> --format json` / หลังแก้: `antd lint <path> --format json`
+- ห้ามใช้ antd ใน `apps/web` (ฝั่งนั้นใช้ Tailwind + shadcn/ui)
