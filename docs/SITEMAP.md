@@ -1,6 +1,6 @@
 # NightList — Sitemap
 
-> สถานะ: **Draft v0.1** · ใช้คู่กับ [`ARCHITECTURE.md`](ARCHITECTURE.md) · **Figma:** ✅ มีแบบแล้ว · 🟡 มี wireframe · ⬜ ยังไม่มี
+> สถานะ: **Draft v0.2** · ใช้คู่กับ [`ARCHITECTURE.md`](ARCHITECTURE.md) · **Figma:** ✅ มีแบบแล้ว · 🟡 มี wireframe · ⬜ ยังไม่มี
 
 ## 1. ภาพรวม
 
@@ -22,7 +22,8 @@ flowchart TD
 
   AUTH --> LOGIN["/login"]
   AUTH --> REG["/register"]
-  AUTH --> OTP["/verify"]
+  AUTH --> FGT["/forgot-password · /reset-password"]
+  AUTH --> VER["/verify-email"]
   AUTH --> ONB["/onboarding"]
 
   BAR --> BOOK["/bars/:slug/book จอง"]
@@ -69,9 +70,12 @@ flowchart TD
 ### เข้าสู่ระบบ
 | Path | หน้า | Access | ส่วนประกอบหลัก | Figma |
 |---|---|---|---|---|
-| `/login` | เข้าสู่ระบบ | 🌐 | Phone OTP, Google, LINE | 🟡 Login, Login-P |
-| `/register` | สมัครสมาชิก | 🌐 | ชื่อ, เบอร์, วันเกิด (20+), ยอมรับ Terms/Privacy | 🟡 |
-| `/verify` | ยืนยัน OTP | 🌐 | ช่องกรอก OTP 6 หลัก | ⬜ |
+| `/login` | เข้าสู่ระบบ | 🌐 | username/อีเมล + password, ลืมรหัสผ่าน, ลิงก์ไปสมัคร, Turnstile (หลังผิด 3 ครั้ง) | 🟡 Login, Login-P |
+| `/register` | สมัครสมาชิก | 🌐 | username, อีเมล, password + ยืนยัน, วันเกิด (20+), ยอมรับ Terms/Privacy | 🟡 |
+| `/verify-email` | ยืนยันอีเมล | 🌐 | แจ้งให้เช็กอีเมล + ส่งใหม่ | ⬜ |
+| `/forgot-password` | ลืมรหัสผ่าน | 🌐 | username หรืออีเมล | ⬜ |
+| `/reset-password` | ตั้งรหัสใหม่ | 🌐 | password + ยืนยัน | ⬜ |
+| `/change-password` | เปลี่ยนรหัส (บังคับครั้งแรก) | 🧑‍🍳 | สำหรับบัญชี Staff ที่ร้านสร้างให้ | ⬜ |
 | `/onboarding` | ตั้งค่าความชอบ | 👤 | สไตล์ร้าน, งบ, จำนวนคน, ย่าน | ⬜ |
 
 ### ลูกค้า (ล็อกอินแล้ว)
@@ -119,7 +123,7 @@ flowchart TD
 
 | Path | หน้า | ส่วนประกอบหลัก (ProComponents) |
 |---|---|---|
-| `/login` | เข้าสู่ระบบ + MFA | Form |
+| `/login` | เข้าสู่ระบบ (username + password) + TOTP MFA | Form |
 | `/` | แดชบอร์ด | ยอดจอง, ร้านใหม่, รายการรอตรวจ |
 | `/merchants` | ร้านรออนุมัติ | ProTable + Drawer ตรวจเอกสาร |
 | `/bars` · `/bars/:id` | จัดการร้าน | ProTable, ระงับ / เปิด, Editor's Pick |
@@ -144,7 +148,7 @@ flowchart TD
 
 ## 6. Flow หลักของผู้ใช้
 
-1. **ลูกค้าใหม่:** `/` → Age Gate → `/bars/:slug` → "จองเลย" → `/login` → `/verify` → `/onboarding` → `/bars/:slug/book` → `/bookings/:id/deposit` → `/bookings/:id` → แชร์ LINE
+1. **ลูกค้าใหม่:** `/` → Age Gate → `/bars/:slug` → "จองเลย" → `/register` → `/verify-email` → `/onboarding` → `/bars/:slug/book` → `/bookings/:id/deposit` → `/bookings/:id` → แชร์ LINE
 2. **คืนวันจอง:** `/bookings/:id` (QR) → Staff สแกนใน `/merchant/tonight` → รีวิวใน `/reviews/new`
 3. **ร้านใหม่:** `/merchant/join` → `/merchant/status` → แอดมินอนุมัติใน `admin/merchants` → `/merchant`
 
@@ -155,4 +159,4 @@ flowchart TD
 3. `/bars/:slug/book` → `/bookings/:id/deposit` → `/bookings/:id`
 4. `/ranking`
 5. `/merchant/tonight` (Scanner)
-6. `/login`: ปรับจาก email/password เป็น Phone OTP / Google / LINE
+6. `/login`, `/register`: ใช้ wireframe เดิมได้ แต่เปลี่ยนช่อง email เป็น "username หรืออีเมล" และเพิ่มลิงก์ลืมรหัสผ่าน

@@ -1,6 +1,6 @@
 # NightList — Architecture
 
-> สถานะ: **Draft v0.1** · ใช้คู่กับ [`PROMPT.md`](PROMPT.md) (สเปค) และ [`SITEMAP.md`](SITEMAP.md) (หน้าเว็บ)
+> สถานะ: **Draft v0.2** · ใช้คู่กับ [`PROMPT.md`](PROMPT.md) (สเปค) และ [`SITEMAP.md`](SITEMAP.md) (หน้าเว็บ)
 
 ## 1. ภาพรวมระบบ
 
@@ -21,7 +21,7 @@ flowchart LR
   end
 
   subgraph Supabase["Supabase (ap-southeast-1)"]
-    AUTH["Auth<br/>Phone OTP · Google · LINE"]
+    AUTH["Auth<br/>username + password<br/>(Email provider · MFA)"]
     DB[("PostgreSQL<br/>+ RLS · btree_gist")]
     ST["Storage<br/>รูปร้าน · สลิป · รีวิว"]
     RT["Realtime<br/>Crowd · สถานะจอง"]
@@ -110,8 +110,11 @@ apps/web/src/
 - **API client** สร้างจาก OpenAPI ของ NestJS (`openapi-typescript`) เพื่อให้ type ตรงกับ backend เสมอ
 - **Guard ของ route** (`RequireAuth`, `RequireRole`) ห่อที่ระดับ layout route ใน React Router
 
-### Component style — ⚠️ รอตัดสินใจ
-มีคำถามว่าจะเขียนเป็น **Class component + HOC** หรือไม่ ดูข้อ 9
+### Component style — ✅ Function component + hooks
+- เขียนทุก component เป็น function + hooks ตาม standard React (antd, TanStack Query, React Router และ Motion ออกแบบมาให้ใช้แบบนี้)
+- **ไม่ใช้ class component** ยกเว้น `ErrorBoundary` (React ยังต้องเขียนเป็น class)
+- **HOC** ใช้เฉพาะเรื่องที่ครอบหลายหน้า เช่น `withErrorBoundary` ส่วนเรื่องสิทธิ์ใช้ layout route `<RequireAuth>` / `<RequireRole role="MERCHANT">`
+- logic ที่ใช้ซ้ำให้แยกเป็น custom hook เช่น `useBooking(id)`, `useAvailability(...)`, `useThemeMode()`
 
 ---
 
@@ -205,7 +208,27 @@ sequenceDiagram
 ---
 
 ## 6. Auth & Security
-- **ยืนยันตัวตน:** Supabase Auth ทำหน้าที่นี้ แล้ว NestJS ตรวจ JWT ด้วย JWKS
+- **วิธีล็อกอิน:** **username + password** (ไม่มี OTP / Google / LINE) โดยใช้ Supabase Auth Email provider เก็บรหัสผ่าน (อีเมลเป็น key ภายใน) และ NestJS ตรวจ JWT ด้วย JWKS
+
+```mermaid
+sequenceDiagram
+  actor U as ผู้ใช้
+  participant W as apps/web
+  participant A as NestJS /auth
+  participant D as Postgres
+  participant SA as Supabase Auth
+  U->>W: username + password
+  W->>A: POST /auth/login
+  A->>D: ตรวจ rate limit / lockout (login_attempts)
+  A->>D: หา email จาก username (citext)
+  A->>SA: signInWithPassword(email, password)
+  SA-->>A: session หรือ error
+  A->>D: บันทึก login_attempts
+  A-->>W: session (access + refresh) หรือ "username หรือรหัสผ่านไม่ถูกต้อง"
+  W->>W: supabase.auth.setSession()
+```
+- **ป้องกันการเดารหัส:** rate limit ต่อ IP + username, ผิด 5 ครั้งล็อก 15 นาที, Turnstile ตั้งแต่ครั้งที่ 3 และข้อความ error เป็นแบบเดียวกันเสมอ
+- **Staff:** เจ้าของร้านสร้างบัญชีให้ และ Staff ต้องเปลี่ยนรหัสตอนเข้าครั้งแรก · **Admin:** บังคับ TOTP MFA
 - **Role:** เก็บที่ `users.role` (CUSTOMER / MERCHANT / STAFF / ADMIN) และ `bar_staff` สำหรับผูก Staff กับร้าน
 - **RLS:** เปิดทุกตาราง
   - อ่านสาธารณะได้เฉพาะข้อมูลร้านที่ `APPROVED`
@@ -244,5 +267,5 @@ sequenceDiagram
 | 3 | Package manager | pnpm | ✅ |
 | 4 | DB access ใน NestJS | Kysely + Supavisor | 🟡 เสนอ |
 | 5 | Jobs | pg_cron → `/jobs/*` | ✅ |
-| 6 | Component style | Function component + hooks (เสนอ) หรือ Class component + HOC | ❓ รอตัดสินใจ |
-| 7 | วิธีล็อกอิน | Figma ออกแบบเป็น email + password แต่สเปคเป็น Phone OTP / Google / LINE | ❓ รอตัดสินใจ |
+| 6 | Component style | Function component + hooks (standard React) และ HOC เฉพาะ cross-cutting | ✅ |
+| 7 | วิธีล็อกอิน | username + password (+ อีเมลสำหรับรีเซ็ตรหัสผ่าน) และ MFA สำหรับ Admin | ✅ |

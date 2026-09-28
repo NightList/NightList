@@ -38,7 +38,7 @@
 | Infra | Terraform (Vercel + Supabase providers) |
 | Hosting | Vercel (`web`, `admin`, `api`) |
 | Monorepo | pnpm workspaces + Turborepo |
-| Auth | Phone OTP, Google, LINE Login |
+| Auth | username + password (Supabase Auth) · MFA สำหรับ Admin |
 | Notification | Web Push, LINE Messaging API, In-app |
 
 ## 📁 โครงสร้างโปรเจกต์ (แผน)

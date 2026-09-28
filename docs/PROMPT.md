@@ -1,4 +1,4 @@
-# Prompt: NightList — เว็บแอปรวมร้านกลางคืน + Tier List + จองโต๊ะ (v2.6)
+# Prompt: NightList — เว็บแอปรวมร้านกลางคืน + Tier List + จองโต๊ะ (v2.7)
 
 > คัดลอกทั้งหมดด้านล่างไปใช้กับ AI สร้างโค้ด (Claude, Cursor, v0, Lovable, Bolt ฯลฯ)
 
@@ -262,9 +262,34 @@ Age Gate (20+) → Onboarding (ความชอบ) → Home / Tier List / Sea
   - `read_at` สำหรับ In-app
   - retry แบบ exponential backoff สูงสุด 5 ครั้ง ถ้ายังไม่ผ่านให้เป็น FAILED แล้วส่งช่องทางสำรอง (In-app)
 - **แยก Authentication กับ Notification:**
-  - LINE Login ใช้สำหรับยืนยันตัวตนเท่านั้น การส่ง LINE ต้องให้ผู้ใช้เพิ่มเพื่อน LINE OA และยินยอม (opt-in) แยกต่างหาก
-  - เก็บช่องทางแจ้งเตือนไว้ใน `notification_channels` (user_id, channel, line_user_id / push_subscription, opted_in_at, opted_out_at) ไม่ปนกับตาราง auth
-  - ผู้ใช้ที่ล็อกอินด้วยเบอร์โทรหรือ Google ก็เปิดรับ LINE ได้ และผู้ใช้ LINE Login ปิดการแจ้งเตือนได้
+  - เข้าสู่ระบบด้วย **username + password** เท่านั้น (ดูหัวข้อ "Authentication") ส่วน LINE ไม่ได้ใช้ล็อกอิน
+  - การรับแจ้งเตือนทาง LINE ผู้ใช้ต้องกด "เชื่อม LINE" ในหน้า `/profile` (LINE Login ใช้เพื่อเอา `line_user_id` มาเท่านั้น) แล้วเพิ่มเพื่อน LINE OA และยินยอม (opt-in)
+  - เก็บช่องทางแจ้งเตือนไว้ใน `notification_channels` (user_id, channel, line_user_id / push_subscription, opted_in_at, opted_out_at) ไม่ปนกับตาราง auth และปิดรับได้ทุกเมื่อ
+
+### 16. Authentication (username + password)
+- **สมัคร (`/register`):**
+  - username: 3–20 ตัว ใช้ได้แค่ `a-z 0-9 _` ไม่ซ้ำ และไม่สนตัวพิมพ์เล็ก/ใหญ่
+  - อีเมล: บังคับ ใช้สำหรับรีเซ็ตรหัสผ่านและแจ้งเตือน
+  - password: อย่างน้อย 10 ตัว และต้องไม่อยู่ในรายชื่อรหัสผ่านที่หลุดหรือใช้กันบ่อย
+  - วันเกิด: ต้องอายุ 20+
+  - ต้องยอมรับ Terms และ Privacy
+  - ต้องยืนยันอีเมลก่อนจองโต๊ะ (ดูเมนูและร้านได้ทันที)
+- **เข้าสู่ระบบ (`/login`):**
+  - ใส่ username หรืออีเมล + password
+  - `POST /auth/login` ใน NestJS จะหาอีเมลจาก username แล้วเรียก Supabase Auth `signInWithPassword` ฝั่ง server และคืน session (access + refresh token)
+  - ข้อความ error ใช้แบบเดียวกันเสมอ คือ "username หรือรหัสผ่านไม่ถูกต้อง" เพื่อไม่ให้เดาได้ว่ามี username นี้หรือไม่
+- **ป้องกันการเดารหัส:**
+  - rate limit ต่อ IP และต่อ username
+  - ผิด 5 ครั้งใน 15 นาที ล็อก 15 นาที
+  - ตั้งแต่ครั้งที่ 3 ต้องผ่าน Cloudflare Turnstile
+  - บันทึกลง `login_attempts`
+- **ลืมรหัสผ่าน:** ใส่ username หรืออีเมลที่ `/forgot-password` → ระบบส่งลิงก์รีเซ็ตไปอีเมล → `/reset-password`
+- **Staff ของร้าน:**
+  - เจ้าของร้านสร้างบัญชี Staff (username + รหัสชั่วคราว)
+  - Staff ต้องเปลี่ยนรหัสตอนล็อกอินครั้งแรก (`must_change_password`)
+- **Admin:** username + password + **TOTP MFA** (Supabase MFA) บังคับทุกบัญชี
+- **Session:** access token อายุสั้น + refresh token และมีปุ่มออกจากระบบทุกอุปกรณ์ใน `/settings`
+- Supabase Auth เปิดเฉพาะ Email provider (ใช้อีเมลเป็น key ภายใน) ส่วน Phone / Google / LINE provider ปิด
 
 ---
 
@@ -302,7 +327,7 @@ Age Gate (20+) → Onboarding (ความชอบ) → Home / Tier List / Sea
 ---
 
 ## Database (MVP Schema)
-- **ผู้ใช้และสิทธิ์:** users, user_preferences, user_consents, auth_identities (provider: PHONE / GOOGLE / LINE)
+- **ผู้ใช้และสิทธิ์:** users, user_preferences, user_consents, login_attempts
 - **แจ้งเตือน (แยกจาก auth):** notification_channels, notifications, notification_deliveries
 - **ร้าน:** bars, bar_hours, styles, bar_styles, bar_media, bar_links, bar_verifications, bar_staff, bar_safety_features, safety_reports, crowd_status_logs
 - **จัดอันดับ:** tier_scores, tier_history
@@ -314,8 +339,8 @@ Age Gate (20+) → Onboarding (ความชอบ) → Home / Tier List / Sea
 - **ไม่อยู่ใน MVP schema:** campaigns, campaign_clicks และตารางที่ใช้ดึงข้อมูลจากโซเชียล
 
 **ฟิลด์สำคัญ**
-- `users`: id, name, phone, birthdate, role (CUSTOMER / MERCHANT / STAFF / ADMIN), age_verified, age_verified_at, age_verification_method
-- `auth_identities`: id, user_id, provider, provider_user_id, created_at (ใช้ยืนยันตัวตนเท่านั้น)
+- `users`: id (= auth.users.id), username (citext unique), display_name, email (citext unique), phone (optional), birthdate, role (CUSTOMER / MERCHANT / STAFF / ADMIN), must_change_password, email_verified_at, age_verified, age_verified_at, age_verification_method
+- `login_attempts`: id, username_or_email, ip, user_agent, success, created_at (ใช้กับ rate limit / lockout และเก็บ 90 วัน)
 - `notification_channels`: id, user_id, channel (LINE / WEB_PUSH / IN_APP), line_user_id, push_subscription, opted_in_at, opted_out_at
 - `notifications`: id, user_id, event_type, booking_id, payload, read_at, created_at
 - `notification_deliveries`: id, notification_id, channel, status (QUEUED / SENT / FAILED / RETRYING), attempt_count, last_error, next_retry_at, sent_at
@@ -404,7 +429,7 @@ night-list/
 | **Hosting** | **Vercel** — 3 projects: `web`, `admin` (static + Vercel Functions สำหรับ OG) และ `api` (NestJS เป็น Vercel Function) |
 | Monorepo | pnpm + Turborepo |
 | แผนที่ | Google Maps หรือ Leaflet + OpenStreetMap |
-| Auth | Supabase Auth: Phone OTP, Google, LINE Login (ใช้ยืนยันตัวตนเท่านั้น) — NestJS ตรวจ Supabase JWT ทุก request |
+| Auth | **username + password** ผ่าน NestJS `/auth/*` บน Supabase Auth (Email provider) + TOTP MFA สำหรับ Admin — NestJS ตรวจ Supabase JWT ทุก request |
 | แจ้งเตือน | Web Push, LINE Messaging API (ผ่าน LINE OA opt-in) และ In-app |
 | แชร์ | LINE share URL / LIFF + Web Share API |
 | QR | สร้าง QR ใน NestJS (signed JWT) + สแกนด้วยกล้องผ่านเว็บ (เช่น html5-qrcode) |
@@ -425,7 +450,7 @@ night-list/
 ## Infrastructure as Code (Terraform)
 - **จัดการด้วย Terraform:**
   - Vercel: สร้าง 3 projects (`web`, `admin`, `api`) ผูก Git repo, root directory, build command, environment variables ต่อ environment, custom domains (nightlist.app, admin.nightlist.app, api.nightlist.app)
-  - Supabase: project ต่อ environment (dev / staging / prod), region `ap-southeast-1` (Singapore), ตั้งค่า Auth providers, redirect URLs, storage buckets
+  - Supabase: project ต่อ environment (dev / staging / prod), region `ap-southeast-1` (Singapore), ตั้งค่า Auth (เปิดเฉพาะ Email provider, MFA TOTP), redirect URLs, storage buckets
   - Secrets (Supabase keys, LINE channel secret/token, JOB_SECRET, QR signing key) ส่งเป็นตัวแปร `sensitive` จาก Terraform Cloud / GitHub Secrets และห้าม commit ลง repo
 - **ไม่ใช้ Terraform จัดการ schema:** migrations, RLS และ DB functions อยู่ใน `backend/database` แล้วรันด้วย `supabase db push` ใน CI
 - **CI/CD (GitHub Actions):**
@@ -567,6 +592,7 @@ night-list/
   - เมนูและ access ต้องตรงกับการตรวจสิทธิ์ฝั่ง backend
   - ห้ามใช้ shadcn/ui หรือ UI library อื่นเพิ่ม
 - **Agent Skill:** repo มี skill `ant-design` และ `antd` อยู่ใน `.claude/skills/` ก่อนเขียนหรือแก้โค้ด antd ให้ค้น API ด้วย `antd info <Component> --format json` และหลังแก้ให้รัน `antd lint <path> --format json`
+- **React:** ใช้ **function component + hooks** ทั้งหมด (standard React) ห้ามเขียน class component ยกเว้น `ErrorBoundary` HOC ใช้เฉพาะเรื่องที่ครอบหลายหน้า เช่น `withErrorBoundary` ส่วนการกันสิทธิ์เข้าหน้าให้ใช้ layout route (`<RequireAuth>`, `<RequireRole>`)
 - **เอกสารประกอบ:** [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`SITEMAP.md`](SITEMAP.md)
 
 ### คอมโพเนนต์หลัก
