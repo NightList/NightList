@@ -65,10 +65,23 @@ CLAUDE.md             # กติกาสำหรับ Claude (branch, commit
 
 ## 🎨 ดีไซน์
 
-ธีม **ดำ · ทอง · ม่วง** — Dark, Nightlife, Premium, Mobile-first
+ธีม **Midnight Gold** (ดำ · ทอง · ม่วง) รองรับ **Light / Dark mode** มี motion ตอนสลับธีม (circular reveal) และเคารพ `prefers-reduced-motion`
 
-| Token | สี | ใช้กับ |
-|---|---|---|
+| Token | Dark | Light | ใช้กับ |
+|---|---|---|---|
+| Background | `#07070D` | `#FAF8F3` | พื้นหน้า |
+| Surface | `#11111A` | `#FFFFFF` | header, แถบต่างๆ |
+| Card | `#171520` | `#F4F1EA` | การ์ด, modal |
+| Border | `#34283F` | `#E4DCCF` | ขอบ |
+| Text / Muted | `#F5F1E8` / `#A7A1B3` | `#1A1523` / `#5E5670` | ตัวอักษร |
+| Primary Gold | `#E8B64C` (highlight `#FFD77A`) | `#E8B64C` (ตัวอักษรทอง `#8A5A00`) | ปุ่มหลัก, ดาว, คะแนน |
+| Accent Purple | `#A738F5` (ลิงก์ `#B86BFA`) | `#A738F5` (ลิงก์ `#7E22CE`) | accent, ลิงก์ |
+
+**Tier:** S `#E8B64C` · A `#963BE8` · B `#5869C8` · C `#74788B`
+
+Motion ใช้ [Motion](https://motion.dev) (`motion/react`) ดูรายละเอียดทั้งหมดใน [`docs/PROMPT.md`](docs/PROMPT.md#ดีไซน์)
+
+---|---|---|
 | Background | `#09090B` | พื้นหน้า |
 | Surface | `#111113` | การ์ด |
 | Gold | `#D4AF37` | ปุ่มหลัก, ดาว, ยอดเงิน, ป้ายโฆษณา |

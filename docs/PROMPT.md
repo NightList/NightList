@@ -1,4 +1,4 @@
-# Prompt: NightList — เว็บแอปรวมร้านกลางคืน + Tier List + จองโต๊ะ (v2.3)
+# Prompt: NightList — เว็บแอปรวมร้านกลางคืน + Tier List + จองโต๊ะ (v2.4)
 
 > คัดลอกทั้งหมดด้านล่างไปใช้กับ AI สร้างโค้ด (Claude, Cursor, v0, Lovable, Bolt ฯลฯ)
 
@@ -68,6 +68,7 @@ Age Gate (20+) → Onboarding (ความชอบ) → Home / Tier List / Sea
 - จัดอันดับร้านเป็น **ระดับดาว 1–5 ดาว (⭐–⭐⭐⭐⭐⭐)** แยกตามประเภท (ผับ/บาร์, นั่งชิล, ร้านอาหารที่มีเครื่องดื่ม) และตามย่าน
   - ระบบคำนวณคะแนนรวม 0–100 แล้วแปลงเป็นดาว: 90+ = 5 ดาว, 75–89 = 4 ดาว, 60–74 = 3 ดาว, 40–59 = 2 ดาว, ต่ำกว่า 40 = 1 ดาว
   - ร้านที่มีรีวิวจากการเช็กอินจริงน้อยกว่า 5 รีวิว ให้แสดงเป็น "ร้านใหม่" แทนดาว
+  - หน้า Tier List แบ่งแถวเป็น **S / A / B / C** โดยแปลงจากดาว (S = 5★, A = 4★, B = 3★, C = 1–2★) ดูสีได้ที่หัวข้อ "Tier Badge" ในส่วนดีไซน์
   - ดาวของ NightList ต่างจากคะแนนรีวิว (rating ที่ลูกค้าให้) ต้องแสดงแยกกันให้ชัด
 - **คะแนนคำนวณจาก:**
   - รีวิวที่มาจากการเช็กอินจริงเท่านั้น (ถ่วงน้ำหนักตามความใหม่ของรีวิว)
@@ -325,7 +326,7 @@ Age Gate (20+) → Onboarding (ความชอบ) → Home / Tier List / Sea
 - `bar_links`: id, bar_id, type (INSTAGRAM / TIKTOK / FACEBOOK / LINE_OA / WEBSITE / REVIEW_CLIP), url, sort_order
 - `bar_safety_features`: id, bar_id, feature_key, value (YES / NO / UNKNOWN), source (SELF_DECLARED / ADMIN_VERIFIED), evidence_url, verified_by, verified_at
 - `crowd_status_logs`: id, bar_id, status (AVAILABLE / ALMOST_FULL / FULL), updated_by, created_at
-- `tier_scores`: id, bar_id, period, category, review_score, checkin_score, safety_score, price_info_score, total_score, stars (1–5), is_new (boolean)
+- `tier_scores`: id, bar_id, period, category, review_score, checkin_score, safety_score, price_info_score, total_score, stars (1–5), tier (S / A / B / C — คำนวณจาก stars), is_new (boolean)
 - `table_zones`: id, bar_id, name, capacity_pax, default_duration_minutes, allow_zone_only_booking
 - `tables`: id, zone_id, name, seats, active
 - `price_packages`: id, bar_id, name, pax_min, pax_max, total_price, active
@@ -342,6 +343,7 @@ Age Gate (20+) → Onboarding (ความชอบ) → Home / Tier List / Sea
 - `commission_rules`: id, bar_id, calculation_type, rate, charge_on_no_show, no_show_rate, effective_from, effective_to, created_by
 - `billing_events`: id, booking_id, bar_id, event_type (CHECK_IN / NO_SHOW), commission_rule_id, base_amount, amount, status (PENDING / INVOICED / PAID / WAIVED), period, created_at, unique (booking_id, event_type)
 - `user_consents`: id, user_id, consent_type, version, granted, granted_at, revoked_at
+- `user_preferences`: user_id, preferred_styles[], budget_per_person, usual_pax, preferred_districts[], theme (LIGHT / DARK / SYSTEM, ค่าเริ่มต้น SYSTEM), reduced_motion (boolean, nullable = ตามระบบ)
 - `promotion_packages`: id, name, placement (HOME_BANNER / HOME_RECOMMENDED / SEARCH_TOP), duration_days, price, max_slots_per_area, active
 - `promoted_listings`: id, bar_id, package_id, placement, district, category, starts_at, ends_at, status (PENDING_PAYMENT / PAYMENT_SUBMITTED / ACTIVE / EXPIRED / REJECTED / CANCELLED), approved_by
 - `promoted_listing_payments`: id, promoted_listing_id, amount, slip_image_url, status (SUBMITTED / VERIFIED / REJECTED), verified_by, verified_at
@@ -418,7 +420,7 @@ night-list/
 ## Tech Stack
 | ชั้น | เทคโนโลยี |
 |---|---|
-| **Frontend** | **React** 18 + TypeScript + Vite + React Router + TanStack Query + Tailwind CSS + shadcn/ui + React Hook Form + Zod (`apps/web`, `apps/admin`) |
+| **Frontend** | **React** 18 + TypeScript + Vite + React Router + TanStack Query + Tailwind CSS + shadcn/ui + **Motion** (`motion/react`) + React Hook Form + Zod (`apps/web`, `apps/admin`) |
 | **Backend** | **NestJS** (TypeScript) + nestjs-zod (ใช้ schema ร่วมจาก `packages/types`) + Swagger/OpenAPI + Guards สำหรับ RBAC |
 | **DB** | **Supabase** — PostgreSQL (+ btree_gist, pg_cron, pg_net), Auth, Storage (รูปร้าน/สลิป), Realtime, RLS |
 | **Infra** | **Terraform** — provider `vercel/vercel` และ `supabase/supabase`, remote state (Terraform Cloud หรือ S3 + lock) |
@@ -456,44 +458,146 @@ night-list/
 - **Environments:** dev / staging / prod แยก Supabase project และ Vercel environment กันชัดเจน
 
 ## ดีไซน์
-- **สไตล์:** Dark, Nightlife, Premium, Minimal, Modern
-- **สี: โทน ดำ · ทอง · ม่วง** (ดำเป็นพื้น ใช้ทองเป็นสีหลัก และม่วงเป็นสีรอง)
-  - **ดำ (พื้นหลัง):**
-    - Background #09090B
-    - Surface/การ์ด #111113
-    - Surface ยกระดับ (modal, bottom sheet) #18181B
-    - Border #27272A
-  - **ทอง (Primary):**
-    - Gold #D4AF37 และ Gold Light #E9C46A (hover, ตัวอักษรบนพื้นดำ)
-    - ใช้กับปุ่ม CTA หลัก ("จองเลย"), ดาว ⭐, ป้าย "แนะนำ · โฆษณา" และ Editor's Pick
-    - ตัวอักษรบนปุ่มทองใช้ #09090B
-  - **ม่วง (Secondary):**
-    - Purple #7C3AED สำหรับพื้นปุ่มรอง/ขอบ/focus ring (ตัวอักษรบนพื้นม่วงใช้ #F5F5F5) และ Purple Light #A78BFA สำหรับลิงก์/ข้อความบนพื้นดำ (ห้ามใช้ #7C3AED เป็นตัวอักษรบนพื้นดำ เพราะ contrast ไม่พอ)
-    - ใช้กับแท็บที่เลือก, chip ตัวกรอง, focus ring, ลิงก์, badge สไตล์ร้าน และ glow/gradient ตกแต่ง
-    - gradient หัวข้อหรือแบนเนอร์: #7C3AED → #D4AF37
-  - **ตัวอักษร:** Text #F5F5F5 และ Text รอง #A1A1AA
-  - **สีสถานะ Crowd Status:** 🟢 #22C55E / 🟡 #EAB308 / 🔴 #EF4444 (ใส่ไอคอนหรือข้อความคู่ด้วย ไม่ใช้สีอย่างเดียว)
-  - ทุกคู่สีตัวอักษรกับพื้นต้องผ่าน WCAG AA (contrast ≥ 4.5:1)
-  - ทองและม่วงใช้เป็นสีเน้นเท่านั้น ไม่ใช้เต็มพื้นที่ใหญ่
-  - กำหนดเป็น design tokens ใน `packages/ui` (Tailwind preset) เช่น `bg`, `surface`, `gold`, `gold-light`, `purple`, `purple-light`
-- **การ์ดร้าน:** รูป, ชื่อ, ดาว (1–5) หรือป้าย "ร้านใหม่", ป้าย "แนะนำ · โฆษณา" (ถ้าโปรโมท), ประเภท/สไตล์, ระยะทาง, ราคาต่อหัว, คะแนน, Safety Score, Crowd Status และป้ายโต๊ะว่าง
-- **หน้าร้าน:** ปุ่ม "ประเมินราคา" และ "จองเลย" ติดด้านล่างจอ
-- **Staff Scanner:** ปุ่มใหญ่ ใช้มือเดียวได้ในที่มืด
+- **สไตล์:** Nightlife, Premium, Minimal, Modern · Mobile-first
+- **ธีมหลัก: Midnight Gold** (ดำ · ทอง · ม่วง) ใช้ Gold กับปุ่มหลักและคะแนน ส่วน Purple ใช้กับ accent และลิงก์
+- รองรับ **Light / Dark mode** พร้อม motion ตอนสลับธีม (รายละเอียดด้านล่าง)
 
-### Layout อ้างอิงจาก Mockup (ปรับเป็นธีม ดำ · ทอง · ม่วง)
+### Design Tokens — Midnight Gold
+ประกาศเป็น CSS variables ใน `packages/ui` แล้วใช้ผ่าน Tailwind preset เช่น `bg-background`, `text-muted`, `bg-gold`, `text-link` ห้าม hard-code hex ในคอมโพเนนต์
+
+| Token | Dark (ค่าเริ่มต้น) | Light | ใช้กับ |
+|---|---|---|---|
+| `--background` | `#07070D` | `#FAF8F3` | พื้นหน้า |
+| `--surface` | `#11111A` | `#FFFFFF` | header, sidebar, bottom bar |
+| `--card` | `#171520` | `#F4F1EA` | การ์ดร้าน, modal, bottom sheet |
+| `--border` | `#34283F` | `#E4DCCF` | ขอบการ์ด, input, divider |
+| `--text` | `#F5F1E8` | `#1A1523` | ตัวอักษรหลัก |
+| `--muted` | `#A7A1B3` | `#5E5670` | ตัวอักษรรอง, placeholder |
+| `--gold` | `#E8B64C` | `#E8B64C` | **พื้น**ปุ่มหลัก ("จองเลย", "บันทึก"), ป้ายโฆษณา, Tier S |
+| `--gold-highlight` | `#FFD77A` | `#F5C85E` | hover ของปุ่มทอง, glow, ไฮไลต์ในหัวข้อ |
+| `--gold-text` | `#E8B64C` | `#8A5A00` | ดาว ⭐, คะแนน, ยอดเงิน, ตัวอักษรทองบนพื้น |
+| `--on-gold` | `#07070D` | `#1A1523` | ตัวอักษรบนปุ่มทอง |
+| `--purple` | `#A738F5` | `#A738F5` | accent: แท็บที่เลือก, chip ที่เลือก, focus ring, ขอบ glow, ไอคอน |
+| `--link` | `#B86BFA` | `#7E22CE` | ลิงก์และข้อความสีม่วงขนาดเล็ก |
+| `--tier-s` | `#E8B64C` | `#E8B64C` | Tier S (Legendary) |
+| `--tier-a` | `#963BE8` | `#963BE8` | Tier A (Excellent) |
+| `--tier-b` | `#5869C8` | `#5869C8` | Tier B (Good) |
+| `--tier-c` | `#74788B` | `#74788B` | Tier C (Normal) |
+| `--crowd-available` / `almost-full` / `full` | `#22C55E` / `#EAB308` / `#EF4444` | `#16A34A` / `#CA8A04` / `#DC2626` | Crowd Status (ใส่ข้อความคู่เสมอ) |
+
+**กฎ contrast (WCAG AA)**
+- ข้อความขนาดปกติต้องได้ ≥ 4.5:1
+- `#A738F5` บนพื้นดำได้แค่ 4.3:1 จึงใช้เป็นสี accent / ขอบ / ไอคอน / ตัวอักษรใหญ่เท่านั้น ส่วนลิงก์และข้อความม่วงขนาดเล็กให้ใช้ `--link`
+- **ป้าย Tier:** S ใช้ตัวอักษร `#07070D`, A ใช้ `#F5F1E8`, B ใช้ `#F5F1E8` แบบตัวหนาหรือตัวใหญ่, C ใช้ `#07070D`
+- ใน Light mode ห้ามใช้ `#E8B64C` เป็นตัวอักษรบนพื้นขาว ให้ใช้ `--gold-text` (`#8A5A00`) แทน
+- ทองและม่วงใช้เป็นสีเน้น ไม่ใช้เต็มพื้นที่ใหญ่ ยกเว้น gradient ใน hero
+
+**Gradient และเอฟเฟกต์**
+- **Hero:** รูปบรรยากาศบาร์ + overlay `linear-gradient(90deg, #07070D 0%, rgba(7,7,13,.6) 50%, transparent)` และเส้นแสงม่วง `#A738F5` แนวทแยง
+- **หัวข้อใหญ่:** ตัวอักษร serif ครึ่งแรกเป็น `--text` ครึ่งหลังเป็น gradient ทอง `#FFD77A → #E8B64C` (เช่น "NIGHT**LIST**")
+- **Glow:** การ์ดตอน hover ใช้ `box-shadow: 0 0 0 1px var(--gold), 0 8px 32px rgba(167,56,245,.25)`
+- **Light mode:** ลด glow เหลือเงานุ่ม `0 8px 24px rgba(26,21,35,.08)` และ hero overlay ใช้ `#FAF8F3` แทน
+
+**Typography**
+- หัวข้อแบรนด์ / hero: serif หรือ display เช่น **Playfair Display** หรือ **Cinzel** (ภาษาอังกฤษเท่านั้น)
+- ภาษาไทยและเนื้อหา: **IBM Plex Sans Thai** หรือ **Noto Sans Thai** (UI) และ **Mitr** / **Prompt** สำหรับหัวข้อไทย
+- ข้อความตกแต่งลายมือ (เช่น slogan ใน hero) ใช้ได้ไม่เกิน 1 จุดต่อหน้า
+
+**ไอคอนและโลโก้**
+- ไอคอนเส้น (lucide) สีตาม `--muted`, ส่วนที่เลือกหรือ active ใช้ `--gold-text`
+- ไอคอนมงกุฎ 👑 ใช้เป็นสัญลักษณ์ ranking / Tier (เส้นทอง)
+
+### Light / Dark Mode
+- **ตัวเลือก 3 แบบ:** 🌙 มืด / ☀️ สว่าง / 💻 ตามระบบ
+  - ค่าเริ่มต้นคือ "ตามระบบ" (`prefers-color-scheme`) ถ้าอ่านค่าไม่ได้ให้ใช้ **Dark**
+- **ปุ่มสลับ:** อยู่ใน header (ไอคอนพระจันทร์/ดวงอาทิตย์) และในหน้า `settings`
+- **การบันทึก:**
+  - ผู้ใช้ทั่วไป: เก็บใน `localStorage` (`nightlist-theme`)
+  - ถ้าล็อกอิน: sync ไปที่ `user_preferences.theme` (`LIGHT` / `DARK` / `SYSTEM`) ด้วย
+- **Implementation:**
+  - Tailwind `darkMode: 'class'`: ใส่ class `dark` / `light` ที่ `<html>` และสลับค่า CSS variables ตาม class
+  - **กันจอกะพริบ (FOUC):** ใส่ inline script เล็กๆ ใน `<head>` ของ `index.html` ให้อ่านค่าธีมแล้วตั้ง class ก่อน React render
+  - ตั้ง `<meta name="theme-color">` ให้เปลี่ยนตามธีม (`#07070D` / `#FAF8F3`)
+  - `ThemeProvider` + hook `useTheme()` อยู่ใน `packages/ui` ใช้ร่วมกันทั้ง `apps/web` และ `apps/admin`
+- **หน้าที่ต้องเป็น Dark เสมอ:** Staff Scanner (`/merchant/tonight`) เพราะใช้ในร้านที่มืด เพื่อไม่ให้แสบตา
+- **รูปภาพ:** รูปร้านไม่ต้องปรับตามธีม แต่ overlay และ gradient บนรูปต้องเปลี่ยนตามธีม
+
+### Motion
+ใช้ **Motion** (`motion/react`, เดิมชื่อ Framer Motion) และกำหนด motion tokens ใน `packages/ui`
+
+| Token | ค่า | ใช้กับ |
+|---|---|---|
+| `duration.fast` | 150ms | hover, กดปุ่ม, toggle |
+| `duration.base` | 250ms | เปิด/ปิด dropdown, tab, การ์ด |
+| `duration.slow` | 400ms | page transition, bottom sheet, เปลี่ยนธีม |
+| `ease.out` | `cubic-bezier(0.22, 1, 0.36, 1)` | ค่าเริ่มต้น |
+| `spring.sheet` | `{ type: 'spring', stiffness: 380, damping: 32 }` | bottom sheet, modal |
+
+**Motion สำหรับสลับธีม (Light ↔ Dark)** ⭐
+- ใช้ **View Transitions API** ทำ circular reveal ขยายวงกลมออกจากตำแหน่งปุ่มสลับธีม ใช้เวลา 400ms ด้วย `ease.out`
+- ไอคอนพระจันทร์ ↔ ดวงอาทิตย์ หมุน 90° พร้อม fade/scale ใช้เวลา 250ms
+- **Fallback** (browser ที่ไม่รองรับ View Transitions): ใส่ `transition: background-color, color, border-color 300ms` ที่ตัวแปรสีหลัก
+- ห้ามใส่ transition สีให้ทุก element ตลอดเวลา ให้เปิด class `theme-transition` เฉพาะช่วงที่กำลังสลับ แล้วเอาออก เพื่อไม่ให้ UI หน่วง
+
+**Motion ใน UI**
+- **Page transition:** fade + เลื่อนขึ้น 8px (250ms)
+- **Tier List:** แถว S → A → B → C ค่อยๆ ปรากฏแบบ stagger ห่างกัน 60ms และการ์ดในแถวไล่ต่อกันทีละ 40ms
+- **การ์ดร้าน:** hover แล้วยกขึ้น `y: -4px` + ขอบทอง + glow ม่วง ส่วนกด (tap) ให้ `scale: 0.98`
+- **ดาว / คะแนน:** ดาวค่อยๆ เติมสีทองจากซ้ายไปขวาเมื่อเลื่อนมาเห็นในจอ และตัวเลขคะแนนนับขึ้น (count-up)
+- **ปุ่ม ♥ Favorite:** เด้ง (scale 1 → 1.25 → 1) + เปลี่ยนเป็นสีทอง
+- **Crowd Status:** จุดสีมี pulse เบาๆ เฉพาะสถานะ 🟢 ว่าง (2 วินาทีต่อรอบ)
+- **Hero:** ภาพพื้นหลัง parallax เบาๆ (ไม่เกิน 20px) และแสงบนแก้วมี shimmer 1 ครั้งตอนโหลด
+- **Bottom sheet ประเมินราคา:** เลื่อนขึ้นแบบ `spring.sheet` และยอด Estimated Total นับตัวเลขเมื่อค่าเปลี่ยน
+- **จองสำเร็จ:** เครื่องหมายถูกวาดเส้น (path draw) พร้อมประกายทองเล็กๆ รวมไม่เกิน 1 วินาที
+- **Skeleton loading:** shimmer ไล่จาก `--card` ไป `--border`
+- **Toast / แจ้งเตือน:** slide-in จากบนบนมือถือ และจากมุมขวาล่างบน desktop
+
+**กฎ Motion**
+- เคารพ `prefers-reduced-motion`: ถ้าผู้ใช้ปิด motion ให้ตัด parallax, stagger, count-up และ circular reveal เหลือแค่ fade 150ms หรือเปลี่ยนทันที ใช้ `useReducedMotion()` ของ Motion
+- animate เฉพาะ `transform` และ `opacity` (ยกเว้นตอนสลับธีม) เพื่อให้ได้ 60fps บนมือถือ
+- motion ต้องไม่ขวางการใช้งาน ผู้ใช้ต้องกดปุ่มได้ทันทีโดยไม่ต้องรอ animation จบ
+- Staff Scanner ใช้ motion น้อยที่สุด เน้นความเร็ว
+
+### Tier Badge (S / A / B / C)
+ดาวใช้แสดงคะแนนของร้าน ส่วน Tier ใช้แบ่งแถวในหน้า Tier List โดยแปลงจากดาว:
+
+| Tier | ป้าย | เงื่อนไข | สีพื้น |
+|---|---|---|---|
+| **S** | Legendary | 5 ดาว | `--tier-s` #E8B64C |
+| **A** | Excellent | 4 ดาว | `--tier-a` #963BE8 |
+| **B** | Good | 3 ดาว | `--tier-b` #5869C8 |
+| **C** | Normal | 1–2 ดาว | `--tier-c` #74788B |
+
+- ร้านที่ขึ้นเป็น "ร้านใหม่" (รีวิวน้อยกว่า 5) ยังไม่อยู่ใน Tier List
+- **หน้า Tier List:** แสดงป้าย Tier เป็นช่องสี่เหลี่ยมใหญ่ด้านซ้ายของแต่ละแถว และการ์ดร้านเรียงแนวนอน เลื่อนได้บนมือถือ
+
+### คอมโพเนนต์หลัก
+- **Header:** โลโก้ + เมนู (หน้าแรก / จัดอันดับ / ร้าน / รีวิว / เกี่ยวกับเรา) + ช่องค้นหาทรงแคปซูล + ปุ่มสลับธีม + โปรไฟล์ โดยเมนูที่เลือกอยู่เป็นสีทองพร้อมขีดล่างทอง
+- **ปุ่ม:**
+  - Primary: พื้น `--gold` ตัวอักษร `--on-gold`
+  - Secondary: ขอบทอง ตัวอักษร `--gold-text` พื้นโปร่ง
+  - Tertiary: ตัวอักษร `--link`
+  - ทุกปุ่มมุมโค้งแบบ pill (9999px) หรือ 12px
+- **การ์ดร้าน:** รูป, ชื่อ, ดาว (1–5) หรือป้าย "ร้านใหม่", ป้าย Tier, ป้าย "แนะนำ · โฆษณา" (ถ้าโปรโมท), ประเภท/สไตล์, ระยะทาง, ราคาต่อหัว, Safety Score, Crowd Status, ปุ่ม ♥ และปุ่ม "ดูรายละเอียด →" ขอบทอง
+- **Chip หมวดหมู่ / ตัวกรอง:** ขอบ `--border` ส่วนที่เลือกอยู่เป็นพื้น `--purple` ตัวอักษรขาว
+- **แผงรายละเอียดร้าน (desktop):** เปิดเป็น side panel ด้านขวา มีรูป, ชื่อ + ป้าย Tier, ดาว, tag, คำอธิบาย, เวลาเปิด-ปิด, ราคาเฉลี่ย, ที่จอดรถ และปุ่ม "ดูรีวิวทั้งหมด"
+- **หน้าร้าน:** ปุ่ม "ประเมินราคา" และ "จองเลย" ติดด้านล่างจอ
+- **Staff Scanner:** ปุ่มใหญ่ ใช้มือเดียวได้ในที่มืด และบังคับเป็น Dark mode
+
+### Layout อ้างอิงจาก Mockup (ใช้ token ของธีม Midnight Gold)
 **Desktop (Home)**
 - **Header:** โลโก้ NightList (พระจันทร์เสี้ยว gradient ม่วง→ทอง) + เมนู: จัดอันดับ / จองโต๊ะ / แนะนำ / ค้นหา / โปรไฟล์
-  - เมนูปกติเป็นสีเทา #A1A1AA ส่วนเมนูที่เลือกอยู่เป็นทอง พร้อมขีดล่างทอง
+  - เมนูปกติเป็นสีเทา var(--muted) ส่วนเมนูที่เลือกอยู่เป็นทอง พร้อมขีดล่างทอง
 - **Hero "ร้านแนะนำสุดฮอตในกรุงเทพฯ":**
-  - พื้น gradient ดำ → ม่วงเข้ม (#09090B → #2E1065) และขอบบาง ทองจาง (rgba ของ #D4AF37 ที่ 30%)
+  - พื้น gradient ดำ → ม่วงเข้ม (var(--background) → #1E0B33) และขอบบาง ทองจาง (rgba ของ #E8B64C ที่ 30%)
   - ป้าย "แนะนำ · โฆษณา" เป็นขอบทอง ตัวอักษรทอง
 - **"อันดับร้านดังประจำสัปดาห์ (⭐–⭐⭐⭐⭐⭐)":** grid การ์ดร้าน 3 คอลัมน์ เลื่อนแนวนอนได้
 - **การ์ดร้าน:**
-  - พื้น #111113, ขอบ #27272A, hover ขอบทอง + เงา glow ม่วงจางๆ
-  - ดาวเป็นทอง ชื่อร้านเป็น #F5F5F5 และรายละเอียด (ประเภท, ราคาเฉลี่ย, Safety Score) เป็น #A1A1AA
+  - พื้น var(--card), ขอบ var(--border), hover ขอบทอง + เงา glow ม่วงจางๆ
+  - ดาวเป็นทอง ชื่อร้านเป็น #F5F5F5 และรายละเอียด (ประเภท, ราคาเฉลี่ย, Safety Score) เป็น var(--muted)
   - Crowd Status มีจุดสี + ข้อความ (ว่าง / ใกล้เต็ม / โต๊ะเต็ม)
 - **แถบค้นหา + ตัวกรอง (ย่าน / ประเภท / งบ / เวลาว่าง):**
-  - chip ปกติขอบ #27272A ส่วน chip ที่เลือกเป็นพื้นม่วง #7C3AED ตัวอักษรขาว
+  - chip ปกติขอบ var(--border) ส่วน chip ที่เลือกเป็นพื้นม่วง #A738F5 ตัวอักษรขาว
 - **"ร้านใกล้ฉัน":** แผนที่ธีมมืด หมุดร้านสีทอง ร้านที่โปรโมทเป็นหมุดทองมีวงม่วงรอบ
 - **Sidebar ขวา (sticky):**
   - **การ์ด "ประเมินราคา & จองโต๊ะ":**
@@ -509,18 +613,18 @@ night-list/
 - **Bottom bar (sticky):**
   - ปุ่มรอง "ประเมินราคา & จองโต๊ะ" ขอบทอง ตัวอักษรทอง
   - ปุ่มหลัก "คำนวณและจองโต๊ะ" พื้นทอง ตัวอักษรดำ
-  - ตัวประเมินราคาเปิดเป็น bottom sheet (#18181B)
+  - ตัวประเมินราคาเปิดเป็น bottom sheet (var(--card))
 
 **การใช้สีตามองค์ประกอบ (สรุป)**
 | องค์ประกอบ | สี |
 |---|---|
-| พื้นหน้า / การ์ด / modal | #09090B / #111113 / #18181B |
-| ปุ่มหลัก (จอง, คำนวณ), ดาว, ยอดเงิน, ป้ายโฆษณา, Editor's Pick | ทอง #D4AF37 (hover #E9C46A) |
-| ปุ่มรอง, chip ที่เลือก, focus ring, badge สไตล์ร้าน | ม่วง #7C3AED |
-| ลิงก์, ข้อความเน้นบนพื้นดำ | ม่วงอ่อน #A78BFA |
-| Hero / แบนเนอร์ / โลโก้ | gradient ม่วง #7C3AED → ทอง #D4AF37 หรือ ดำ → ม่วงเข้ม #2E1065 |
+| พื้นหน้า / การ์ด / modal | var(--background) / var(--card) / var(--card) |
+| ปุ่มหลัก (จอง, คำนวณ), ดาว, ยอดเงิน, ป้ายโฆษณา, Editor's Pick | ทอง #E8B64C (hover #FFD77A) |
+| ปุ่มรอง, chip ที่เลือก, focus ring, badge สไตล์ร้าน | ม่วง #A738F5 |
+| ลิงก์, ข้อความเน้นบนพื้นดำ | ม่วงอ่อน `--link` #B86BFA |
+| Hero / แบนเนอร์ / โลโก้ | gradient ม่วง #A738F5 → ทอง #E8B64C หรือ ดำ → ม่วงเข้ม #1E0B33 |
 | Crowd Status | 🟢 #22C55E / 🟡 #EAB308 / 🔴 #EF4444 (ใส่ข้อความคู่ด้วยเสมอ) |
-| ห้ามใช้ | สีส้ม/อำพัน (Amber) และม่วง #7C3AED เป็นตัวอักษรบนพื้นดำ |
+| ห้ามใช้ | สีส้ม/อำพัน (Amber), hex ตรงๆ ในคอมโพเนนต์ และม่วง #A738F5 กับข้อความขนาดเล็ก |
 
 **ข้อความใน UI:** ใช้ภาษาไทยให้ถูกต้องทั้งหมด (mockup มีข้อความภาษาไทยเพี้ยนหลายจุด) ส่วนชื่อร้านใน seed data ต้องเป็นชื่อสมมติ ห้ามใช้ชื่อร้านจริง
 
