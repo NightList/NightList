@@ -26,4 +26,9 @@
 - HOC ใช้เฉพาะเรื่องที่ครอบหลายหน้า ส่วนเรื่องสิทธิ์ใช้ layout route `<RequireAuth>` / `<RequireRole>`
 
 ## Auth
-- เข้าสู่ระบบด้วย username + password ผ่าน NestJS `/auth/*` เท่านั้น ห้ามเพิ่ม OTP / social login โดยไม่ได้ตกลงกันก่อน
+- เข้าสู่ระบบด้วย email + password ของ Supabase Auth (supabase-js) ส่วน NestJS แค่ตรวจ JWT ห้ามเพิ่ม OTP / social login โดยไม่ได้ตกลงกันก่อน
+
+## คำสั่ง
+- ติดตั้ง: `pnpm install` · รัน: `pnpm dev` · ตรวจก่อน commit: `pnpm lint && pnpm typecheck && pnpm test && pnpm build`
+- package ภายใน build ด้วย tsup/tsc → แอปต้องรอ `^build` (Turborepo จัดการให้)
+- สี / ธีม: แก้ที่ `packages/ui/src/tokens.ts` และ `theme.css` ให้ตรงกัน (มี test ตรวจ)

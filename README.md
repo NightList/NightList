@@ -4,7 +4,7 @@
 
 ร้านแบ่งเป็น 3 ประเภท: **ผับ/บาร์** · **ร้านนั่งชิล** · **ร้านอาหารที่มีเครื่องดื่ม**
 
-> **สถานะ:** 📝 Planning — ตอนนี้ repo นี้มีสเปคและ prompt สำหรับให้ AI สร้างโค้ด ยังไม่มีโค้ด
+> **สถานะ:** 🏗️ Scaffold — มีโครง monorepo ที่ build / test ผ่านแล้ว ยังไม่มีฟีเจอร์จริง (หน้าส่วนใหญ่เป็น placeholder ตาม [`docs/SITEMAP.md`](docs/SITEMAP.md))
 
 ---
 
@@ -28,6 +28,25 @@
 
 ---
 
+## 🚀 เริ่มต้นใช้งาน
+
+**ต้องมี:** Node.js 22+, pnpm 10 (`corepack enable`) และ Docker (สำหรับ Supabase local)
+
+```bash
+pnpm install
+cp .env.example .env                 # ใส่ค่า Supabase หลัง db:start
+pnpm --filter @nightlist/database db:start   # Supabase local (Studio :54323)
+pnpm dev                             # web :5173 · admin :5174 · (api: pnpm --filter @nightlist/api dev → :3000/docs)
+```
+
+| คำสั่ง | ทำอะไร |
+|---|---|
+| `pnpm dev` | รันทุกแอปพร้อมกัน (Turborepo) |
+| `pnpm build` | build ทุก package |
+| `pnpm test` | unit test (utils, ui tokens) + API e2e |
+| `pnpm lint` / `pnpm typecheck` | ตรวจโค้ด |
+| `pnpm --filter @nightlist/web dev` | รันแอปเดียว |
+
 ## 🧱 Tech Stack
 
 | ชั้น | เทคโนโลยี |
@@ -38,7 +57,7 @@
 | Infra | Terraform (Vercel + Supabase providers) |
 | Hosting | Vercel (`web`, `admin`, `api`) |
 | Monorepo | pnpm workspaces + Turborepo |
-| Auth | username + password (Supabase Auth) · MFA สำหรับ Admin |
+| Auth | Supabase Auth: email + password · Turnstile · MFA สำหรับ Admin |
 | Notification | Web Push, LINE Messaging API, In-app |
 
 ## 📁 โครงสร้างโปรเจกต์ (แผน)

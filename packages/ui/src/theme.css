@@ -1,0 +1,115 @@
+/*
+ * Midnight Gold — CSS variables + Tailwind v4 theme
+ * ใช้ในแอป: @import "@nightlist/ui/theme.css";  (หลัง @import "tailwindcss")
+ * ค่าต้องตรงกับ src/tokens.ts (มี test ตรวจ)
+ */
+
+:root,
+.dark {
+  --background: #07070D;
+  --surface: #11111A;
+  --card: #171520;
+  --border: #34283F;
+  --text: #F5F1E8;
+  --muted: #A7A1B3;
+  --gold: #E8B64C;
+  --gold-highlight: #FFD77A;
+  --gold-text: #E8B64C;
+  --on-gold: #07070D;
+  --purple: #A738F5;
+  --link: #B86BFA;
+  --crowd-available: #22C55E;
+  --crowd-almost-full: #EAB308;
+  --crowd-full: #EF4444;
+  --glow: 0 0 0 1px var(--gold), 0 8px 32px rgba(167, 56, 245, 0.25);
+  --hero-via: #1E0B33;
+  --title-from: #FFD77A;
+  --title-to: #E8B64C;
+}
+
+.light {
+  --background: #FAF8F3;
+  --surface: #FFFFFF;
+  --card: #F4F1EA;
+  --border: #E4DCCF;
+  --text: #1A1523;
+  --muted: #5E5670;
+  --gold: #E8B64C;
+  --gold-highlight: #F5C85E;
+  --gold-text: #8A5A00;
+  --on-gold: #1A1523;
+  --purple: #A738F5;
+  --link: #7E22CE;
+  --crowd-available: #16A34A;
+  --crowd-almost-full: #CA8A04;
+  --crowd-full: #DC2626;
+  --glow: 0 8px 24px rgba(26, 21, 35, 0.08);
+  --hero-via: #EFE3FF;
+  --title-from: #B07A12;
+  --title-to: #8A5A00;
+}
+
+/* ใช้ dark: variant ตาม class บน <html> (ไม่ใช่ prefers-color-scheme) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Tailwind utilities: bg-background, text-muted, bg-gold, text-link, border-border ... */
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-gold: var(--gold);
+  --color-gold-highlight: var(--gold-highlight);
+  --color-gold-text: var(--gold-text);
+  --color-on-gold: var(--on-gold);
+  --color-purple: var(--purple);
+  --color-link: var(--link);
+  --color-hero-via: var(--hero-via);
+  --color-tier-s: #E8B64C;
+  --color-tier-a: #963BE8;
+  --color-tier-b: #5869C8;
+  --color-tier-c: #74788B;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-sans: 'IBM Plex Sans Thai', 'Noto Sans Thai', system-ui, sans-serif;
+  --shadow-glow: var(--glow);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  html,
+  body {
+    background: var(--background);
+    color: var(--text);
+    font-family: var(--font-sans);
+  }
+  a {
+    color: var(--link);
+  }
+}
+
+/* เปิดเฉพาะตอนสลับธีม (fallback ของ View Transitions) */
+.theme-transition,
+.theme-transition * {
+  transition:
+    background-color 300ms var(--ease-out),
+    color 300ms var(--ease-out),
+    border-color 300ms var(--ease-out) !important;
+}
+
+/* View Transitions: ปิด cross-fade default ให้ circular reveal ทำงาน */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
