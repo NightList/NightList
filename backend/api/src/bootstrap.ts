@@ -18,11 +18,7 @@ export async function createApp(): Promise<INestApplication> {
 
   const doc = SwaggerModule.createDocument(
     app,
-    new DocumentBuilder()
-      .setTitle('NightList API')
-      .setVersion('0.1.0')
-      .addBearerAuth()
-      .build(),
+    new DocumentBuilder().setTitle('NightList API').setVersion('0.1.0').addBearerAuth().build(),
   );
   SwaggerModule.setup('docs', app, cleanupOpenApiDoc(doc));
 

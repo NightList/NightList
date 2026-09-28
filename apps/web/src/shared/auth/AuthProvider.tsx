@@ -1,8 +1,22 @@
 import type { Session } from '@supabase/supabase-js';
+import type { UserRole } from '@nightlist/types';
+import { currentUser, demoLogout, type DemoUser } from '@nightlist/mock';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { supabase } from '@/shared/lib/supabase';
+import { useDemo } from '@/shared/data/useDemo';
+import { isSupabaseConfigured, supabase } from '@/shared/lib/supabase';
+
+export interface AppUser {
+  id: string;
+  email: string;
+  displayName: string;
+  role: UserRole;
+  barId?: string;
+}
 
 interface AuthContextValue {
+  /** true = ยังไม่ได้ตั้ง Supabase → ใช้ข้อมูลเดโมในเบราว์เซอร์ */
+  isDemo: boolean;
+  user: AppUser | null;
   session: Session | null;
   loading: boolean;
   signOut: () => Promise<void>;
@@ -10,9 +24,13 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+const fromDemo = (u: DemoUser | null): AppUser | null =>
+  u && { id: u.id, email: u.email, displayName: u.displayName, role: u.role, barId: u.barId };
+
 export function AuthProvider({ children }: { children: ReactNode }) {
+  useDemo();
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(!!supabase);
+  const [loading, setLoading] = useState(isSupabaseConfigured);
 
   useEffect(() => {
     if (!supabase) return;
@@ -24,16 +42,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => data.subscription.unsubscribe();
   }, []);
 
-  const value = useMemo<AuthContextValue>(
-    () => ({
+  const demoUser = isSupabaseConfigured ? null : currentUser();
+
+  const value = useMemo<AuthContextValue>(() => {
+    // TODO: เมื่อต่อ Supabase จริง ให้โหลด role/barId จาก public.users
+    const realUser: AppUser | null = session
+      ? {
+          id: session.user.id,
+          email: session.user.email ?? '',
+          displayName:
+            (session.user.user_metadata?.display_name as string) ?? session.user.email ?? '',
+          role: 'CUSTOMER',
+        }
+      : null;
+    return {
+      isDemo: !isSupabaseConfigured,
+      user: isSupabaseConfigured ? realUser : fromDemo(demoUser),
       session,
       loading,
       signOut: async () => {
-        await supabase?.auth.signOut();
+        if (supabase) await supabase.auth.signOut();
+        else demoLogout();
       },
-    }),
-    [session, loading],
-  );
+    };
+  }, [session, loading, demoUser]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

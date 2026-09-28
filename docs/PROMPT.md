@@ -381,7 +381,8 @@ night-list/
 │   ├── ui/                 # antd theme + Tailwind preset + คอมโพเนนต์ร่วม (dark nightlife) ใช้ร่วมกัน 2 แอป
 │   ├── types/              # TypeScript types + Zod schemas (BookingStatus, DTO, API contracts) ใช้ร่วม frontend/NestJS
 │   ├── config/             # eslint, tsconfig, tailwind preset, env schema
-│   └── utils/              # price calculator, star calculator, date/timezone (Asia/Bangkok), status transition map, formatters
+│   ├── utils/              # price calculator, star calculator, date/timezone (Asia/Bangkok), status transition map, formatters
+│   └── mock/               # โหมดเดโม: seed ร้านสมมติ + store (localStorage) + service ที่หน้าเว็บเรียก จนกว่าจะต่อ API จริง
 │
 ├── backend/
 │   ├── api/                # NestJS app — HTTP entry (controllers, guards, pipes), deploy เป็น Vercel Function

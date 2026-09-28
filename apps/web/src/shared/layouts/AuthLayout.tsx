@@ -8,7 +8,11 @@ import { NightSky } from '@/features/auth/NightSky';
 const FEATURES = [
   { icon: CurrencyCircleDollar, title: 'รู้ราคาก่อนไป', desc: 'ประเมินค่าใช้จ่ายต่อหัวก่อนจอง' },
   { icon: ShieldCheck, title: 'เช็กความปลอดภัย', desc: 'รปภ. · CCTV · ทางหนีไฟ ยืนยันโดยทีม' },
-  { icon: CalendarCheck, title: 'จองโต๊ะในไม่กี่คลิก', desc: 'เช็กอินด้วย QR · แชร์ให้แก๊งได้ทันที' },
+  {
+    icon: CalendarCheck,
+    title: 'จองโต๊ะในไม่กี่คลิก',
+    desc: 'เช็กอินด้วย QR · แชร์ให้แก๊งได้ทันที',
+  },
 ];
 
 /**

@@ -26,7 +26,14 @@ export function AgeGate() {
   };
 
   return (
-    <Modal open={open} closable={false} keyboard={false} mask={{ closable: false }} footer={null} centered>
+    <Modal
+      open={open}
+      closable={false}
+      keyboard={false}
+      mask={{ closable: false }}
+      footer={null}
+      centered
+    >
       {denied ? (
         <Typography.Paragraph className="py-6 text-center">
           ขออภัย NightList สำหรับผู้ที่มีอายุ 20 ปีขึ้นไปเท่านั้น

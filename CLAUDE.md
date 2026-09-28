@@ -1,12 +1,9 @@
 # CLAUDE.md — กติกาการทำงานใน repo NightList
 
 ## Branch
-- ห้าม commit หรือ push เข้า `main` โดยตรง
-- 1 module ต่อ 1 branch ตั้งชื่อเป็น `claude-แสน-<module>`
-  - module: `docs`, `web`, `admin`, `api`, `services`, `database`, `infra`, `ui`, `types`, `config`, `utils`
-  - feature ย่อยให้ต่อท้าย เช่น `claude-แสน-api-booking`
-- ก่อนเริ่มงาน ให้แตก branch จาก `main` ล่าสุด
-- งานเสร็จแล้ว push branch ขึ้น GitHub แล้วให้เจ้าของ repo เปิด / merge Pull Request
+- มีแค่ 2 branch: `demo` (dev) และ `main` (deploy ขึ้นเว็บ)
+- ทำงานและ push ที่ `demo` เท่านั้น ห้าม push ตรงเข้า `main` และไม่ต้องแตก branch ย่อย
+- เจ้าของ repo เป็นคน merge `demo → main` เมื่อทดสอบแล้ว
 
 ## Commit
 - ใช้ Conventional Commits เช่น `feat(api): ...`, `fix(web): ...`, `docs: ...`
@@ -32,3 +29,7 @@
 - ติดตั้ง: `pnpm install` · รัน: `pnpm dev` · ตรวจก่อน commit: `pnpm lint && pnpm typecheck && pnpm test && pnpm build`
 - package ภายใน build ด้วย tsup/tsc → แอปต้องรอ `^build` (Turborepo จัดการให้)
 - สี / ธีม: แก้ที่ `packages/ui/src/tokens.ts` และ `theme.css` ให้ตรงกัน (มี test ตรวจ)
+
+## โหมดเดโม
+- ถ้าไม่มี `VITE_SUPABASE_URL` แอปใช้ `@nightlist/mock` (ข้อมูลสมมติใน localStorage) — ห้ามใส่ชื่อร้านจริงใน seed
+- ตอนต่อ API จริง ให้แทน service ของ mock ทีละหน้าด้วย TanStack Query + `shared/lib/api-client.ts`

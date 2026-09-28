@@ -1,30 +1,68 @@
-import { createBrowserRouter, Outlet, RouterProvider, type RouteObject } from 'react-router';
+import { runTimeouts } from '@nightlist/mock';
+import { createBrowserRouter, RouterProvider, type RouteObject } from 'react-router';
+import {
+  AcceptInvitePage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
+  VerifyEmailPage,
+} from '@/routes/AuthMiscPages';
+import { BarDetailPage } from '@/routes/BarDetailPage';
+import { BarReviewsPage } from '@/routes/BarReviewsPage';
+import { BookingDetailPage } from '@/routes/BookingDetailPage';
+import { BookingsPage } from '@/routes/BookingsPage';
+import { BookPage } from '@/routes/BookPage';
+import { DepositPage } from '@/routes/DepositPage';
+import { FavoritesPage } from '@/routes/FavoritesPage';
 import { HomePage } from '@/routes/HomePage';
 import { LoginPage } from '@/routes/LoginPage';
+import { MerchantAnalyticsPage } from '@/routes/merchant/AnalyticsPage';
+import { MerchantBillingPage } from '@/routes/merchant/BillingPage';
+import { MerchantBookingsPage } from '@/routes/merchant/BookingsPage';
+import { MerchantDashboardPage } from '@/routes/merchant/DashboardPage';
+import { MerchantDepositsPage } from '@/routes/merchant/DepositsPage';
+import { MerchantJoinPage, MerchantStatusPage } from '@/routes/merchant/JoinPage';
+import { MerchantLayout } from '@/routes/merchant/MerchantLayout';
+import { MerchantMenuPage } from '@/routes/merchant/MenuPage';
+import { MerchantPricingPage } from '@/routes/merchant/PricingPage';
+import { MerchantPromotePage } from '@/routes/merchant/PromotePage';
+import { MerchantReviewsPage } from '@/routes/merchant/ReviewsPage';
+import { MerchantSafetyPage } from '@/routes/merchant/SafetyPage';
+import { MerchantSettingsPage } from '@/routes/merchant/SettingsPage';
+import { MerchantStaffPage } from '@/routes/merchant/StaffPage';
+import { MerchantStorePage } from '@/routes/merchant/StorePage';
+import { MerchantTablesPage } from '@/routes/merchant/TablesPage';
+import { TonightPage } from '@/routes/merchant/TonightPage';
+import { MyReviewsPage } from '@/routes/MyReviewsPage';
 import { NotFoundPage } from '@/routes/NotFoundPage';
-import { TonightPage } from '@/routes/TonightPage';
-import { RequireAuth } from '@/shared/auth/RequireAuth';
-import { PlaceholderPage } from '@/shared/components/PlaceholderPage';
+import { NotificationsPage } from '@/routes/NotificationsPage';
+import { OnboardingPage } from '@/routes/OnboardingPage';
+import { ProfilePage } from '@/routes/ProfilePage';
+import { RankingPage } from '@/routes/RankingPage';
+import { RegisterPage } from '@/routes/RegisterPage';
+import { ReviewNewPage } from '@/routes/ReviewNewPage';
+import { SearchPage } from '@/routes/SearchPage';
+import { SettingsPage } from '@/routes/SettingsPage';
+import { SharePage } from '@/routes/SharePage';
+import { StaticPage } from '@/routes/StaticPage';
+import { RequireAuth, RequireRole } from '@/shared/auth/RequireAuth';
 import { AuthLayout } from '@/shared/layouts/AuthLayout';
 import { MainLayout } from '@/shared/layouts/MainLayout';
 
-/** หน้าชั่วคราวตาม docs/SITEMAP.md — แทนที่ทีละ feature */
-const todo = (path: string, title: string): RouteObject => ({
-  path,
-  element: <PlaceholderPage title={title} path={`/${path}`} />,
-});
+// เดโม: จำลอง pg_cron — ตรวจ NO_SHOW / EXPIRED ตอนเปิดแอปและทุก 1 นาที
+runTimeouts();
+setInterval(runTimeouts, 60_000);
 
+/** route ทั้งหมดตาม docs/SITEMAP.md */
 const routes: RouteObject[] = [
   {
-    // ---- เข้าสู่ระบบ (layout เต็มจอ ไม่มี header/bottom nav ปกติ) ----
     element: <AuthLayout />,
     children: [
       { path: 'login', element: <LoginPage /> },
-      todo('register', 'สมัครสมาชิก'),
-      todo('verify-email', 'ยืนยันอีเมล'),
-      todo('forgot-password', 'ลืมรหัสผ่าน'),
-      todo('reset-password', 'ตั้งรหัสผ่านใหม่'),
-      todo('accept-invite', 'รับคำเชิญ Staff'),
+      { path: 'register', element: <RegisterPage /> },
+      { path: 'verify-email', element: <VerifyEmailPage /> },
+      { path: 'forgot-password', element: <ForgotPasswordPage /> },
+      { path: 'reset-password', element: <ResetPasswordPage /> },
+      { path: 'accept-invite', element: <AcceptInvitePage /> },
     ],
   },
   {
@@ -32,56 +70,59 @@ const routes: RouteObject[] = [
     children: [
       // ---- สาธารณะ ----
       { index: true, element: <HomePage /> },
-      todo('ranking', 'จัดอันดับ'),
-      todo('ranking/:category/:district?', 'จัดอันดับตามหมวด/ย่าน'),
-      todo('search', 'ค้นหา'),
-      todo('bars/:slug', 'หน้าร้าน'),
-      todo('bars/:slug/reviews', 'รีวิวทั้งหมด'),
-      todo('share/:token', 'บัตรจองที่แชร์'),
-      todo('about', 'เกี่ยวกับเรา'),
-      todo('terms', 'เงื่อนไขการใช้งาน'),
-      todo('privacy', 'นโยบายความเป็นส่วนตัว'),
-      todo('cookies', 'นโยบายคุกกี้'),
+      { path: 'ranking', element: <RankingPage /> },
+      { path: 'search', element: <SearchPage /> },
+      { path: 'bars/:slug', element: <BarDetailPage /> },
+      { path: 'bars/:slug/reviews', element: <BarReviewsPage /> },
+      { path: 'share/:token', element: <SharePage /> },
+      { path: 'about', element: <StaticPage page="about" /> },
+      { path: 'terms', element: <StaticPage page="terms" /> },
+      { path: 'privacy', element: <StaticPage page="privacy" /> },
+      { path: 'cookies', element: <StaticPage page="cookies" /> },
 
       // ---- ลูกค้า (ต้องล็อกอิน) ----
       {
         element: <RequireAuth />,
         children: [
-          todo('onboarding', 'ตั้งค่าความชอบ'),
-          todo('bars/:slug/book', 'จองโต๊ะ'),
-          todo('bookings', 'การจองของฉัน'),
-          todo('bookings/:id', 'บัตรจอง'),
-          todo('bookings/:id/deposit', 'จ่ายมัดจำ'),
-          todo('reviews/new', 'เขียนรีวิว'),
-          todo('reviews', 'รีวิวของฉัน'),
-          todo('favorites', 'ร้านโปรด'),
-          todo('notifications', 'แจ้งเตือน'),
-          todo('profile', 'โปรไฟล์'),
-          todo('settings', 'ตั้งค่า'),
+          { path: 'onboarding', element: <OnboardingPage /> },
+          { path: 'bars/:slug/book', element: <BookPage /> },
+          { path: 'bookings', element: <BookingsPage /> },
+          { path: 'bookings/:id', element: <BookingDetailPage /> },
+          { path: 'bookings/:id/deposit', element: <DepositPage /> },
+          { path: 'reviews/new', element: <ReviewNewPage /> },
+          { path: 'reviews', element: <MyReviewsPage /> },
+          { path: 'favorites', element: <FavoritesPage /> },
+          { path: 'notifications', element: <NotificationsPage /> },
+          { path: 'profile', element: <ProfilePage /> },
+          { path: 'settings', element: <SettingsPage /> },
+          { path: 'merchant/join', element: <MerchantJoinPage /> },
+          { path: 'merchant/status', element: <MerchantStatusPage /> },
 
-          // ---- ร้าน /merchant (TODO: <RequireRole role="MERCHANT|STAFF">) ----
+          // ---- ร้าน /merchant ----
           {
-            path: 'merchant',
-            element: <Outlet />,
+            element: <RequireRole roles={['MERCHANT', 'STAFF']} />,
             children: [
-              { index: true, element: <PlaceholderPage title="แดชบอร์ดร้าน" path="/merchant" /> },
-              { path: 'tonight', element: <TonightPage /> },
-              todo('join', 'สมัครเป็นร้าน'),
-              todo('status', 'สถานะการตรวจ'),
-              todo('bookings', 'การจอง'),
-              todo('bookings/:id', 'รายละเอียดการจอง'),
-              todo('deposits', 'ตรวจสลิป'),
-              todo('store', 'ข้อมูลร้าน'),
-              todo('safety', 'ความปลอดภัย'),
-              todo('menu', 'เมนู'),
-              todo('pricing', 'ค่าธรรมเนียม + แพ็กเกจ'),
-              todo('tables', 'โซน / โต๊ะ'),
-              todo('settings', 'ตั้งค่าการจอง'),
-              todo('promote', 'โปรโมทร้าน'),
-              todo('reviews', 'รีวิว'),
-              todo('analytics', 'สถิติ'),
-              todo('billing', 'ค่าคอม'),
-              todo('staff', 'พนักงาน'),
+              {
+                path: 'merchant',
+                element: <MerchantLayout />,
+                children: [
+                  { index: true, element: <MerchantDashboardPage /> },
+                  { path: 'tonight', element: <TonightPage /> },
+                  { path: 'bookings', element: <MerchantBookingsPage /> },
+                  { path: 'deposits', element: <MerchantDepositsPage /> },
+                  { path: 'store', element: <MerchantStorePage /> },
+                  { path: 'menu', element: <MerchantMenuPage /> },
+                  { path: 'pricing', element: <MerchantPricingPage /> },
+                  { path: 'tables', element: <MerchantTablesPage /> },
+                  { path: 'safety', element: <MerchantSafetyPage /> },
+                  { path: 'settings', element: <MerchantSettingsPage /> },
+                  { path: 'promote', element: <MerchantPromotePage /> },
+                  { path: 'reviews', element: <MerchantReviewsPage /> },
+                  { path: 'analytics', element: <MerchantAnalyticsPage /> },
+                  { path: 'billing', element: <MerchantBillingPage /> },
+                  { path: 'staff', element: <MerchantStaffPage /> },
+                ],
+              },
             ],
           },
         ],

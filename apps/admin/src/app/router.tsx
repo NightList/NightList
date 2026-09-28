@@ -1,20 +1,39 @@
 import { createBrowserRouter, RouterProvider } from 'react-router';
 import { DashboardPage } from '@/routes/DashboardPage';
-import { PlaceholderPage } from '@/routes/PlaceholderPage';
+import { LoginPage } from '@/routes/LoginPage';
+import {
+  AuditLogsPage,
+  BarsPage,
+  BillingPage,
+  BookingsPage,
+  MerchantsPage,
+  PromotionsPage,
+  RankingPage,
+  ReviewsPage,
+  SafetyPage,
+  SettingsPage,
+  UsersPage,
+} from '@/routes/pages';
 import { AdminLayout } from './AdminLayout';
-import { ADMIN_ROUTES } from './menu';
 
 const router = createBrowserRouter([
-  { path: '/login', element: <PlaceholderPage title="เข้าสู่ระบบ (email + password + MFA)" /> },
+  { path: '/login', element: <LoginPage /> },
   {
     path: '/',
     element: <AdminLayout />,
     children: [
       { index: true, element: <DashboardPage /> },
-      ...ADMIN_ROUTES.filter((r) => r.path !== '/').map((r) => ({
-        path: r.path.slice(1),
-        element: <PlaceholderPage title={r.name} />,
-      })),
+      { path: 'merchants', element: <MerchantsPage /> },
+      { path: 'bars', element: <BarsPage /> },
+      { path: 'safety', element: <SafetyPage /> },
+      { path: 'ranking', element: <RankingPage /> },
+      { path: 'promotions', element: <PromotionsPage /> },
+      { path: 'users', element: <UsersPage /> },
+      { path: 'bookings', element: <BookingsPage /> },
+      { path: 'reviews', element: <ReviewsPage /> },
+      { path: 'billing', element: <BillingPage /> },
+      { path: 'audit-logs', element: <AuditLogsPage /> },
+      { path: 'settings', element: <SettingsPage /> },
     ],
   },
 ]);

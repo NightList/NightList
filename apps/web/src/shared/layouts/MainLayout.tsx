@@ -8,10 +8,13 @@ import {
   User,
 } from '@phosphor-icons/react';
 import { ThemeToggle } from '@nightlist/ui';
-import { Button, Layout } from 'antd';
+import { myNotifications } from '@nightlist/mock';
+import { Badge, Button, Layout } from 'antd';
 import { Link, NavLink, Outlet } from 'react-router';
 import { AgeGate } from '@/features/age-gate/AgeGate';
 import { useAuth } from '@/shared/auth/AuthProvider';
+import { DemoBanner } from '@/shared/components/DemoBanner';
+import { useDemo } from '@/shared/data/useDemo';
 
 const NAV = [
   { to: '/', label: 'หน้าแรก', icon: House, end: true },
@@ -28,11 +31,15 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
   }`;
 
 export function MainLayout() {
-  const { session } = useAuth();
+  useDemo();
+  const { user } = useAuth();
+  const unread = user ? myNotifications().filter((n) => !n.readAt).length : 0;
+  const isShop = user?.role === 'MERCHANT' || user?.role === 'STAFF';
 
   return (
     <Layout className="min-h-dvh !bg-background">
       <AgeGate />
+      <DemoBanner />
       <header className="sticky top-0 z-30 border-b border-border bg-surface/80 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4">
           <Link to="/" className="flex items-center gap-2 !text-text">
@@ -47,11 +54,27 @@ export function MainLayout() {
                 {n.label}
               </NavLink>
             ))}
+            {isShop && (
+              <NavLink to="/merchant" className={navClass}>
+                ร้านของฉัน
+              </NavLink>
+            )}
           </nav>
           <div className="ml-auto flex items-center gap-1">
             <ThemeToggle />
-            <Button type="text" shape="circle" aria-label="แจ้งเตือน" icon={<Bell size={20} />} />
-            {session ? (
+            {user && (
+              <Link to="/notifications">
+                <Badge count={unread} size="small">
+                  <Button
+                    type="text"
+                    shape="circle"
+                    aria-label={`แจ้งเตือน ${unread} รายการ`}
+                    icon={<Bell size={20} />}
+                  />
+                </Badge>
+              </Link>
+            )}
+            {user ? (
               <Link to="/profile">
                 <Button type="text" shape="circle" aria-label="โปรไฟล์" icon={<User size={20} />} />
               </Link>

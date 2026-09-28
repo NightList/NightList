@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ant-design/cssinjs": "^2.1.2",
+    "@nightlist/mock": "workspace:*",
     "@nightlist/types": "workspace:*",
     "@nightlist/ui": "workspace:*",
     "@nightlist/utils": "workspace:*",
@@ -19,7 +20,9 @@
     "@supabase/supabase-js": "^2.117.2",
     "@tanstack/react-query": "^5.104.0",
     "antd": "^6.6.5",
+    "dayjs": "^1.11.23",
     "motion": "^13.4.4",
+    "qrcode.react": "^4.2.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-router": "^8.4.0",
