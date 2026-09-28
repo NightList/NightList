@@ -5,6 +5,7 @@ import { NotFoundPage } from '@/routes/NotFoundPage';
 import { TonightPage } from '@/routes/TonightPage';
 import { RequireAuth } from '@/shared/auth/RequireAuth';
 import { PlaceholderPage } from '@/shared/components/PlaceholderPage';
+import { AuthLayout } from '@/shared/layouts/AuthLayout';
 import { MainLayout } from '@/shared/layouts/MainLayout';
 
 /** หน้าชั่วคราวตาม docs/SITEMAP.md — แทนที่ทีละ feature */
@@ -14,6 +15,18 @@ const todo = (path: string, title: string): RouteObject => ({
 });
 
 const routes: RouteObject[] = [
+  {
+    // ---- เข้าสู่ระบบ (layout เต็มจอ ไม่มี header/bottom nav ปกติ) ----
+    element: <AuthLayout />,
+    children: [
+      { path: 'login', element: <LoginPage /> },
+      todo('register', 'สมัครสมาชิก'),
+      todo('verify-email', 'ยืนยันอีเมล'),
+      todo('forgot-password', 'ลืมรหัสผ่าน'),
+      todo('reset-password', 'ตั้งรหัสผ่านใหม่'),
+      todo('accept-invite', 'รับคำเชิญ Staff'),
+    ],
+  },
   {
     element: <MainLayout />,
     children: [
@@ -29,14 +42,6 @@ const routes: RouteObject[] = [
       todo('terms', 'เงื่อนไขการใช้งาน'),
       todo('privacy', 'นโยบายความเป็นส่วนตัว'),
       todo('cookies', 'นโยบายคุกกี้'),
-
-      // ---- เข้าสู่ระบบ ----
-      { path: 'login', element: <LoginPage /> },
-      todo('register', 'สมัครสมาชิก'),
-      todo('verify-email', 'ยืนยันอีเมล'),
-      todo('forgot-password', 'ลืมรหัสผ่าน'),
-      todo('reset-password', 'ตั้งรหัสผ่านใหม่'),
-      todo('accept-invite', 'รับคำเชิญ Staff'),
 
       // ---- ลูกค้า (ต้องล็อกอิน) ----
       {
