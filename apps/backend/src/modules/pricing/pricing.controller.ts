@@ -1,6 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { PricingService } from '@nightlist/services';
+import { PricingService } from './pricing.service';
 import { PriceEstimateInput } from '@nightlist/types';
 import { createZodDto } from 'nestjs-zod';
 

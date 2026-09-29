@@ -14,10 +14,10 @@ flowchart LR
   end
 
   subgraph Vercel["Vercel"]
-    WEB["apps/web<br/>React + antd + Tailwind"]
+    WEB["apps/frontend<br/>React + antd + Tailwind"]
     ADM["apps/admin<br/>React + antd Pro"]
     OG["api/og<br/>OG image + meta"]
-    API["backend/api<br/>NestJS (Function)"]
+    API["apps/backend<br/>NestJS (Function)"]
   end
 
   subgraph Supabase["Supabase (ap-southeast-1)"]
@@ -63,18 +63,18 @@ flowchart LR
 
 | Layer | อยู่ที่ | หน้าที่ |
 |---|---|---|
-| Presentation | `apps/web`, `apps/admin` | UI, routing, state ฝั่ง client และ form validation |
+| Presentation | `apps/frontend`, `apps/admin` | UI, routing, state ฝั่ง client และ form validation |
 | Shared UI / Contract | `packages/ui`, `packages/types` | theme tokens, คอมโพเนนต์ร่วม, Zod schema / DTO |
 | Domain logic (pure) | `packages/utils` | price calculator, star → tier, status transition map |
 | Demo data | `packages/mock` | โหมดเดโม: ข้อมูลสมมติ + store ในเบราว์เซอร์ (ใช้เมื่อยังไม่ตั้ง Supabase) |
-| API | `backend/api` | controller, guard, pipe, Swagger |
-| Application / Domain | `backend/services` | booking, billing, notification ฯลฯ (NestJS modules) |
-| Data | `backend/database` | migrations, RLS, DB functions, seed |
+| API | `apps/backend/src` (controllers) | controller, guard, pipe, Swagger |
+| Application / Domain | `apps/backend/src/modules` | booking, pricing, ranking, notification ฯลฯ (NestJS modules) |
+| Data | `apps/backend/supabase` | migrations, RLS, DB functions, seed |
 | Infra | `infra/terraform`, `.github/workflows` | Vercel, Supabase, secrets, CI/CD |
 
 ---
 
-## 3. Frontend (`apps/web`, `apps/admin`)
+## 3. Frontend (`apps/frontend`, `apps/admin`)
 
 ### Stack
 - React 19 + TypeScript + Vite + React Router
@@ -90,9 +90,9 @@ flowchart LR
 - ห้าม override `.ant-*` แบบ global ให้ใช้ token → component token → `classNames` / `styles` ตามลำดับ
 
 ### โครงภายในแอป (module-based — อิงโครง [thirddeity/pre-project](https://github.com/thirddeity/pre-project))
-ทั้ง `apps/web` และ `apps/admin` จัดโฟลเดอร์แบบเดียวกัน — หาไฟล์ของหน้าไหนก็เปิด `modules/<ชื่อหน้า>/page.tsx`
+ทั้ง `apps/frontend` และ `apps/admin` จัดโฟลเดอร์แบบเดียวกัน — หาไฟล์ของหน้าไหนก็เปิด `modules/<ชื่อหน้า>/page.tsx`
 ```
-apps/web/src/
+apps/frontend/src/
 ├── main.tsx              # จุดเริ่ม: render <App />
 ├── App.tsx               # providers: Theme → React Query → Auth → Router
 ├── configs/              # ค่าตั้งกลาง (dayjs, query, interval ของเดโม)
@@ -130,7 +130,20 @@ apps/web/src/
 
 ---
 
-## 4. Backend (`backend/api` + `backend/services`)
+## 4. Backend (`apps/backend`)
+
+```
+apps/backend/
+├── src/
+│   ├── main.ts / bootstrap.ts   # เริ่ม NestJS (local) / สร้าง app ให้ Vercel Function
+│   ├── app.module.ts            # รวม modules + guard/pipe ระดับแอป
+│   ├── auth/ health/ jobs/ config/   # guard, endpoint ระบบ, env
+│   └── modules/<domain>/        # 1 โดเมน = module + service (+ controller ถ้ามี HTTP): booking, pricing, ranking, notification
+├── supabase/                    # config.toml, migrations/, seed.sql — รันด้วย pnpm --filter @nightlist/backend db:*
+├── api/index.js                 # Vercel Function entry
+└── test/                        # e2e (vitest + supertest)
+```
+
 
 ### Request pipeline
 ```mermaid
@@ -172,7 +185,7 @@ flowchart LR
 ```mermaid
 sequenceDiagram
   actor U as ลูกค้า
-  participant W as apps/web
+  participant W as apps/frontend
   participant A as NestJS
   participant D as Postgres
   actor S as ร้าน
@@ -225,7 +238,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
   actor U as ผู้ใช้
-  participant W as apps/web
+  participant W as apps/frontend
   participant SA as Supabase Auth
   participant A as NestJS
   U->>W: email + password (+ Turnstile)
@@ -262,7 +275,7 @@ sequenceDiagram
 ## 8. Monorepo
 - **pnpm** workspaces + Turborepo
 - โครงโฟลเดอร์ดูใน [`README.md`](../README.md) หรือ [`PROMPT.md`](PROMPT.md)
-- Dependency ต้องไหลทางเดียว: `apps/*` → `packages/*` และ `backend/api` → `backend/services` → `backend/database` / `packages/*` (ห้ามย้อนกลับ)
+- Dependency ต้องไหลทางเดียว: `apps/*` → `packages/*` และใน `apps/backend`: controller → `modules/*` → `supabase/` / `packages/*` (ห้ามย้อนกลับ)
 
 ---
 

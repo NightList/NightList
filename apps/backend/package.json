@@ -1,8 +1,8 @@
 {
-  "name": "@nightlist/api",
+  "name": "@nightlist/backend",
   "version": "0.0.0",
   "private": true,
-  "description": "NightList REST API (NestJS)",
+  "description": "NightList backend — NestJS REST API + domain modules + Supabase migrations",
   "main": "./dist/main.js",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -10,7 +10,13 @@
     "start": "node dist/main.js",
     "lint": "eslint src test",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:diff": "supabase db diff -f",
+    "db:push": "supabase db push",
+    "db:types": "supabase gen types typescript --local > src/database.types.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.2.6",
@@ -19,7 +25,6 @@
     "@nestjs/platform-express": "^11.2.6",
     "@nestjs/swagger": "^11.4.7",
     "@nestjs/throttler": "^6.7.1",
-    "@nightlist/services": "workspace:*",
     "@nightlist/types": "workspace:*",
     "@nightlist/utils": "workspace:*",
     "jose": "^6.2.12",
@@ -35,6 +40,7 @@
     "@types/express": "^5.0.6",
     "@types/node": "^22.0.0",
     "@types/supertest": "^7.2.1",
+    "supabase": "^2.40.0",
     "supertest": "^7.3.0",
     "typescript": "~5.9.3",
     "unplugin-swc": "^2.0.0",

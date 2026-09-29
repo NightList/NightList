@@ -45,8 +45,8 @@
 ```bash
 pnpm install
 cp .env.example .env                 # ใส่ค่า Supabase หลัง db:start
-pnpm --filter @nightlist/database db:start   # Supabase local (Studio :54323)
-pnpm dev                             # web :5173 · admin :5174 · (api: pnpm --filter @nightlist/api dev → :3000/docs)
+pnpm --filter @nightlist/backend db:start   # Supabase local (Studio :54323)
+pnpm dev                             # frontend :5173 · admin :5174 · (api: pnpm --filter @nightlist/backend dev → :3000/docs)
 ```
 
 | คำสั่ง | ทำอะไร |
@@ -55,7 +55,7 @@ pnpm dev                             # web :5173 · admin :5174 · (api: pnpm --
 | `pnpm build` | build ทุก package |
 | `pnpm test` | unit test (utils, ui tokens) + API e2e |
 | `pnpm lint` / `pnpm typecheck` | ตรวจโค้ด |
-| `pnpm --filter @nightlist/web dev` | รันแอปเดียว |
+| `pnpm --filter @nightlist/frontend dev` | รันแอปเดียว |
 
 ## 🧱 Tech Stack
 
@@ -75,25 +75,22 @@ pnpm dev                             # web :5173 · admin :5174 · (api: pnpm --
 ```
 night-list/
 ├── apps/
-│   ├── web/          # React — ลูกค้า + ร้าน (/merchant) + Staff Scanner (PWA)
-│   └── admin/        # React + antd Pro — Backoffice ทีม NightList
+│   ├── frontend/     # React — ลูกค้า + ร้าน (/merchant) + Staff Scanner (PWA)
+│   ├── admin/        # React + antd Pro — Backoffice ทีม NightList
+│   └── backend/      # NestJS API: src/ (controllers) · src/modules/ (business logic) · supabase/ (migrations, RLS, seed)
 ├── packages/
 │   ├── ui/           # antd theme + Tailwind preset (Midnight Gold)
 │   ├── mock/         # โหมดเดโม: ข้อมูลสมมติ + store ในเบราว์เซอร์
 │   ├── types/        # TypeScript types + Zod schemas
 │   ├── config/       # eslint, tsconfig, tailwind preset
 │   └── utils/        # price/star calculator, status transitions
-├── backend/
-│   ├── api/          # NestJS app (controllers, guards)
-│   ├── services/     # NestJS domain modules + jobs
-│   └── database/     # Supabase migrations, RLS, seed
 ├── infra/terraform/  # Vercel + Supabase (dev/staging/prod)
 └── docs/
     ├── PROMPT.md       # สเปคเต็ม + prompt สำหรับ AI
     ├── ARCHITECTURE.md # สถาปัตยกรรมระบบ
     └── SITEMAP.md      # รายชื่อหน้าและ route
 CLAUDE.md             # กติกาสำหรับ Claude (branch, commit, skills)
-.claude/skills/       # Agent skills: ant-design, antd
+.claude/skills/       # Agent skills: ant-design, antd, frontend-design, animate ฯลฯ
 ```
 
 ## 🎨 ดีไซน์

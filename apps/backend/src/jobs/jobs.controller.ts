@@ -1,10 +1,10 @@
 import { Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
-import { NotificationService } from '@nightlist/services';
+import { NotificationService } from '../modules/notification/notification.service';
 import { JobSecretGuard } from './job-secret.guard';
 
-/** Endpoint ที่ pg_cron + pg_net เรียกตามรอบ (ดู backend/database/supabase/migrations) */
+/** Endpoint ที่ pg_cron + pg_net เรียกตามรอบ (ดู apps/backend/supabase/migrations) */
 @ApiExcludeController()
 @SkipThrottle()
 @UseGuards(JobSecretGuard)

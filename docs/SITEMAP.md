@@ -49,11 +49,11 @@ flowchart TD
 
 **Access:** 🌐 ทุกคน · 👤 ลูกค้าที่ล็อกอิน · 🏪 เจ้าของร้าน · 🧑‍🍳 Staff · 🛡️ Admin
 
-> ทุกหน้าใน `apps/web` ต้องผ่าน **Age Gate 20+** ก่อน (แสดงเป็น modal ครั้งแรกที่เข้า) ยกเว้น `/terms`, `/privacy` และ `/cookies`
+> ทุกหน้าใน `apps/frontend` ต้องผ่าน **Age Gate 20+** ก่อน (แสดงเป็น modal ครั้งแรกที่เข้า) ยกเว้น `/terms`, `/privacy` และ `/cookies`
 
 ---
 
-## 2. apps/web — ลูกค้า
+## 2. apps/frontend — ลูกค้า
 
 ### สาธารณะ
 | Path | หน้า | Access | ส่วนประกอบหลัก | Figma |
@@ -94,7 +94,7 @@ flowchart TD
 
 ---
 
-## 3. apps/web — ร้าน (`/merchant`)
+## 3. apps/frontend — ร้าน (`/merchant`)
 
 | Path | หน้า | Access | ส่วนประกอบหลัก |
 |---|---|---|---|

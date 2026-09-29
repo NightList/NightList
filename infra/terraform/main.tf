@@ -22,10 +22,10 @@ module "web" {
   name              = "${local.name}-web"
   github_repo       = var.github_repo
   production_branch = var.production_branch
-  root_directory    = "apps/web"
+  root_directory    = "apps/frontend"
   framework         = "vite"
   output_directory  = "dist"
-  build_command     = "cd ../.. && pnpm turbo run build --filter=@nightlist/web"
+  build_command     = "cd ../.. && pnpm turbo run build --filter=@nightlist/frontend"
   domain            = local.web_domain
   env = {
     VITE_SUPABASE_URL      = { value = local.supabase_url, sensitive = false }
@@ -56,10 +56,10 @@ module "api" {
   name              = "${local.name}-api"
   github_repo       = var.github_repo
   production_branch = var.production_branch
-  root_directory    = "backend/api"
+  root_directory    = "apps/backend"
   framework         = null
   output_directory  = null
-  build_command     = "cd ../.. && pnpm turbo run build --filter=@nightlist/api"
+  build_command     = "cd ../.. && pnpm turbo run build --filter=@nightlist/backend"
   domain            = local.api_domain
   env = {
     NODE_ENV                  = { value = "production", sensitive = false }

@@ -2,17 +2,15 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD, APP_PIPE } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import {
-  BookingModule,
-  NotificationModule,
-  PricingModule,
-  RankingModule,
-} from '@nightlist/services';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { validateEnv } from './config/env';
 import { HealthController } from './health/health.controller';
 import { JobsController } from './jobs/jobs.controller';
-import { PricingController } from './pricing/pricing.controller';
+import { BookingModule } from './modules/booking/booking.module';
+import { NotificationModule } from './modules/notification/notification.module';
+import { PricingController } from './modules/pricing/pricing.controller';
+import { PricingModule } from './modules/pricing/pricing.module';
+import { RankingModule } from './modules/ranking/ranking.module';
 
 @Module({
   imports: [
