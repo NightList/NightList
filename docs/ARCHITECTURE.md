@@ -1,6 +1,6 @@
 # NightList — Architecture
 
-> สถานะ: **Draft v0.3** · ใช้คู่กับ [`PROMPT.md`](PROMPT.md) (สเปค) และ [`SITEMAP.md`](SITEMAP.md) (หน้าเว็บ)
+> สถานะ: **Draft v0.4** · ใช้คู่กับ [`PROMPT.md`](PROMPT.md) (สเปค) และ [`SITEMAP.md`](SITEMAP.md) (หน้าเว็บ)
 
 ## 1. ภาพรวมระบบ
 
@@ -89,25 +89,36 @@ flowchart LR
 - สีทั้งหมดมาจาก `packages/ui/tokens.ts` ไฟล์เดียว แล้วสร้างทั้ง **antd theme** และ **Tailwind CSS variables** จากไฟล์นี้
 - ห้าม override `.ant-*` แบบ global ให้ใช้ token → component token → `classNames` / `styles` ตามลำดับ
 
-### โครงภายในแอป (feature-based)
+### โครงภายในแอป (module-based — อิงโครง [thirddeity/pre-project](https://github.com/thirddeity/pre-project))
+ทั้ง `apps/web` และ `apps/admin` จัดโฟลเดอร์แบบเดียวกัน — หาไฟล์ของหน้าไหนก็เปิด `modules/<ชื่อหน้า>/page.tsx`
 ```
 apps/web/src/
-├── app/            # providers (Theme, antd ConfigProvider, QueryClient, Auth), router
-├── routes/         # 1 ไฟล์ต่อ 1 หน้า (ตาม SITEMAP.md) — บาง, แค่ประกอบ feature
-├── features/
-│   ├── ranking/    # components/ hooks/ api.ts
-│   ├── search/
-│   ├── bar-detail/
-│   ├── booking/
-│   ├── deposit/
-│   ├── checkin/
-│   ├── review/
-│   ├── favorite/
-│   ├── auth/
-│   └── merchant/   # dashboard, tonight, menu, tables, promote ...
-├── shared/         # components ที่ใช้ข้าม feature, hooks, lib/api-client.ts
-└── main.tsx
+├── main.tsx              # จุดเริ่ม: render <App />
+├── App.tsx               # providers: Theme → React Query → Auth → Router
+├── configs/              # ค่าตั้งกลาง (dayjs, query, interval ของเดโม)
+├── router/
+│   ├── index.tsx         # route ทั้งหมด (ตาม SITEMAP.md)
+│   └── middleware.tsx    # RequireAuth / RequireRole (layout route guard)
+├── layouts/              # main.tsx (floating island navbar) · auth.tsx (login 2) · merchant.tsx
+├── modules/              # 1 โฟลเดอร์ = 1 หน้า (camelCase) → page.tsx
+│   ├── home/
+│   │   ├── page.tsx
+│   │   ├── components/   # ใช้เฉพาะหน้านี้ (hero.tsx, categoryRow.tsx)
+│   │   └── type/         # type ของหน้านี้
+│   ├── login/ register/ forgotPassword/ resetPassword/ verifyEmail/ acceptInvite/
+│   ├── ranking/ search/ barDetail/ barReviews/ book/ bookings/ bookingDetail/ deposit/ ...
+│   └── merchant/<ชื่อหน้า>/page.tsx   # dashboard, tonight, bookings, deposits, store, menu ...
+├── hooks/                # custom hooks ใช้ข้ามหน้า (useDemo, useNow, useScrolled, useMerchantBar)
+├── services/             # auth.tsx (AuthProvider/useAuth), supabase.ts, api.ts
+├── ui/
+│   ├── components/       # component ใช้ข้ามหน้า (navbar, barCard, authCard, pageHeader ...)
+│   └── utils/            # format.ts ฯลฯ
+└── styles/index.css      # Tailwind + @layer + class ตกแต่งเล็กน้อย
 ```
+- กติกา: ของที่ใช้ **หน้าเดียว** อยู่ใน `modules/<หน้า>/components|type|form|modal|utils` · ใช้ **หลายหน้า** ย้ายไป `ui/` หรือ `hooks/`
+- ชื่อไฟล์ component เป็น camelCase (`barCard.tsx`) ส่วน export เป็น PascalCase (`BarCard`)
+- รูป/วิดีโอใน `public/images/<module>/` และ `public/videos/`
+- `@nightlist/*` ใน dev ถูก alias ไปที่ `packages/*/src` (vite.config.ts) — แก้ package แล้วเห็นผลทันที ไม่ต้องรอ build
 - **API client** สร้างจาก OpenAPI ของ NestJS (`openapi-typescript`) เพื่อให้ type ตรงกับ backend เสมอ
 - **Guard ของ route** (`RequireAuth`, `RequireRole`) ห่อที่ระดับ layout route ใน React Router
 
