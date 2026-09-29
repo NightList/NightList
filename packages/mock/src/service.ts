@@ -100,6 +100,51 @@ export function tierList(
   return out;
 }
 
+export type RankingPeriod = 'WEEK' | 'MONTH';
+
+export interface RankedBar extends BarWithTier {
+  rank: number;
+  /** โหวตจากคนที่เช็กอินจริงในช่วงนั้น */
+  votes: number;
+}
+
+/** เลข ISO week ของวันที่ — ใช้เป็น seed ให้อันดับรายสัปดาห์เปลี่ยนทุกสัปดาห์ */
+function isoWeek(d: Date): string {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - day);
+  const y = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  return `${t.getUTCFullYear()}-W${Math.ceil(((t.getTime() - y.getTime()) / 86_400_000 + 1) / 7)}`;
+}
+
+function hash(str: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
+  return (h >>> 0) / 4294967296;
+}
+
+/**
+ * อันดับรายสัปดาห์ / รายเดือน ตามจำนวนโหวต (เดโม: คำนวณจากคะแนนร้าน + สุ่มแบบคงที่ต่อช่วงเวลา)
+ * ของจริง: นับจากตาราง votes ที่ผูกกับ booking ที่เช็กอินแล้วในช่วงนั้น
+ */
+export function rankingByPeriod(
+  period: RankingPeriod,
+  category: BarCategory | 'ALL' = 'ALL',
+  now = new Date(),
+): RankedBar[] {
+  const key = period === 'WEEK' ? isoWeek(now) : `${now.getFullYear()}-${now.getMonth() + 1}`;
+  const scale = period === 'WEEK' ? 6 : 24;
+  return listBars({ category })
+    .filter((b) => !b.isNew)
+    .map((b) => ({
+      ...b,
+      rank: 0,
+      votes: Math.round((b.score * 0.9 + hash(`${key}:${b.id}`) * 38) * scale),
+    }))
+    .sort((a, b) => b.votes - a.votes)
+    .map((b, i) => ({ ...b, rank: i + 1 }));
+}
+
 export function updateBar(id: string, patch: Partial<Bar>, actor = 'merchant'): void {
   mutate((s) => {
     const b = s.bars.find((x) => x.id === id);

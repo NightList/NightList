@@ -34,7 +34,7 @@ const routes: RouteObject[] = [
     children: [
       // ---- สาธารณะ ----
       { index: true, element: <HomePage /> },
-      { path: 'ranking', lazy: () => import('@/modules/ranking/page').then((m) => ({ Component: m.RankingPage })) },
+      { path: 'ranking', handle: { fullBleed: true }, lazy: () => import('@/modules/ranking/page').then((m) => ({ Component: m.RankingPage })) },
       { path: 'search', lazy: () => import('@/modules/search/page').then((m) => ({ Component: m.SearchPage })) },
       { path: 'bars/:slug', lazy: () => import('@/modules/barDetail/page').then((m) => ({ Component: m.BarDetailPage })) },
       { path: 'bars/:slug/reviews', lazy: () => import('@/modules/barReviews/page').then((m) => ({ Component: m.BarReviewsPage })) },
@@ -93,7 +93,7 @@ const routes: RouteObject[] = [
       },
       {
         path: '*',
-        handle: { fullBleed: true },
+        handle: { fullBleed: true, hideFooter: true },
         lazy: () => import('@/modules/notFound/page').then((m) => ({ Component: m.NotFoundPage })),
       },
     ],

@@ -18,7 +18,9 @@ export function MainLayout() {
   const { pathname } = useLocation();
   const isHome = pathname === '/';
   // หน้าที่วาดเต็มจอเอง (ภาพพื้นหลังเต็มจอ + navbar ใส) ตั้ง handle: { fullBleed: true } ใน router
-  const fullBleed = useMatches().some((m) => (m.handle as { fullBleed?: boolean } | undefined)?.fullBleed);
+  const handles = useMatches().map((m) => (m.handle ?? {}) as { fullBleed?: boolean; hideFooter?: boolean });
+  const fullBleed = handles.some((h) => h.fullBleed);
+  const hideFooter = handles.some((h) => h.hideFooter);
   const bleed = isHome || fullBleed;
   const isShop = user?.role === 'MERCHANT' || user?.role === 'STAFF';
   const items: NavItem[] = [...NAV, ...(isShop ? [{ to: '/merchant', label: 'ร้านของฉัน' }] : [])];
@@ -33,7 +35,7 @@ export function MainLayout() {
       </header>
 
       {bleed ? (
-        <main className={`flex-1 ${fullBleed ? '' : 'pb-24 md:pb-0'}`}>
+        <main className={`flex-1 ${hideFooter ? '' : fullBleed ? '' : 'pb-24 md:pb-0'}`}>
           <Outlet />
         </main>
       ) : (
@@ -42,7 +44,7 @@ export function MainLayout() {
         </main>
       )}
 
-      <footer className={`relative hidden overflow-hidden border-t border-border ${fullBleed ? '' : 'md:block'}`}>
+      <footer className={`relative hidden overflow-hidden border-t border-border ${hideFooter ? '' : 'md:block'}`}>
         <img
           src="/images/home/city-strip.jpg"
           alt=""
