@@ -1,11 +1,11 @@
 import type { BarWithTier } from '@nightlist/mock';
 import { divIcon, type LatLngBoundsExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
+import { MapContainer, Marker, Popup, useMap } from 'react-leaflet';
 import { Link } from 'react-router';
 import { useEffect } from 'react';
 import { useThemeMode } from '@nightlist/ui';
-import { MAP_ATTRIBUTION, MAP_TILES, tileClass } from '@/ui/utils/mapTiles';
+import { MapBaseLayer } from './mapBaseLayer';
 
 /** หมุดทอง (ไม่ใช้รูป marker ของ Leaflet — bundler จัดการ path รูปยาก) */
 const pin = (label?: string) =>
@@ -57,11 +57,7 @@ export function BarMap({
         dragging={interactive}
         className="size-full"
       >
-        <TileLayer
-          url={MAP_TILES[resolved]}
-          attribution={MAP_ATTRIBUTION}
-          className={tileClass(resolved)}
-        />
+        <MapBaseLayer theme={resolved} />
         <FitBounds bounds={bounds} />
         {bars.map((b) => (
           <Marker key={b.id} position={[b.lat, b.lng]} icon={pin()}>

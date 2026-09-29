@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ant-design/cssinjs": "^2.1.2",
+    "@maplibre/maplibre-gl-leaflet": "^0.1.4",
     "@nightlist/mock": "workspace:*",
     "@nightlist/types": "workspace:*",
     "@nightlist/ui": "workspace:*",
@@ -22,6 +23,7 @@
     "antd": "^6.6.5",
     "dayjs": "^1.11.23",
     "leaflet": "^1.9.4",
+    "maplibre-gl": "^6.11.2",
     "motion": "^13.4.4",
     "qrcode.react": "^4.2.0",
     "react": "^19.3.0",

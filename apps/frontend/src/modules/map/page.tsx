@@ -17,7 +17,7 @@ import type { Map as LeafletMap } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useEffect, useMemo, useState } from 'react';
-import { MapContainer, Marker, TileLayer, useMapEvents } from 'react-leaflet';
+import { MapContainer, Marker, useMapEvents } from 'react-leaflet';
 import { Link, useNavigate } from 'react-router';
 import { useDemo } from '@/hooks/useDemo';
 import { BarRating } from '@/ui/components/barRating';
@@ -26,7 +26,7 @@ import { CrowdBadge } from '@/ui/components/crowdBadge';
 import { PRBadge } from '@/ui/components/prBadge';
 import { baht } from '@/ui/utils/format';
 import { barImage } from '@/ui/utils/barImage';
-import { MAP_ATTRIBUTION, MAP_TILES, tileClass } from '@/ui/utils/mapTiles';
+import { MapBaseLayer } from '@/ui/components/mapBaseLayer';
 import { barPin, meIcon } from './components/barPin';
 
 const BANGKOK: [number, number] = [13.745, 100.56];
@@ -96,13 +96,7 @@ export function MapPage() {
         ref={setMap}
         className="size-full"
       >
-        <TileLayer
-          key={resolved}
-          url={MAP_TILES[resolved]}
-          attribution={MAP_ATTRIBUTION}
-          className={tileClass(resolved)}
-          maxZoom={19}
-        />
+        <MapBaseLayer theme={resolved} />
         <ClearOnMapClick onClear={() => setSelectedId(null)} />
         {bars.map((b) => (
           <Marker
