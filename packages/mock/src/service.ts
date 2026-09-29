@@ -128,10 +128,10 @@ export function currentUser(): DemoUser | null {
   return id ? (getState().users.find((u) => u.id === id) ?? null) : null;
 }
 
-export function demoLogin(email: string): DemoUser {
+export function demoLogin(email: string, remember = true): DemoUser {
   const user = getState().users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
   if (!user) throw new Error('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
-  setSessionUserId(user.id);
+  setSessionUserId(user.id, remember);
   return user;
 }
 

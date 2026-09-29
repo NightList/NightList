@@ -10,9 +10,10 @@ let version = 0;
 const listeners = new Set<Listener>();
 const memory = new Map<string, string>();
 
-function storage() {
+function storage(kind: 'local' | 'session' = 'local') {
   try {
-    if (typeof localStorage !== 'undefined') return localStorage;
+    if (kind === 'local' && typeof localStorage !== 'undefined') return localStorage;
+    if (kind === 'session' && typeof sessionStorage !== 'undefined') return sessionStorage;
   } catch {
     /* blocked */
   }
@@ -83,12 +84,14 @@ export function resetDemo(): void {
 }
 
 export function getSessionUserId(): string | null {
-  return storage().getItem(SESSION_KEY);
+  return storage('session').getItem(SESSION_KEY) ?? storage().getItem(SESSION_KEY);
 }
 
-export function setSessionUserId(id: string | null): void {
-  if (id) storage().setItem(SESSION_KEY, id);
-  else storage().removeItem(SESSION_KEY);
+/** remember = false → เก็บแค่ใน tab นี้ (sessionStorage) ปิดเบราว์เซอร์แล้วหลุด */
+export function setSessionUserId(id: string | null, remember = true): void {
+  storage().removeItem(SESSION_KEY);
+  storage('session').removeItem(SESSION_KEY);
+  if (id) storage(remember ? 'local' : 'session').setItem(SESSION_KEY, id);
   version++;
   listeners.forEach((l) => l());
 }
