@@ -6,14 +6,30 @@
       "framework": "vite",
       "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
       "buildCommand": "cd ../.. && pnpm turbo run build --filter=@nightlist/frontend",
-      "outputDirectory": "dist"
+      "outputDirectory": "dist",
+      "rewrites": [
+        {
+          "source": "/(.*)",
+          "destination": "/index.html"
+        }
+      ]
     },
     "admin": {
       "root": "apps/admin",
       "framework": "vite",
       "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
       "buildCommand": "cd ../.. && pnpm turbo run build --filter=@nightlist/admin",
-      "outputDirectory": "dist"
+      "outputDirectory": "dist",
+      "rewrites": [
+        {
+          "source": "/admin/(.*\\.[a-zA-Z0-9]+)",
+          "destination": "/$1"
+        },
+        {
+          "source": "/(.*)",
+          "destination": "/index.html"
+        }
+      ]
     },
     "backend": {
       "root": "apps/backend",
@@ -24,8 +40,29 @@
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": { "service": "backend" } },
-    { "source": "/admin/(.*)", "destination": { "service": "admin" } },
-    { "source": "/(.*)", "destination": { "service": "frontend" } }
+    {
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "backend"
+      }
+    },
+    {
+      "source": "/admin",
+      "destination": {
+        "service": "admin"
+      }
+    },
+    {
+      "source": "/admin/(.*)",
+      "destination": {
+        "service": "admin"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "frontend"
+      }
+    }
   ]
 }
