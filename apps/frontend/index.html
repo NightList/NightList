@@ -28,7 +28,7 @@
   <script>
     (function () {
       try {
-        var m = localStorage.getItem('nightlist-theme') || 'SYSTEM';
+        var m = localStorage.getItem('nightlist-theme') || 'DARK';
         var dark =
           m === 'DARK' ||
           (m === 'SYSTEM' && (!window.matchMedia || window.matchMedia('(prefers-color-scheme: dark)').matches));

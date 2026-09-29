@@ -36,7 +36,7 @@ function readStoredMode(): ThemeMode {
   } catch {
     /* storage ถูกปิด */
   }
-  return 'SYSTEM';
+  return 'DARK';
 }
 
 function systemPrefersDark(): boolean {
