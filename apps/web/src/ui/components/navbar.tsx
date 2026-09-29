@@ -90,7 +90,12 @@ export function Navbar({ items }: { items: NavItem[] }) {
         {user && (
           <Link to="/notifications">
             <Badge count={unread} size="small" offset={[-4, 4]}>
-              <Button type="text" shape="circle" aria-label={`แจ้งเตือน ${unread} รายการ`} icon={<Bell size={20} />} />
+              <Button
+                type="text"
+                shape="circle"
+                aria-label={`แจ้งเตือน ${unread} รายการ`}
+                icon={<Bell size={20} />}
+              />
             </Badge>
           </Link>
         )}
@@ -118,7 +123,9 @@ export function BottomIsland({ items }: { items: NavItem[] }) {
       aria-label="เมนูล่าง"
       className="fixed inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 flex justify-center px-3 md:hidden"
     >
-      <div className={`flex w-full max-w-md items-center justify-between rounded-full p-1.5 ${ISLAND}`}>
+      <div
+        className={`flex w-full max-w-md items-center justify-between rounded-full p-1.5 ${ISLAND}`}
+      >
         {items.map((n) => (
           <NavLink
             key={n.to}

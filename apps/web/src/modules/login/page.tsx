@@ -74,8 +74,16 @@ export function LoginPage() {
         >
           <Input aria-label="อีเมล" placeholder="อีเมล" autoComplete="email" inputMode="email" />
         </Form.Item>
-        <Form.Item name="password" className="!mb-4" rules={[{ required: true, message: 'กรอกรหัสผ่าน' }]}>
-          <Input.Password aria-label="รหัสผ่าน" placeholder="รหัสผ่าน" autoComplete="current-password" />
+        <Form.Item
+          name="password"
+          className="!mb-4"
+          rules={[{ required: true, message: 'กรอกรหัสผ่าน' }]}
+        >
+          <Input.Password
+            aria-label="รหัสผ่าน"
+            placeholder="รหัสผ่าน"
+            autoComplete="current-password"
+          />
         </Form.Item>
 
         <div className="mb-6 flex items-center justify-between">
@@ -87,13 +95,7 @@ export function LoginPage() {
           </Link>
         </div>
 
-        <Button
-          type="primary"
-          htmlType="submit"
-          block
-          loading={loading}
-          className="btn-auth"
-        >
+        <Button type="primary" htmlType="submit" block loading={loading} className="btn-auth">
           เข้าสู่ระบบ
         </Button>
       </Form>

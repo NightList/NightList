@@ -1,5 +1,4 @@
 import { barBookings } from '@nightlist/mock';
-import { StarRating, TierBadge } from '@nightlist/ui';
 import { Button, Card, Col, Row, Statistic, Table } from 'antd';
 import { Link } from 'react-router';
 import { BookingStatusTag } from '@/ui/components/bookingStatusTag';
@@ -7,6 +6,7 @@ import { CrowdBadge } from '@/ui/components/crowdBadge';
 import { PageHeader } from '@/ui/components/pageHeader';
 import { dateTime } from '@/ui/utils/format';
 import { useMerchantBar } from '@/hooks/useMerchantBar';
+import { BarRating } from '@/ui/components/barRating';
 
 export function MerchantDashboardPage() {
   const bar = useMerchantBar();
@@ -53,11 +53,8 @@ export function MerchantDashboardPage() {
         </Col>
         <Col xs={12} md={6}>
           <Card>
-            <p className="mb-1 text-sm text-muted">ดาว / Tier</p>
-            <div className="flex items-center gap-2">
-              {bar.tier && <TierBadge tier={bar.tier} />}
-              <StarRating value={bar.rating} size={14} />
-            </div>
+            <p className="mb-1 text-sm text-muted">ระดับร้าน</p>
+            <BarRating bar={bar} compact />
           </Card>
         </Col>
       </Row>

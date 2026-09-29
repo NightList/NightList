@@ -1,8 +1,8 @@
 import { ArrowRight } from '@phosphor-icons/react';
 import { safetyScore, type BarWithTier } from '@nightlist/mock';
-import { StarRating, TierBadge } from '@nightlist/ui';
 import { Link } from 'react-router';
 import { baht } from '@/ui/utils/format';
+import { BarRating } from './barRating';
 import { CrowdBadge } from './crowdBadge';
 import { FavoriteButton } from './favoriteButton';
 
@@ -25,7 +25,7 @@ export function BarCover({
 
 /**
  * การ์ดร้าน (Figma: Material → Card ร้าน)
- * รูปมีขอบใน · Tier · ชื่อ · ดาว + ย่าน · ปุ่มขอบทอง "ดูรายละเอียด"
+ * รูปมีขอบใน · สถานะคน · ชื่อ · ดาว (ระดับร้าน) + ย่าน · ปุ่มขอบทอง "ดูรายละเอียด"
  * ทั้งการ์ดเป็นลิงก์เดียว — ปุ่มหัวใจหยุด event เอง
  */
 export function BarCard({ bar }: { bar: BarWithTier }) {
@@ -36,7 +36,10 @@ export function BarCard({ bar }: { bar: BarWithTier }) {
     >
       <div className="relative">
         <BarCover bar={bar} className="aspect-[16/10] rounded-xl" />
-        <FavoriteButton barId={bar.id} className="!absolute right-2.5 top-2.5 !border-0 !bg-black/40 !text-white backdrop-blur" />
+        <FavoriteButton
+          barId={bar.id}
+          className="!absolute right-2.5 top-2.5 !border-0 !bg-black/40 !text-white backdrop-blur"
+        />
         {bar.promoted && (
           <span className="absolute left-2.5 top-2.5 rounded-full bg-black/55 px-2.5 py-0.5 text-xs text-gold-highlight backdrop-blur">
             แนะนำ · โฆษณา
@@ -46,16 +49,11 @@ export function BarCard({ bar }: { bar: BarWithTier }) {
 
       <div className="flex flex-1 flex-col px-1.5 pb-1 pt-4">
         <div className="mb-1.5 flex items-center gap-2">
-          {bar.tier ? (
-            <TierBadge tier={bar.tier} />
-          ) : (
-            <span className="rounded-md bg-purple/20 px-1.5 py-0.5 text-xs text-link">ร้านใหม่</span>
-          )}
           <CrowdBadge crowd={bar.crowd} updatedAt={bar.crowdUpdatedAt} />
         </div>
         <h3 className="text-lg font-semibold">{bar.name}</h3>
         <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-sm text-muted">
-          {bar.isNew ? <span>ยังมีรีวิวไม่พอให้ดาว</span> : <StarRating value={bar.rating} reviewCount={bar.reviewCount} size={14} />}
+          <BarRating bar={bar} compact />
           <span aria-hidden>•</span>
           <span>{bar.district}</span>
         </p>
