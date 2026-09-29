@@ -4,7 +4,7 @@ import { useReducedMotion } from 'motion/react';
 import { useNavigate } from 'react-router';
 
 /**
- * Hero — วิดีโอเมืองกลางคืนวนลูปเต็มจอ (public/videos/hero.*)
+ * Hero — วิดีโอเมืองกลางคืนวนลูปเต็มจอ (public/videos/hero.mp4 — H.264 720p ไฟล์เดียว ~0.8MB)
  * ข้อความวางมุมล่างซ้าย ไล่เฉดลงสีพื้นหลัง ให้ต่อกับเนื้อหาด้านล่างแบบไร้รอยต่อ
  * prefers-reduced-motion → แสดงภาพนิ่ง (poster) แทนวิดีโอ
  */
@@ -18,6 +18,7 @@ export function Hero() {
         <img
           src="/images/home/hero-poster.jpg"
           alt=""
+          fetchPriority="high"
           className="absolute inset-0 -z-10 size-full object-cover"
         />
       ) : (
@@ -27,11 +28,10 @@ export function Hero() {
           muted
           loop
           playsInline
-          preload="auto"
+          preload="metadata"
           poster="/images/home/hero-poster.jpg"
           aria-hidden
         >
-          <source src="/videos/hero.webm" type="video/webm" />
           <source src="/videos/hero.mp4" type="video/mp4" />
         </video>
       )}

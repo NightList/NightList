@@ -140,15 +140,26 @@ export function CategoryRow() {
   const [halfWidth, setHalfWidth] = useState(0);
 
   // ความกว้างของชุดการ์ดแรก = จุดที่ต้องวนกลับ
+  // วัดใหม่ทุกครั้งที่แถวเปลี่ยนขนาด (ฟอนต์ไทยโหลดเสร็จช้ากว่า React render → ค่าแรกอาจเป็น 0/ผิด
+  // แล้วการ์ดจะเลื่อนหลุดจอเหลือแค่ไม่กี่ใบ) — ResizeObserver จับได้ทั้ง resize และฟอนต์มาทีหลัง
   useEffect(() => {
-    const measure = () => {
-      const el = trackRef.current;
-      if (el) setHalfWidth(el.scrollWidth / 2);
-    };
+    const el = trackRef.current;
+    if (!el) return;
+    const measure = () => setHalfWidth(el.scrollWidth / 2);
     measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    document.fonts?.ready.then(measure).catch(() => {});
+    return () => ro.disconnect();
   }, []);
+
+  // halfWidth เปลี่ยน (เช่นฟอนต์มา) → ดึง x กลับเข้าช่วงที่ถูกต้องทันที
+  useEffect(() => {
+    if (halfWidth <= 0) return;
+    let n = x.get() % halfWidth;
+    if (n > 0) n -= halfWidth;
+    x.set(n);
+  }, [halfWidth, x]);
 
   const stopScroll = useCallback(() => {
     animRef.current?.stop();
@@ -210,7 +221,7 @@ export function CategoryRow() {
   /** ล้อเมาส์แนวตั้ง → เลื่อนแนวนอน · แทร็กแพดปัดซ้ายขวาก็ใช้ได้ */
   const onWheel = (e: WheelEvent<HTMLDivElement>) => {
     const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-    if (delta === 0) return;
+    if (delta === 0 || halfWidth <= 0) return; // ยังวัดความกว้างไม่ได้ → ห้ามเลื่อน (กันหลุดขอบ)
     e.preventDefault();
     nudge(-delta, false);
   };
