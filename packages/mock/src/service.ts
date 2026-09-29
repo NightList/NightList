@@ -1,7 +1,6 @@
 import type { BarCategory, BookingStatus, CrowdStatus, Tier } from '@nightlist/types';
 import {
   canTransition,
-  estimatePrice,
   HOLDING_STATUSES,
   isNewBar,
   scoreToStars,
@@ -10,9 +9,11 @@ import {
 import type {
   AppNotification,
   Bar,
+  BarPromotion,
   BarWithTier,
   Booking,
   DemoUser,
+  DepositSettlement,
   PromotionOrder,
   Review,
 } from './models';
@@ -44,6 +45,8 @@ export interface BarFilter {
   maxBudget?: number;
   crowd?: CrowdStatus[];
   minSafety?: number;
+  /** ร้านที่มี PR (ชายหรือหญิงอย่างน้อย 1 คน) */
+  hasPR?: boolean;
   sort?: 'relevance' | 'rating' | 'price' | 'safety';
 }
 
@@ -57,6 +60,7 @@ export function listBars(filter: BarFilter = {}): BarWithTier[] {
     .filter((b) => !filter.maxBudget || b.avgPerPerson <= filter.maxBudget)
     .filter((b) => !filter.crowd?.length || filter.crowd.includes(b.crowd))
     .filter((b) => !filter.minSafety || safetyScore(b) >= filter.minSafety)
+    .filter((b) => !filter.hasPR || b.pr.male + b.pr.female > 0)
     .filter(
       (b) =>
         !q ||
@@ -94,6 +98,51 @@ export function tierList(
   for (const b of listBars({ category, district, sort: 'rating' })) if (b.tier) out[b.tier].push(b);
   (Object.keys(out) as Tier[]).forEach((t) => out[t].sort((a, b) => b.score - a.score));
   return out;
+}
+
+export type RankingPeriod = 'WEEK' | 'MONTH';
+
+export interface RankedBar extends BarWithTier {
+  rank: number;
+  /** โหวตจากคนที่เช็กอินจริงในช่วงนั้น */
+  votes: number;
+}
+
+/** เลข ISO week ของวันที่ — ใช้เป็น seed ให้อันดับรายสัปดาห์เปลี่ยนทุกสัปดาห์ */
+function isoWeek(d: Date): string {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - day);
+  const y = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  return `${t.getUTCFullYear()}-W${Math.ceil(((t.getTime() - y.getTime()) / 86_400_000 + 1) / 7)}`;
+}
+
+function hash(str: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
+  return (h >>> 0) / 4294967296;
+}
+
+/**
+ * อันดับรายสัปดาห์ / รายเดือน ตามจำนวนโหวต (เดโม: คำนวณจากคะแนนร้าน + สุ่มแบบคงที่ต่อช่วงเวลา)
+ * ของจริง: นับจากตาราง votes ที่ผูกกับ booking ที่เช็กอินแล้วในช่วงนั้น
+ */
+export function rankingByPeriod(
+  period: RankingPeriod,
+  category: BarCategory | 'ALL' = 'ALL',
+  now = new Date(),
+): RankedBar[] {
+  const key = period === 'WEEK' ? isoWeek(now) : `${now.getFullYear()}-${now.getMonth() + 1}`;
+  const scale = period === 'WEEK' ? 6 : 24;
+  return listBars({ category })
+    .filter((b) => !b.isNew)
+    .map((b) => ({
+      ...b,
+      rank: 0,
+      votes: Math.round((b.score * 0.9 + hash(`${key}:${b.id}`) * 38) * scale),
+    }))
+    .sort((a, b) => b.votes - a.votes)
+    .map((b, i) => ({ ...b, rank: i + 1 }));
 }
 
 export function updateBar(id: string, patch: Partial<Bar>, actor = 'merchant'): void {
@@ -198,6 +247,12 @@ function notify(userId: string, title: string, body: string, link?: string) {
   getState().notifications.unshift(n);
 }
 
+function adminIds(): string[] {
+  return getState()
+    .users.filter((u) => u.role === 'ADMIN')
+    .map((u) => u.id);
+}
+
 function merchantIdsOf(barId: string): string[] {
   return getState()
     .users.filter((u) => u.barId === barId)
@@ -209,9 +264,25 @@ export interface CreateBookingInput {
   zoneId: string;
   datetime: string;
   pax: number;
-  packageId?: string;
-  items: { menuItemId: string; quantity: number }[];
+  promotionId?: string;
   note?: string;
+}
+
+/** โปรโมชันนี้ใช้ได้กับเวลาจองนี้ไหม (วัน + ต้องเช็กอินก่อน cutoff) */
+export function promotionApplies(p: BarPromotion, datetime: string): boolean {
+  if (!p.active) return false;
+  const d = new Date(datetime);
+  if (p.days?.length && !p.days.includes(d.getDay())) return false;
+  if (p.cutoffTime) {
+    const [h, m] = p.cutoffTime.split(':').map(Number);
+    if (d.getHours() * 60 + d.getMinutes() > h! * 60 + m!) return false;
+  }
+  return true;
+}
+
+/** จำนวนมัดจำของการจองนี้ (ต่อโต๊ะ หรือ ต่อคน) */
+export function depositFor(bar: Bar, pax: number): number {
+  return bar.deposit.unit === 'PER_PERSON' ? bar.deposit.amount * pax : bar.deposit.amount;
 }
 
 export function createBooking(input: CreateBookingInput): Booking {
@@ -223,18 +294,11 @@ export function createBooking(input: CreateBookingInput): Booking {
   if (!slot || slot.full) throw new Error('โซนนี้เต็มแล้วในช่วงเวลานั้น ลองเลือกโซนหรือเวลาอื่น');
   const table = slot.freeTables.find((t) => t.seats >= input.pax) ?? slot.freeTables[0]!;
 
-  const pkg = bar.packages.find((p) => p.id === input.packageId);
-  const lines = [
-    ...(pkg ? [{ name: pkg.name, quantity: 1, unitPrice: pkg.totalPrice }] : []),
-    ...input.items
-      .filter((i) => i.quantity > 0)
-      .map((i) => {
-        const m = bar.menu.find((x) => x.id === i.menuItemId)!;
-        return { name: m.name, quantity: i.quantity, unitPrice: m.price };
-      }),
-  ];
-  const estimate = estimatePrice({ items: lines, fees: bar.fees, pax: input.pax });
-  const status: BookingStatus = bar.deposit.enabled ? 'AWAITING_DEPOSIT' : 'PENDING';
+  const promo = bar.promotions.find((p) => p.id === input.promotionId);
+  if (input.promotionId && (!promo || !promotionApplies(promo, input.datetime)))
+    throw new Error('โปรโมชันนี้ใช้กับเวลาที่เลือกไม่ได้');
+  // ทุกการจองต้องมัดจำ (เงินเข้าแพลตฟอร์มก่อน)
+  const status: BookingStatus = 'AWAITING_DEPOSIT';
   const booking: Booking = {
     id: uid('bk'),
     code: `NL-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
@@ -246,9 +310,8 @@ export function createBooking(input: CreateBookingInput): Booking {
     datetime: input.datetime,
     pax: input.pax,
     status,
-    packageId: pkg?.id,
-    items: lines,
-    estimate,
+    promotionId: promo?.id,
+    promotionTitle: promo?.title,
     note: input.note,
     createdAt: nowIso(),
     history: [{ from: null, to: status, by: user.displayName, at: nowIso() }],
@@ -309,6 +372,16 @@ export function transition(id: string, to: BookingStatus, actor: Actor, by: stri
     b.history.push({ from: b.status, to, by, at: nowIso() });
     b.status = to;
     if (to === 'CHECKED_IN') b.checkedInAt = nowIso();
+    // มัดจำที่แพลตฟอร์มถือไว้: มาใช้บริการ/ไม่มาตามนัด → เป็นของร้าน (รอโอน) · ยกเลิก → คืนลูกค้า
+    if (b.deposit?.settlement === 'HELD') {
+      if (to === 'CHECKED_IN' || to === 'NO_SHOW') {
+        b.deposit.settlement = 'PAYOUT_PENDING';
+        b.deposit.settledAt = nowIso();
+      } else if (to === 'CANCELLED_BY_CUSTOMER' || to === 'CANCELLED_BY_MERCHANT' || to === 'REJECTED') {
+        b.deposit.settlement = 'REFUNDED';
+        b.deposit.settledAt = nowIso();
+      }
+    }
     const bar = s.bars.find((x) => x.id === b.barId)!;
     const msg: Partial<Record<BookingStatus, string>> = {
       CONFIRMED: 'ร้านยืนยันการจองแล้ว',
@@ -331,30 +404,74 @@ export function submitDeposit(id: string, slipDataUrl: string): void {
   const bar = getBar(b.barId)!;
   mutate((s) => {
     const bk = s.bookings.find((x) => x.id === id)!;
-    bk.deposit = {
-      amount: bar.deposit.amount,
-      slipDataUrl,
-      status: 'SUBMITTED',
-      submittedAt: nowIso(),
-    };
+    const amount = depositFor(bar, bk.pax);
+    bk.deposit = { amount, slipDataUrl, status: 'SUBMITTED', submittedAt: nowIso() };
+    // เงินเข้าแพลตฟอร์ม → แอดมิน NightList เป็นคนตรวจสลิป ร้านแค่รับทราบ
+    adminIds().forEach((a) =>
+      notify(a, 'มีสลิปมัดจำรอตรวจ', `${bar.name} · ${bk.userName} · ${amount} บาท`, '/deposits'),
+    );
     merchantIdsOf(bar.id).forEach((m) =>
-      notify(
-        m,
-        'มีสลิปมัดจำรอตรวจ',
-        `${bk.userName} · ${bar.deposit.amount} บาท`,
-        '/merchant/deposits',
-      ),
+      notify(m, 'ลูกค้าโอนมัดจำแล้ว (รอ NightList ตรวจ)', `${bk.userName} · ${amount} บาท`, '/merchant/bookings'),
     );
   });
   transition(id, 'DEPOSIT_SUBMITTED', 'CUSTOMER', b.userName);
 }
 
+/** แอดมิน NightList ตรวจสลิป — ผ่าน = แพลตฟอร์มถือเงินไว้ (HELD) และยืนยันโต๊ะให้ */
 export function reviewDeposit(id: string, ok: boolean, by: string): void {
   mutate((s) => {
     const bk = s.bookings.find((x) => x.id === id);
-    if (bk?.deposit) bk.deposit.status = ok ? 'VERIFIED' : 'REJECTED';
+    if (bk?.deposit) {
+      bk.deposit.status = ok ? 'VERIFIED' : 'REJECTED';
+      if (ok) {
+        bk.deposit.verifiedAt = nowIso();
+        bk.deposit.settlement = 'HELD';
+      }
+    }
   });
-  transition(id, ok ? 'CONFIRMED' : 'AWAITING_DEPOSIT', 'MERCHANT', by);
+  transition(id, ok ? 'CONFIRMED' : 'AWAITING_DEPOSIT', 'ADMIN', by);
+}
+
+/** แอดมินจ่ายมัดจำที่ค้างให้ร้าน: โอนเข้าบัญชีร้าน หรือเก็บเป็นเครดิตในร้าน */
+export function settleDeposit(id: string, how: 'PAID_OUT' | 'CREDIT', by: string): void {
+  mutate((s) => {
+    const bk = s.bookings.find((x) => x.id === id);
+    if (!bk?.deposit || bk.deposit.settlement !== 'PAYOUT_PENDING') return;
+    bk.deposit.settlement = how;
+    bk.deposit.settledAt = nowIso();
+    s.audit.unshift({
+      id: uid('au'),
+      actor: by,
+      action: how === 'PAID_OUT' ? 'DEPOSIT_PAID_OUT' : 'DEPOSIT_CREDIT',
+      target: `${bk.code} · ${bk.deposit.amount} บาท`,
+      at: nowIso(),
+    });
+  });
+}
+
+/** สรุปเงินมัดจำของร้าน: ถือไว้ / รอโอน / โอนแล้ว / เครดิต */
+export function barLedger(barId: string) {
+  const rows = getState().bookings.filter((b) => b.barId === barId && b.deposit?.settlement);
+  const sum = (k: DepositSettlement) =>
+    rows.filter((b) => b.deposit!.settlement === k).reduce((a, b) => a + b.deposit!.amount, 0);
+  return {
+    rows: [...rows].sort((a, b) => b.datetime.localeCompare(a.datetime)),
+    held: sum('HELD'),
+    payoutPending: sum('PAYOUT_PENDING'),
+    paidOut: sum('PAID_OUT'),
+    credit: sum('CREDIT'),
+  };
+}
+
+/** มัดจำทั้งระบบ (แอดมิน): รอตรวจสลิป + รอโอนให้ร้าน */
+export function platformDeposits() {
+  const all = getState().bookings.filter((b) => b.deposit);
+  return {
+    toVerify: all.filter((b) => b.status === 'DEPOSIT_SUBMITTED'),
+    toPayout: all.filter((b) => b.deposit!.settlement === 'PAYOUT_PENDING'),
+    held: all.filter((b) => b.deposit!.settlement === 'HELD'),
+    settled: all.filter((b) => ['PAID_OUT', 'CREDIT', 'REFUNDED'].includes(b.deposit!.settlement!)),
+  };
 }
 
 /** Staff สแกน/กรอกรหัส → เช็กอิน */
@@ -592,15 +709,19 @@ export function verifySafety(barId: string, key: string, actor: string): void {
 export function billingEvents() {
   return getState()
     .bookings.filter((b) => ['CHECKED_IN', 'COMPLETED', 'NO_SHOW'].includes(b.status))
-    .map((b) => ({
+    .map((b) => {
+      const bar = getBar(b.barId);
+      const base = b.pax * (bar?.avgPerPerson ?? 0);
+      return {
       id: `be-${b.id}`,
       bookingCode: b.code,
       barId: b.barId,
-      barName: getBar(b.barId)?.name ?? '-',
+      barName: bar?.name ?? '-',
       type: b.status === 'NO_SHOW' ? ('NO_SHOW' as const) : ('CHECK_IN' as const),
-      baseAmount: b.estimate.estimatedTotal,
-      amount: b.status === 'NO_SHOW' ? 0 : Math.round(b.estimate.estimatedTotal * 0.1),
+      baseAmount: base,
+      amount: b.status === 'NO_SHOW' ? 0 : Math.round(base * 0.1),
       status: b.status === 'NO_SHOW' ? ('WAIVED' as const) : ('PENDING' as const),
       at: b.checkedInAt ?? b.datetime,
-    }));
+      };
+    });
 }

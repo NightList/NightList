@@ -21,10 +21,11 @@ export const BOOKING_TRANSITIONS: Readonly<
     { to: 'CANCELLED_BY_CUSTOMER', by: ['CUSTOMER'] },
     { to: 'EXPIRED', by: ['SYSTEM'] },
   ],
+  // มัดจำเข้าแพลตฟอร์ม → แอดมิน NightList เป็นคนตรวจสลิป (ร้านไม่เห็นเงินจนกว่าจะ payout)
   DEPOSIT_SUBMITTED: [
-    { to: 'CONFIRMED', by: ['MERCHANT', 'STAFF'] },
-    { to: 'AWAITING_DEPOSIT', by: ['MERCHANT', 'STAFF'] },
-    { to: 'REJECTED', by: ['MERCHANT', 'STAFF'] },
+    { to: 'CONFIRMED', by: ['ADMIN'] },
+    { to: 'AWAITING_DEPOSIT', by: ['ADMIN'] },
+    { to: 'REJECTED', by: ['ADMIN', 'MERCHANT'] },
   ],
   CONFIRMED: [
     { to: 'CHECKED_IN', by: ['MERCHANT', 'STAFF'] },

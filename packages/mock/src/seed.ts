@@ -3,6 +3,7 @@ import type {
   AppNotification,
   AuditLog,
   Bar,
+  BarPromotion,
   Booking,
   DemoUser,
   MenuItem,
@@ -121,6 +122,41 @@ function menuFor(barId: string, rand: () => number): MenuItem[] {
   }));
 }
 
+/** PromptPay ของแพลตฟอร์ม — ลูกค้าโอนมัดจำเข้าที่นี่ (เดโม: เบอร์สมมติ) */
+export const PLATFORM = {
+  name: 'NightList Co., Ltd.',
+  promptpayId: '0812345678',
+} as const;
+
+/** โปรโมชันตัวอย่างต่อร้าน — โปรเบียร์ก่อน 2 ทุ่ม + โปรอื่นสลับกัน */
+function promotionsFor(barId: string, i: number): BarPromotion[] {
+  const list: BarPromotion[] = [
+    {
+      id: `${barId}-pr1`,
+      title: 'โปรเบียร์ก่อน 2 ทุ่ม',
+      description: 'เบียร์สด/ขวด ราคาพิเศษ เมื่อเช็กอินก่อน 20:00 น.',
+      cutoffTime: '20:00',
+      active: true,
+    },
+  ];
+  if (i % 3 === 0)
+    list.push({
+      id: `${barId}-pr2`,
+      title: 'Ladies Night พุธ',
+      description: 'ค็อกเทลแก้วแรกฟรีสำหรับสุภาพสตรี ทุกวันพุธ',
+      days: [3],
+      active: true,
+    });
+  if (i % 4 === 1)
+    list.push({
+      id: `${barId}-pr3`,
+      title: 'มา 6 คนขึ้นไป ฟรีของทานเล่น 1 จาน',
+      description: 'จองผ่าน NightList และเช็กอินครบตามจำนวน',
+      active: true,
+    });
+  return list;
+}
+
 function packagesFor(barId: string, menu: MenuItem[]): PricePackage[] {
   const bottle = menu[0]!;
   const soda = menu[4]!;
@@ -207,7 +243,7 @@ const COMMENTS = [
 const REVIEWERS = ['ต้น', 'ฝน', 'เมย์', 'บอส', 'แพร', 'นิว', 'กอล์ฟ', 'มายด์', 'เจ', 'ปาล์ม'];
 
 export interface DemoState {
-  version: 1;
+  version: 2;
   bars: Bar[];
   reviews: Review[];
   bookings: Booking[];
@@ -269,6 +305,14 @@ export function createSeed(): DemoState {
       })),
       menu,
       packages: pkgs,
+      promotions: promotionsFor(id, i),
+      // PR ประจำร้าน (ร้านกรอกเอง) — ผับ/บาร์มีเยอะ ร้านอาหารมักไม่มี
+      pr:
+        category === 'PUB_BAR'
+          ? { male: Math.floor(rand() * 4), female: 2 + Math.floor(rand() * 6) }
+          : category === 'CHILL' && i % 2 === 0
+            ? { male: Math.floor(rand() * 2), female: 1 + Math.floor(rand() * 3) }
+            : { male: 0, female: 0 },
       zones: zonesFor(id, rand),
       fees: { serviceChargeRate: 10, vatRate: 7, otherFees: category === 'PUB_BAR' ? 200 : 0 },
       safety,
@@ -290,12 +334,15 @@ export function createSeed(): DemoState {
       promoted: i === 0 || i === 3 || i === 8,
       editorsPick: i === 9,
       deposit: {
-        enabled: i % 2 === 0,
         amount: category === 'PUB_BAR' ? 500 : 300,
         unit: 'PER_TABLE',
-        promptpayId: `08${String(10000000 + i * 1234567).slice(0, 8)}`,
         policy:
           'มัดจำหักเป็นค่าอาหาร/เครื่องดื่มในวันที่มา · ยกเลิกก่อน 6 ชม. คืนเต็มจำนวน · ไม่มาตามนัด ร้านขอเก็บมัดจำ',
+      },
+      payout: {
+        bankName: ['กสิกรไทย', 'ไทยพาณิชย์', 'กรุงเทพ', 'กรุงไทย'][i % 4]!,
+        accountNo: `${String(1234567890 + i * 97531).slice(0, 10)}`,
+        accountName: `บจก. ${name}`,
       },
       gracePeriodMinutes: [15, 30, 60][i % 3]!,
       perks: [
@@ -360,29 +407,36 @@ export function createSeed(): DemoState {
     datetime,
     pax,
     status,
-    items: [],
-    estimate: {
-      subtotal: 2400,
-      serviceCharge: 240,
-      vat: 184.8,
-      otherFees: 0,
-      estimatedTotal: 2824.8,
-      perPerson: 706.2,
-    },
     createdAt: isoDaysAgo(1),
     history: [{ from: null, to: status, by: 'SYSTEM', at: isoDaysAgo(1) }],
     shareToken: `sh-seed-${n}`,
     ...extra,
   });
+  const held = (days: number): Booking['deposit'] => ({
+    amount: 500,
+    status: 'VERIFIED',
+    submittedAt: isoDaysAgo(days + 0.2),
+    verifiedAt: isoDaysAgo(days),
+    settlement: 'HELD',
+  });
   const bookings: Booking[] = [
-    mkBooking(1, 'Demo Customer', at(21, 0), 4, 'CONFIRMED'),
-    mkBooking(2, 'คุณต้น', at(20, 30), 3, 'CONFIRMED'),
+    mkBooking(1, 'Demo Customer', at(21, 0), 4, 'CONFIRMED', {
+      deposit: held(0.5),
+      promotionId: 'bar-1-pr1',
+      promotionTitle: 'โปรเบียร์ก่อน 2 ทุ่ม',
+    }),
+    mkBooking(2, 'คุณต้น', at(20, 30), 3, 'CONFIRMED', { deposit: held(0.8) }),
     mkBooking(3, 'คุณเมย์', at(22, 0), 6, 'DEPOSIT_SUBMITTED', {
       deposit: { amount: 500, status: 'SUBMITTED', submittedAt: isoDaysAgo(0.1) },
     }),
-    mkBooking(4, 'คุณบอส', at(21, 30), 2, 'PENDING'),
-    mkBooking(5, 'คุณแพร', at(20, 0, -3), 4, 'COMPLETED', { checkedInAt: at(20, 10, -3) }),
-    mkBooking(6, 'คุณนิว', at(21, 0, -5), 5, 'NO_SHOW'),
+    mkBooking(4, 'คุณบอส', at(21, 30), 2, 'AWAITING_DEPOSIT'),
+    mkBooking(5, 'คุณแพร', at(20, 0, -3), 4, 'COMPLETED', {
+      checkedInAt: at(20, 10, -3),
+      deposit: { ...held(3.5)!, settlement: 'PAYOUT_PENDING', settledAt: at(20, 10, -3) },
+    }),
+    mkBooking(6, 'คุณนิว', at(21, 0, -5), 5, 'NO_SHOW', {
+      deposit: { ...held(5.5)!, settlement: 'PAID_OUT', settledAt: isoDaysAgo(4) },
+    }),
   ];
 
   const users: DemoUser[] = [
@@ -431,7 +485,7 @@ export function createSeed(): DemoState {
   ];
 
   return {
-    version: 1,
+    version: 2,
     bars,
     reviews,
     bookings,

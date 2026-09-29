@@ -16,6 +16,8 @@ setInterval(runTimeouts, DEMO_TIMEOUT_INTERVAL);
  * ทุกหน้ายกเว้น Home โหลดแบบ lazy (แยก chunk ต่อหน้า) — bundle แรกเล็กลง หน้าแรกขึ้นไว
  */
 const routes: RouteObject[] = [
+  // แผนที่เต็มจอ (ไม่มี navbar — มีปุ่มลอยของตัวเอง)
+  { path: 'map', lazy: () => import('@/modules/map/page').then((m) => ({ Component: m.MapPage })) },
   {
     element: <AuthLayout />,
     children: [
@@ -32,7 +34,7 @@ const routes: RouteObject[] = [
     children: [
       // ---- สาธารณะ ----
       { index: true, element: <HomePage /> },
-      { path: 'ranking', lazy: () => import('@/modules/ranking/page').then((m) => ({ Component: m.RankingPage })) },
+      { path: 'ranking', handle: { fullBleed: true }, lazy: () => import('@/modules/ranking/page').then((m) => ({ Component: m.RankingPage })) },
       { path: 'search', lazy: () => import('@/modules/search/page').then((m) => ({ Component: m.SearchPage })) },
       { path: 'bars/:slug', lazy: () => import('@/modules/barDetail/page').then((m) => ({ Component: m.BarDetailPage })) },
       { path: 'bars/:slug/reviews', lazy: () => import('@/modules/barReviews/page').then((m) => ({ Component: m.BarReviewsPage })) },
@@ -74,7 +76,7 @@ const routes: RouteObject[] = [
                   { path: 'deposits', lazy: () => import('@/modules/merchant/deposits/page').then((m) => ({ Component: m.MerchantDepositsPage })) },
                   { path: 'store', lazy: () => import('@/modules/merchant/store/page').then((m) => ({ Component: m.MerchantStorePage })) },
                   { path: 'menu', lazy: () => import('@/modules/merchant/menu/page').then((m) => ({ Component: m.MerchantMenuPage })) },
-                  { path: 'pricing', lazy: () => import('@/modules/merchant/pricing/page').then((m) => ({ Component: m.MerchantPricingPage })) },
+                  { path: 'promotions', lazy: () => import('@/modules/merchant/promotions/page').then((m) => ({ Component: m.MerchantPromotionsPage })) },
                   { path: 'tables', lazy: () => import('@/modules/merchant/tables/page').then((m) => ({ Component: m.MerchantTablesPage })) },
                   { path: 'safety', lazy: () => import('@/modules/merchant/safety/page').then((m) => ({ Component: m.MerchantSafetyPage })) },
                   { path: 'settings', lazy: () => import('@/modules/merchant/settings/page').then((m) => ({ Component: m.MerchantSettingsPage })) },
@@ -89,7 +91,11 @@ const routes: RouteObject[] = [
           },
         ],
       },
-      { path: '*', lazy: () => import('@/modules/notFound/page').then((m) => ({ Component: m.NotFoundPage })) },
+      {
+        path: '*',
+        handle: { fullBleed: true, hideFooter: true },
+        lazy: () => import('@/modules/notFound/page').then((m) => ({ Component: m.NotFoundPage })),
+      },
     ],
   },
 ];

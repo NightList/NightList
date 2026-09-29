@@ -2,11 +2,13 @@ import { ArrowRight } from '@phosphor-icons/react';
 import { safetyScore, type BarWithTier } from '@nightlist/mock';
 import { Link } from 'react-router';
 import { baht } from '@/ui/utils/format';
+import { barImage } from '@/ui/utils/barImage';
 import { BarRating } from './barRating';
 import { CrowdBadge } from './crowdBadge';
 import { FavoriteButton } from './favoriteButton';
+import { PRBadge } from './prBadge';
 
-/** ภาพปกร้าน (เดโมใช้ gradient แทนรูปจริง) */
+/** ภาพปกร้าน — รูปจริง (coverUrl) หรือรูปแทน · ไล่เงาดำด้านล่างให้อ่านชื่อร้านออก */
 export function BarCover({
   bar,
   className = 'aspect-video',
@@ -15,7 +17,15 @@ export function BarCover({
   className?: string;
 }) {
   return (
-    <div className={`relative overflow-hidden ${className}`} style={{ background: bar.cover }}>
+    <div className={`relative overflow-hidden bg-card ${className}`}>
+      <img
+        src={barImage(bar)}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        className="absolute inset-0 size-full object-cover"
+      />
+      <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/10 to-transparent" />
       <span className="absolute bottom-3 left-4 font-display text-2xl font-bold text-white/90 drop-shadow">
         {bar.name}
       </span>
@@ -50,6 +60,7 @@ export function BarCard({ bar }: { bar: BarWithTier }) {
       <div className="flex flex-1 flex-col px-1.5 pb-1 pt-4">
         <div className="mb-1.5 flex items-center gap-2">
           <CrowdBadge crowd={bar.crowd} updatedAt={bar.crowdUpdatedAt} />
+          <PRBadge pr={bar.pr} compact />
         </div>
         <h3 className="text-lg font-semibold">{bar.name}</h3>
         <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-sm text-muted">

@@ -44,6 +44,31 @@ export interface Zone {
   defaultDurationMinutes: number;
 }
 
+/** โปรโมชันของร้านที่ลูกค้าเลือกได้ตอนจองโต๊ะ (เช่น โปรเบียร์ก่อน 2 ทุ่ม) */
+export interface BarPromotion {
+  id: string;
+  title: string;
+  description: string;
+  /** ต้องเช็กอินก่อนเวลานี้ (HH:mm) — ว่าง = ทั้งคืน */
+  cutoffTime?: string;
+  /** วันที่ใช้ได้ (0 = อาทิตย์) — ว่าง = ทุกวัน */
+  days?: number[];
+  active: boolean;
+}
+
+/** PR ประจำร้าน (ร้านกรอกเอง) */
+export interface BarPR {
+  male: number;
+  female: number;
+}
+
+/** บัญชีรับเงินของร้าน — แพลตฟอร์มโอนมัดจำให้ตามนี้ */
+export interface BarPayout {
+  bankName: string;
+  accountNo: string;
+  accountName: string;
+}
+
 export interface OpeningHours {
   /** 0 = อาทิตย์ */
   day: number;
@@ -64,9 +89,13 @@ export interface Bar {
   description: string;
   styles: string[];
   cover: string; // css gradient (ไม่มีรูปจริงในเดโม)
+  /** รูปปกร้านจริง (Supabase Storage) — ถ้าไม่มีใช้ cover gradient */
+  coverUrl?: string;
   hours: OpeningHours[];
   menu: MenuItem[];
   packages: PricePackage[];
+  promotions: BarPromotion[];
+  pr: BarPR;
   zones: Zone[];
   fees: { serviceChargeRate: number; vatRate: number; otherFees: number };
   safety: SafetyFeature[];
@@ -80,13 +109,13 @@ export interface Bar {
   status: 'DRAFT' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
   promoted: boolean;
   editorsPick: boolean;
+  /** มัดจำ — เก็บทุกการจอง เงินเข้าแพลตฟอร์มก่อน แล้วค่อยโอนให้ร้าน/เก็บเป็นเครดิต */
   deposit: {
-    enabled: boolean;
     amount: number;
     unit: 'PER_TABLE' | 'PER_PERSON';
-    promptpayId: string;
     policy: string;
   };
+  payout: BarPayout;
   gracePeriodMinutes: number;
   perks: string[];
 }
@@ -103,6 +132,8 @@ export interface Review {
   userId?: string;
 }
 
+export type DepositSettlement = 'HELD' | 'PAYOUT_PENDING' | 'PAID_OUT' | 'CREDIT' | 'REFUNDED';
+
 export interface Booking {
   id: string;
   code: string;
@@ -114,21 +145,18 @@ export interface Booking {
   datetime: string;
   pax: number;
   status: BookingStatus;
-  packageId?: string;
-  items: { name: string; quantity: number; unitPrice: number }[];
-  estimate: {
-    subtotal: number;
-    serviceCharge: number;
-    vat: number;
-    otherFees: number;
-    estimatedTotal: number;
-    perPerson: number;
-  };
+  promotionId?: string;
+  promotionTitle?: string;
+  /** มัดจำที่ลูกค้าโอนเข้าแพลตฟอร์ม */
   deposit?: {
     amount: number;
     slipDataUrl?: string;
     status: 'SUBMITTED' | 'VERIFIED' | 'REJECTED';
     submittedAt: string;
+    verifiedAt?: string;
+    /** เงินอยู่ที่ไหน: HELD = แพลตฟอร์มถือไว้ · PAYOUT_PENDING = รอโอนให้ร้าน · PAID_OUT = โอนแล้ว · CREDIT = เก็บเป็นเครดิตร้าน · REFUNDED = คืนลูกค้า */
+    settlement?: DepositSettlement;
+    settledAt?: string;
   };
   note?: string;
   createdAt: string;

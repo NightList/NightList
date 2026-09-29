@@ -12,6 +12,7 @@ import {
   ChatCircleText,
   CalendarCheck,
   Buildings,
+  Wallet,
 } from '@phosphor-icons/react';
 import type { ReactNode } from 'react';
 
@@ -31,6 +32,7 @@ export const ADMIN_ROUTES: AdminRoute[] = [
   { path: '/promotions', name: 'โปรโมท', icon: <Megaphone size={18} /> },
   { path: '/users', name: 'ผู้ใช้', icon: <Users size={18} /> },
   { path: '/bookings', name: 'การจอง', icon: <CalendarCheck size={18} /> },
+  { path: '/deposits', name: 'เงินมัดจำ', icon: <Wallet size={18} /> },
   { path: '/reviews', name: 'รีวิวที่ถูกรายงาน', icon: <ChatCircleText size={18} /> },
   { path: '/billing', name: 'ค่าคอม', icon: <Receipt size={18} /> },
   { path: '/audit-logs', name: 'Audit Log', icon: <ClipboardText size={18} /> },

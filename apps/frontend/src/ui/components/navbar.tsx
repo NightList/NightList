@@ -34,7 +34,16 @@ const spring = { type: 'spring', stiffness: 420, damping: 34 } as const;
  * - แถบไฮไลต์เลื่อนตามเมนูที่เลือก (layoutId)
  * - มือถือ: แสดงแค่โลโก้ + ปุ่ม, เมนูอยู่ที่ <BottomIsland>
  */
-export function Navbar({ items, overVideo = false }: { items: NavItem[]; overVideo?: boolean }) {
+export function Navbar({
+  items,
+  overVideo = false,
+  minimal = false,
+}: {
+  items: NavItem[];
+  overVideo?: boolean;
+  /** หน้า Auth: ไม่มีปุ่มเปลี่ยนธีม / ปุ่มเข้าสู่ระบบ (อยู่ในหน้าอยู่แล้ว) */
+  minimal?: boolean;
+}) {
   useDemo();
   const { user } = useAuth();
   const scrolled = useScrolled();
@@ -97,7 +106,7 @@ export function Navbar({ items, overVideo = false }: { items: NavItem[]; overVid
       <div
         className={`ml-auto flex items-center gap-0.5 md:ml-1 ${glass ? '[&_.ant-btn]:!text-white/85 [&_.ant-btn:hover]:!text-white' : ''}`}
       >
-        <ThemeToggle />
+        {!minimal && <ThemeToggle />}
         {user && (
           <Link to="/notifications">
             <Badge count={unread} size="small" offset={[-4, 4]}>
@@ -114,7 +123,7 @@ export function Navbar({ items, overVideo = false }: { items: NavItem[]; overVid
           <Link to="/profile">
             <Button type="text" shape="circle" aria-label="โปรไฟล์" icon={<User size={20} />} />
           </Link>
-        ) : (
+        ) : minimal ? null : (
           <Link to="/login" className="ml-1">
             <Button type="primary" shape="round">
               เข้าสู่ระบบ

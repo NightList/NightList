@@ -14,6 +14,8 @@ export default defineConfig({
       { find: /^@nightlist\/(mock|types|utils|ui)$/, replacement: pkg('$1') },
     ],
   },
+  // worker ของ MapLibre เป็น ES module (import shared chunk) → ต้อง bundle เป็น es
+  worker: { format: 'es' },
   build: {
     // แยก vendor ออกเป็น chunk ของตัวเอง — เบราว์เซอร์ cache ไว้ได้ข้าม deploy และโหลดขนานกัน
     rollupOptions: {

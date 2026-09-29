@@ -33,3 +33,92 @@
     background: rgba(255, 255, 255, 0.12) !important;
   }
 }
+
+/* หมุดแผนที่ (Leaflet divIcon) — ทอง + ขอบม่วง ให้เข้าธีม */
+.nl-pin {
+  width: 28px;
+  height: 28px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: linear-gradient(135deg, #f5c542, #c8961e);
+  border: 2px solid #5b1f8a;
+  box-shadow: 0 6px 14px -4px rgba(0, 0, 0, 0.6);
+}
+.leaflet-container {
+  font-family: inherit;
+  background: #e9e6df;
+}
+.dark .leaflet-container {
+  background: #242f3e;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+}
+
+/* หมุดรูปร้านวงกลม + หาง (หน้า /map) */
+.nl-avatar-pin {
+  position: relative;
+  width: var(--size);
+  height: calc(var(--size) + 10px);
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45));
+}
+.nl-avatar-pin:hover {
+  transform: translateY(-3px);
+}
+.nl-avatar-pin__img {
+  display: grid;
+  place-items: center;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 9999px;
+  border: 3px solid var(--ring);
+  box-shadow: 0 0 0 2px #fff;
+  color: #fff;
+  font-weight: 700;
+  font-size: calc(var(--size) * 0.4);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+.nl-avatar-pin.is-promoted .nl-avatar-pin__img {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 5px #e8b64c;
+}
+.nl-avatar-pin.is-active .nl-avatar-pin__img {
+  box-shadow: 0 0 0 3px #fff, 0 0 0 7px rgba(232, 182, 76, 0.55);
+}
+.nl-avatar-pin__tail {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 12px solid var(--ring);
+}
+.nl-me-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: #3b82f6;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.2);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nl-me-dot {
+    animation: nl-me-pulse 2s ease-out infinite;
+  }
+}
+@keyframes nl-me-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.45); }
+  100% { box-shadow: 0 0 0 16px rgba(59, 130, 246, 0); }
+}
+
+/* พื้นแผนที่ OSM ให้เป็นโทนเรียบ (ไม่ต้องมี key) — light: เทาอ่อน · dark: กลับสีเป็นเทาเข้ม */
+.nl-map-tiles--light {
+  filter: grayscale(1) brightness(1.04) contrast(0.92);
+}
+.nl-map-tiles--dark {
+  /* สำรองเมื่อโหลด vector ไม่ได้ — โทนน้ำเงินเทาแบบ Google night (ไม่มืดจนเกิน) */
+  filter: invert(1) hue-rotate(180deg) sepia(0.25) saturate(1.4) hue-rotate(185deg) brightness(1.05) contrast(0.78);
+}
