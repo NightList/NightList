@@ -4,6 +4,8 @@ import 'leaflet/dist/leaflet.css';
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import { Link } from 'react-router';
 import { useEffect } from 'react';
+import { useThemeMode } from '@nightlist/ui';
+import { MAP_ATTRIBUTION, MAP_TILES, tileClass } from '@/ui/utils/mapTiles';
 
 /** หมุดทอง (ไม่ใช้รูป marker ของ Leaflet — bundler จัดการ path รูปยาก) */
 const pin = (label?: string) =>
@@ -40,6 +42,7 @@ export function BarMap({
   className?: string;
   interactive?: boolean;
 }) {
+  const { resolved } = useThemeMode();
   if (bars.length === 0) return null;
   const single = bars.length === 1;
   const bounds: LatLngBoundsExpression | null = single
@@ -55,8 +58,9 @@ export function BarMap({
         className="size-full"
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+          url={MAP_TILES[resolved]}
+          attribution={MAP_ATTRIBUTION}
+          className={tileClass(resolved)}
         />
         <FitBounds bounds={bounds} />
         {bars.map((b) => (

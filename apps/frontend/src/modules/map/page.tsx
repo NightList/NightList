@@ -25,15 +25,10 @@ import { directionsUrl } from '@/ui/components/barMap';
 import { CrowdBadge } from '@/ui/components/crowdBadge';
 import { PRBadge } from '@/ui/components/prBadge';
 import { baht } from '@/ui/utils/format';
+import { barImage } from '@/ui/utils/barImage';
+import { MAP_ATTRIBUTION, MAP_TILES, tileClass } from '@/ui/utils/mapTiles';
 import { barPin, meIcon } from './components/barPin';
 
-/** แผนที่พื้นเรียบ (CARTO) — สลับตามธีม · ฟรี ไม่ต้องมี key (ต้องใส่ attribution) */
-const TILES = {
-  dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-  light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-} as const;
-const ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
 const BANGKOK: [number, number] = [13.745, 100.56];
 
 const fab =
@@ -101,7 +96,13 @@ export function MapPage() {
         ref={setMap}
         className="size-full"
       >
-        <TileLayer key={resolved} url={TILES[resolved]} attribution={ATTRIBUTION} subdomains="abcd" maxZoom={19} />
+        <TileLayer
+          key={resolved}
+          url={MAP_TILES[resolved]}
+          attribution={MAP_ATTRIBUTION}
+          className={tileClass(resolved)}
+          maxZoom={19}
+        />
         <ClearOnMapClick onClear={() => setSelectedId(null)} />
         {bars.map((b) => (
           <Marker
@@ -222,11 +223,7 @@ export function MapPage() {
               <div className="flex gap-3">
                 <div
                   className="size-16 shrink-0 rounded-2xl bg-cover bg-center"
-                  style={
-                    selected.coverUrl
-                      ? { backgroundImage: `url(${selected.coverUrl})` }
-                      : { background: selected.cover }
-                  }
+                  style={{ backgroundImage: `url(${barImage(selected)})` }}
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">

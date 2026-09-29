@@ -1,5 +1,6 @@
 import type { BarWithTier } from '@nightlist/mock';
 import { divIcon } from 'leaflet';
+import { barImage } from '@/ui/utils/barImage';
 
 const CROWD_RING: Record<BarWithTier['crowd'], string> = {
   AVAILABLE: '#22c55e',
@@ -16,10 +17,8 @@ const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)
 export function barPin(bar: BarWithTier, active: boolean) {
   const size = active ? 60 : 48;
   const ring = CROWD_RING[bar.crowd];
-  const photo = bar.coverUrl
-    ? `background-image:url('${esc(bar.coverUrl)}');background-size:cover;background-position:center`
-    : `background:${bar.cover}`;
-  const initial = bar.coverUrl ? '' : esc(bar.name.charAt(0));
+  const photo = `background-image:url('${esc(barImage(bar))}');background-size:cover;background-position:center`;
+  const initial = '';
   return divIcon({
     className: '',
     html: `<div class="nl-avatar-pin${active ? ' is-active' : ''}${bar.promoted ? ' is-promoted' : ''}" style="--ring:${ring};--size:${size}px">

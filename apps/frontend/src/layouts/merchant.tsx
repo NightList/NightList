@@ -20,6 +20,7 @@ import { Menu, Result } from 'antd';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '@/services/auth';
 import { useDemo } from '@/hooks/useDemo';
+import { barImage } from '@/ui/utils/barImage';
 
 const ITEMS = [
   { key: '/merchant', icon: <Gauge />, label: 'แดชบอร์ด', staff: false },
@@ -65,8 +66,10 @@ export function MerchantLayout() {
     <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
       <aside className="lg:sticky lg:top-24 lg:self-start">
         <div
-          className="mb-3 rounded-2xl border border-border p-4"
-          style={{ background: bar.cover }}
+          className="mb-3 rounded-2xl border border-border bg-cover bg-center p-4"
+          style={{
+            backgroundImage: `linear-gradient(to top, rgba(0,0,0,.65), rgba(0,0,0,.15)), url(${barImage(bar)})`,
+          }}
         >
           <p className="text-xs text-white/80">{user?.role === 'STAFF' ? 'Staff' : 'ร้านของฉัน'}</p>
           <p className="font-display text-xl font-bold text-white">{bar.name}</p>
