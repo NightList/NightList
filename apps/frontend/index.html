@@ -8,10 +8,15 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- ฟอนต์โหลดแบบไม่บล็อกการวาดหน้า (แสดงฟอนต์ระบบก่อน แล้วสลับเมื่อโหลดเสร็จ) -->
     <link
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
+    <!-- รูปพื้นหลัง Hero ให้เริ่มโหลดทันที (LCP) -->
+    <link rel="preload" as="image" href="/images/home/hero-poster.jpg" fetchpriority="high" />
     <title>NightList</title>
     <!-- กันจอกะพริบ: ตั้งธีมก่อน React render (key ต้องตรงกับ THEME_STORAGE_KEY) -->
     <script>
