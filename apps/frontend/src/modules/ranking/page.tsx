@@ -6,6 +6,7 @@ import { useDemo } from '@/hooks/useDemo';
 import { Podium } from './components/podium';
 import { RadialCarousel } from './components/radialCarousel';
 import { RankList } from './components/rankList';
+import { SplitHeading } from './components/splitHeading';
 
 const PERIOD_LABEL: Record<RankingPeriod, string> = { WEEK: 'สัปดาห์นี้', MONTH: 'เดือนนี้' };
 
@@ -68,9 +69,9 @@ export function RankingPage() {
           </div>
         </div>
 
-        <h2 className="mt-14 text-center text-3xl font-bold sm:mt-20 sm:text-5xl">
-          {PERIOD_LABEL[period]} ผู้ชนะได้แก่…
-        </h2>
+        <div className="mt-14 sm:mt-20">
+          <SplitHeading key={period} lead={PERIOD_LABEL[period]} text="ผู้ชนะได้แก่" />
+        </div>
 
         {ranked.length === 0 ? (
           <Empty className="mt-12" description="ยังไม่มีร้านในหมวดนี้" />

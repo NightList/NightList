@@ -2,12 +2,17 @@ import type { RankedBar } from '@nightlist/mock';
 import { useRef } from 'react';
 import { Link } from 'react-router';
 import { barImage } from '@/ui/utils/barImage';
+import { RatingBadge } from './ratingBadge';
 import { EASE_OUT, MOTION_OK, MOTION_REDUCE, gsap, useGSAP } from '../utils/gsap';
 
+/**
+ * สีอันดับ: ทอง / เงิน / ทองแดง — ทองแดงดันไปทางแดงและเข้มกว่า (hue ~20° vs ทอง ~41°)
+ * ให้ต่างจากที่ 1 ชัดทั้งสีและความสว่าง · ขอบการ์ดใช้สีเดียวกับป้ายอันดับ
+ */
 const PLACE = [
-  { label: 'ที่ 1', color: 'text-gold', ring: 'ring-gold/70' },
-  { label: 'ที่ 2', color: 'text-[#d6d9e0]', ring: 'ring-[#d6d9e0]/60' },
-  { label: 'ที่ 3', color: 'text-[#c98a5a]', ring: 'ring-[#c98a5a]/60' },
+  { label: 'ที่ 1', color: 'text-[#f2c14e]', border: 'border-[#f2c14e]', glow: 'shadow-[0_0_40px_-8px_rgba(242,193,78,0.55)]' },
+  { label: 'ที่ 2', color: 'text-[#dfe3ea]', border: 'border-[#c9ced8]', glow: '' },
+  { label: 'ที่ 3', color: 'text-[#d9774a]', border: 'border-[#b8603a]', glow: '' },
 ] as const;
 
 /** ลำดับบนจอ: ที่ 2 · ที่ 1 · ที่ 3 · มุมเอียงและระยะตอนกางเต็ม (Figma) */
@@ -23,7 +28,7 @@ function PodiumCard({ bar, place }: { bar: RankedBar; place: 0 | 1 | 2 }) {
     <Link
       to={`/bars/${bar.slug}`}
       aria-label={`${p.label} ${bar.name} ${bar.votes} โหวต`}
-      className={`group relative block overflow-hidden rounded-2xl border-[5px] border-[#d9d9de]/90 bg-card shadow-[0_30px_60px_-25px_rgba(0,0,0,0.85)] ring-1 ${p.ring} ${place === 0 ? 'h-56 w-36 sm:h-80 sm:w-56 lg:h-96 lg:w-64' : 'h-48 w-32 sm:h-72 sm:w-52 lg:h-80 lg:w-60'}`}
+      className={`group relative block overflow-hidden rounded-2xl border-[5px] ${p.border} bg-card shadow-[0_30px_60px_-25px_rgba(0,0,0,0.85)] ${p.glow} ${place === 0 ? 'h-56 w-36 sm:h-80 sm:w-56 lg:h-96 lg:w-64' : 'h-48 w-32 sm:h-72 sm:w-52 lg:h-80 lg:w-60'}`}
     >
       <img
         src={barImage(bar)}
@@ -44,9 +49,10 @@ function PodiumCard({ bar, place }: { bar: RankedBar; place: 0 | 1 | 2 }) {
         </div>
         <div className="w-full">
           <p className="truncate text-sm font-semibold sm:text-base">{bar.name}</p>
-          <p className="truncate text-xs text-white/70">
-            {bar.district} · ★ {bar.rating.toFixed(1)}
-          </p>
+          <div className="mt-1.5 flex items-center justify-center gap-2">
+            <span className="truncate text-xs text-white/75">{bar.district}</span>
+            <RatingBadge rating={bar.rating} tier={bar.tier} small />
+          </div>
         </div>
       </div>
     </Link>

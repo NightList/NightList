@@ -53,7 +53,7 @@ export function RankList({ rows }: { rows: RankedBar[] }) {
               </span>
               โหวต
             </span>
-            <RatingBadge rating={b.rating} />
+            <RatingBadge rating={b.rating} tier={b.tier} />
           </Link>
         </li>
       ))}
