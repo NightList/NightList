@@ -3,6 +3,9 @@ import { useEffect, useState } from 'react';
 import { TileLayer, useMap } from 'react-leaflet';
 import { loadGoogleStyle } from '@/ui/utils/mapStyle';
 import { MAP_ATTRIBUTION, MAP_TILES, MAP_USE_RASTER, tileClass } from '@/ui/utils/mapTiles';
+// MapLibre v6 หา worker จาก import.meta.url ของตัวเอง — Vite (dev: pre-bundle / build: hash) ทำให้ path เพี้ยน
+// → "Worker failed to load" · ให้ Vite bundle worker เป็นไฟล์ของตัวเอง แล้วบอก URL ให้ MapLibre ตรงๆ
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 
 const VECTOR_ATTRIBUTION =
   '<a href="https://openfreemap.org" target="_blank" rel="noreferrer">OpenFreeMap</a> &copy; <a href="https://www.openmaptiles.org/" target="_blank" rel="noreferrer">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>';
@@ -23,6 +26,7 @@ export function MapBaseLayer({ theme }: { theme: 'light' | 'dark' }) {
     // maplibre-gl (~1MB) โหลดเฉพาะตอนมีแผนที่บนจอ — ไม่ถ่วงหน้าร้าน/หน้าค้นหาตอนเปิด
     Promise.all([
       loadGoogleStyle(theme),
+      import('maplibre-gl').then((m) => m.setWorkerUrl(maplibreWorkerUrl)),
       import('@maplibre/maplibre-gl-leaflet'),
       import('maplibre-gl/dist/maplibre-gl.css'),
     ])
