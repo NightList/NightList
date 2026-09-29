@@ -30,7 +30,7 @@ function load(): DemoState {
     const raw = storage().getItem(KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as DemoState;
-      if (parsed.version === 1) {
+      if (parsed.version === 2) {
         state = parsed;
         return state;
       }

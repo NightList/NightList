@@ -5,6 +5,7 @@ import { BarsPage } from '@/modules/bars/page';
 import { BillingPage } from '@/modules/billing/page';
 import { BookingsPage } from '@/modules/bookings/page';
 import { DashboardPage } from '@/modules/dashboard/page';
+import { DepositsPage } from '@/modules/deposits/page';
 import { LoginPage } from '@/modules/login/page';
 import { MerchantsPage } from '@/modules/merchants/page';
 import { PromotionsPage } from '@/modules/promotions/page';
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
       { path: 'promotions', element: <PromotionsPage /> },
       { path: 'users', element: <UsersPage /> },
       { path: 'bookings', element: <BookingsPage /> },
+      { path: 'deposits', element: <DepositsPage /> },
       { path: 'reviews', element: <ReviewsPage /> },
       { path: 'billing', element: <BillingPage /> },
       { path: 'audit-logs', element: <AuditLogsPage /> },

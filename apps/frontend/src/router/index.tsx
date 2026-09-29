@@ -74,7 +74,7 @@ const routes: RouteObject[] = [
                   { path: 'deposits', lazy: () => import('@/modules/merchant/deposits/page').then((m) => ({ Component: m.MerchantDepositsPage })) },
                   { path: 'store', lazy: () => import('@/modules/merchant/store/page').then((m) => ({ Component: m.MerchantStorePage })) },
                   { path: 'menu', lazy: () => import('@/modules/merchant/menu/page').then((m) => ({ Component: m.MerchantMenuPage })) },
-                  { path: 'pricing', lazy: () => import('@/modules/merchant/pricing/page').then((m) => ({ Component: m.MerchantPricingPage })) },
+                  { path: 'promotions', lazy: () => import('@/modules/merchant/promotions/page').then((m) => ({ Component: m.MerchantPromotionsPage })) },
                   { path: 'tables', lazy: () => import('@/modules/merchant/tables/page').then((m) => ({ Component: m.MerchantTablesPage })) },
                   { path: 'safety', lazy: () => import('@/modules/merchant/safety/page').then((m) => ({ Component: m.MerchantSafetyPage })) },
                   { path: 'settings', lazy: () => import('@/modules/merchant/settings/page').then((m) => ({ Component: m.MerchantSettingsPage })) },

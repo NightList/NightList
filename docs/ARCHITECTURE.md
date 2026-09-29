@@ -66,7 +66,8 @@ flowchart LR
 | Presentation | `apps/frontend`, `apps/admin` | UI, routing, state ฝั่ง client และ form validation |
 | Shared UI / Contract | `packages/ui`, `packages/types` | theme tokens, คอมโพเนนต์ร่วม, Zod schema / DTO |
 | Domain logic (pure) | `packages/utils` | price calculator, star → tier, status transition map |
-| Demo data | `packages/mock` | โหมดเดโม: ข้อมูลสมมติ + store ในเบราว์เซอร์ (ใช้เมื่อยังไม่ตั้ง Supabase) |
+| Demo data | `packages/mock` | โหมดเดโม: ข้อมูลสมมติ + store ในเบราว์เซอร์ (ใช้เมื่อยังไม่ตั้ง Supabase) — ขั้นตอนเชื่อม Supabase ดู `docs/SUPABASE.md` |
+| Map | `react-leaflet` + OpenStreetMap | แผนที่ร้าน (หน้าร้าน + หน้าค้นหาแบบแผนที่) ไม่ต้องมี API key · ปุ่มนำทางเปิด Google Maps |
 | API | `apps/backend/src` (controllers) | controller, guard, pipe, Swagger |
 | Application / Domain | `apps/backend/src/modules` | booking, pricing, ranking, notification ฯลฯ (NestJS modules) |
 | Data | `apps/backend/supabase` | migrations, RLS, DB functions, seed |
@@ -158,10 +159,10 @@ flowchart LR
 |---|---|
 | `auth` | ตรวจ Supabase JWT, โหลด user + role, `@Roles()` decorator |
 | `bars` | ข้อมูลร้าน, เวลาเปิด-ปิด, styles, links, media, safety |
-| `menu` / `pricing` | เมนู, ค่าธรรมเนียม, แพ็กเกจ, ตัวประเมินราคา |
+| `menu` / `pricing` | เมนูราคา (แสดงเพื่อประเมินงบ ไม่มีสั่งล่วงหน้า), ค่าธรรมเนียม, โปรโมชันของร้าน (cutoff time / วัน), PR ชาย/หญิง |
 | `availability` | คำนวณโต๊ะว่างจาก reservation interval |
 | `booking` | สร้างการจอง (transaction + overlap), state machine, snapshot |
-| `deposit` | รับสลิป, อ่าน QR ในสลิป, ร้านยืนยัน/ปฏิเสธ |
+| `deposit` | รับสลิป (เข้า PromptPay แพลตฟอร์ม), แอดมินยืนยัน/ปฏิเสธ, settlement: ถือไว้ → รอโอน → โอนให้ร้าน / เครดิตร้าน / คืนลูกค้า |
 | `checkin` | ออก QR token (signed JWT ใช้ครั้งเดียว) และสแกน |
 | `review` | สร้าง/แก้รีวิว, รายงาน, moderation |
 | `ranking` | คำนวณคะแนน → ดาว → Tier |
@@ -192,15 +193,22 @@ sequenceDiagram
   U->>W: เลือกวัน เวลา คน โซน
   W->>A: GET /availability
   A->>D: หาโต๊ะ/ความจุที่ว่างในช่วงเวลานั้น
-  W->>A: POST /bookings (+ price snapshot)
-  A->>D: BEGIN · lock zone · INSERT booking (exclusion constraint) · snapshot · outbox · COMMIT
-  A-->>W: booking = PENDING / AWAITING_DEPOSIT
-  U->>W: โอน PromptPay + อัปโหลดสลิป
+  W->>A: POST /bookings (โต๊ะ + โปรโมชันของร้านถ้ามี — ไม่มีสั่งอาหาร/เครื่องดื่ม)
+  A->>D: BEGIN · lock zone · INSERT booking (exclusion constraint) · outbox · COMMIT
+  A-->>W: booking = AWAITING_DEPOSIT (ทุกการจองต้องมัดจำ)
+  U->>W: โอน PromptPay ของ NightList + อัปโหลดสลิป
   W->>A: POST /bookings/:id/deposit
   A->>D: deposit = SUBMITTED · booking = DEPOSIT_SUBMITTED
-  S->>A: ตรวจสลิป → ยืนยัน
-  A->>D: booking = CONFIRMED · outbox (แจ้งลูกค้า)
+  actor AD as แอดมิน NightList
+  AD->>A: ตรวจสลิป → ผ่าน
+  A->>D: deposit VERIFIED · settlement = HELD · booking = CONFIRMED · outbox (แจ้งลูกค้า+ร้าน)
+  S->>A: ลูกค้าเช็กอิน / ระบบ NO_SHOW
+  A->>D: settlement = PAYOUT_PENDING (เงินเป็นของร้าน)
+  AD->>A: โอนเข้าบัญชีร้าน หรือเก็บเป็นเครดิตร้าน
+  A->>D: settlement = PAID_OUT / CREDIT · audit log
 ```
+
+**เงินมัดจำเข้าแพลตฟอร์ม ไม่เข้าร้านโดยตรง:** ลูกค้าโอนเข้า PromptPay ของ NightList (`platform_settings.deposit_promptpay`) · แอดมินเป็นคนตรวจสลิป (ร้านไม่เห็นสลิป) · `deposits.settlement` บอกว่าเงินอยู่ที่ไหน: `HELD` (เราถือไว้) → `PAYOUT_PENDING` (ลูกค้าเช็กอิน/ไม่มา → เป็นของร้าน) → `PAID_OUT` (โอนเข้าบัญชีที่ร้านตั้งใน `/merchant/settings`) หรือ `CREDIT` (เก็บเป็นเครดิตในร้าน) · ยกเลิก/ปฏิเสธ → `REFUNDED` คืนลูกค้า · ร้านดูสรุปที่ `/merchant/deposits` แอดมินจัดการที่ `/deposits`
 
 ### 5.2 เช็กอินด้วย QR
 ```mermaid

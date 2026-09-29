@@ -1,5 +1,4 @@
-import { availability, getBarBySlug } from '@nightlist/mock';
-import { createBooking } from '@nightlist/mock';
+import { availability, createBooking, depositFor, getBarBySlug, promotionApplies } from '@nightlist/mock';
 import {
   App,
   Alert,
@@ -15,8 +14,8 @@ import {
 } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router';
-import { PriceEstimator, type EstimatorValue } from '@/ui/components/priceEstimator';
+import { Tag as PromoIcon } from '@phosphor-icons/react';
+import { Link, useNavigate, useParams } from 'react-router';
 import { PageHeader } from '@/ui/components/pageHeader';
 import { useDemo } from '@/hooks/useDemo';
 import { baht } from '@/ui/utils/format';
@@ -35,22 +34,24 @@ const TIMES = [
   '23:00',
 ];
 
-/** /bars/:slug/book — จองโต๊ะ */
+/**
+ * /bars/:slug/book — จองโต๊ะอย่างเดียว (ไม่มีสั่งอาหาร/เครื่องดื่มล่วงหน้า)
+ * ขั้น 1 วันเวลา/จำนวนคน/โซน + เลือกโปรโมชันของร้าน (ถ้าเข้าเงื่อนไขเวลา) → ขั้น 2 ยืนยัน + มัดจำ
+ * ทุกการจองต้องมัดจำ เงินเข้า NightList ก่อน แล้วแพลตฟอร์มค่อยโอนให้ร้าน
+ */
 export function BookPage() {
   useDemo();
   const { slug = '' } = useParams();
-  const location = useLocation();
   const navigate = useNavigate();
   const { message } = App.useApp();
   const bar = getBarBySlug(slug);
   const [step, setStep] = useState(0);
   const [date, setDate] = useState<Dayjs>(dayjs().hour() >= 22 ? dayjs().add(1, 'day') : dayjs());
   const [time, setTime] = useState('21:00');
+  const [pax, setPax] = useState(4);
   const [zoneId, setZoneId] = useState<string>();
+  const [promotionId, setPromotionId] = useState<string>();
   const [note, setNote] = useState('');
-  const [est, setEst] = useState<EstimatorValue>(
-    (location.state as EstimatorValue | null) ?? { pax: 4, qty: {} },
-  );
 
   const datetime = useMemo(() => {
     const [h, m] = time.split(':').map(Number);
@@ -60,20 +61,23 @@ export function BookPage() {
   if (!bar) return <Result status="404" title="ไม่พบร้าน" />;
   const slots = availability(bar.id, datetime.toISOString());
   const past = datetime.isBefore(dayjs());
+  const promos = bar.promotions.filter((p) => p.active);
+  const iso = datetime.toISOString();
+  const chosenPromo = promos.find((p) => p.id === promotionId);
+  const deposit = depositFor(bar, pax);
 
   const submit = () => {
     try {
       const b = createBooking({
         barId: bar.id,
         zoneId: zoneId!,
-        datetime: datetime.toISOString(),
-        pax: est.pax,
-        packageId: est.packageId,
-        items: Object.entries(est.qty).map(([menuItemId, quantity]) => ({ menuItemId, quantity })),
+        datetime: iso,
+        pax,
+        promotionId: chosenPromo && promotionApplies(chosenPromo, iso) ? chosenPromo.id : undefined,
         note,
       });
-      message.success('สร้างการจองแล้ว');
-      navigate(b.status === 'AWAITING_DEPOSIT' ? `/bookings/${b.id}/deposit` : `/bookings/${b.id}`);
+      message.success('สร้างการจองแล้ว โอนมัดจำเพื่อยืนยันโต๊ะ');
+      navigate(`/bookings/${b.id}/deposit`);
     } catch (e) {
       message.error((e as Error).message);
     }
@@ -89,7 +93,7 @@ export function BookPage() {
       <Steps
         current={step}
         className="mb-8"
-        items={[{ title: 'วันเวลา & โซน' }, { title: 'รายการ & ราคา' }, { title: 'ยืนยัน' }]}
+        items={[{ title: 'วันเวลา & โซน' }, { title: 'ยืนยัน & มัดจำ' }]}
       />
 
       {step === 0 && (
@@ -117,8 +121,8 @@ export function BookPage() {
               </Form.Item>
               <Form.Item label="จำนวนคน">
                 <Select
-                  value={est.pax}
-                  onChange={(pax) => setEst({ ...est, pax })}
+                  value={pax}
+                  onChange={setPax}
                   options={Array.from({ length: 12 }, (_, i) => ({
                     label: `${i + 1} คน`,
                     value: i + 1,
@@ -155,6 +159,36 @@ export function BookPage() {
                 ))}
               </Radio.Group>
             </Form.Item>
+            {promos.length > 0 && (
+              <Form.Item
+                label={
+                  <span className="inline-flex items-center gap-1.5">
+                    <PromoIcon /> โปรโมชันของร้าน (เลือกได้ 1 อย่าง)
+                  </span>
+                }
+              >
+                <Radio.Group
+                  value={promotionId ?? ''}
+                  onChange={(e) => setPromotionId(e.target.value || undefined)}
+                  className="grid w-full gap-2"
+                >
+                  <Radio value="">ไม่รับโปร</Radio>
+                  {promos.map((p) => {
+                    const ok = promotionApplies(p, iso);
+                    return (
+                      <Radio key={p.id} value={p.id} disabled={!ok} className="!items-start">
+                        <span className="block font-semibold">{p.title}</span>
+                        <span className="block text-xs text-muted">
+                          {p.description}
+                          {p.cutoffTime && ` · ต้องเช็กอินก่อน ${p.cutoffTime} น.`}
+                          {!ok && ' — ใช้กับเวลาที่เลือกไม่ได้'}
+                        </span>
+                      </Radio>
+                    );
+                  })}
+                </Radio.Group>
+              </Form.Item>
+            )}
             <Button type="primary" block disabled={!zoneId || past} onClick={() => setStep(1)}>
               ถัดไป
             </Button>
@@ -164,27 +198,13 @@ export function BookPage() {
 
       {step === 1 && (
         <Card>
-          <PriceEstimator bar={bar} value={est} onChange={setEst} />
-          <div className="mt-6 flex gap-3">
-            <Button block onClick={() => setStep(0)}>
-              ย้อนกลับ
-            </Button>
-            <Button block type="primary" onClick={() => setStep(2)}>
-              ถัดไป
-            </Button>
-          </div>
-        </Card>
-      )}
-
-      {step === 2 && (
-        <Card>
           <dl className="grid grid-cols-[120px_1fr] gap-y-2 text-sm">
             <dt className="text-muted">ร้าน</dt>
             <dd>{bar.name}</dd>
             <dt className="text-muted">วันเวลา</dt>
             <dd>{datetime.format('ddd D MMM YYYY · HH:mm น.')}</dd>
             <dt className="text-muted">จำนวน</dt>
-            <dd>{est.pax} คน</dd>
+            <dd>{pax} คน</dd>
             <dt className="text-muted">โซน</dt>
             <dd>{slots.find((s) => s.zone.id === zoneId)?.zone.name}</dd>
             <dt className="text-muted">เก็บโต๊ะให้</dt>
@@ -192,22 +212,33 @@ export function BookPage() {
               ถึง {datetime.add(bar.gracePeriodMinutes, 'minute').format('HH:mm น.')} (
               {bar.gracePeriodMinutes} นาที)
             </dd>
+            {chosenPromo && (
+              <>
+                <dt className="text-muted">โปรโมชัน</dt>
+                <dd>
+                  {chosenPromo.title}
+                  {chosenPromo.cutoffTime && (
+                    <span className="text-muted"> · เช็กอินก่อน {chosenPromo.cutoffTime} น.</span>
+                  )}
+                </dd>
+              </>
+            )}
             <dt className="text-muted">มัดจำ</dt>
             <dd>
-              {bar.deposit.enabled
-                ? `${baht(bar.deposit.amount)} (โอนเข้าบัญชีร้านโดยตรง)`
-                : 'ไม่ต้องมัดจำ'}
+              <span className="font-semibold text-gold-text">{baht(deposit)}</span>
+              <span className="text-muted">
+                {' '}
+                ({bar.deposit.unit === 'PER_PERSON' ? 'ต่อคน' : 'ต่อโต๊ะ'}) · โอนเข้า NightList
+              </span>
             </dd>
           </dl>
-          {bar.deposit.enabled && (
-            <Alert
-              className="mt-4"
-              type="info"
-              showIcon
-              title="นโยบายมัดจำ"
-              description={bar.deposit.policy}
-            />
-          )}
+          <Alert
+            className="mt-4"
+            type="info"
+            showIcon
+            title="มัดจำเข้า NightList ไม่ใช่เข้าร้านโดยตรง"
+            description={`เราถือเงินไว้ให้จนกว่าคุณจะเช็กอิน แล้วจึงส่งต่อให้ร้าน · ${bar.deposit.policy}`}
+          />
           <Input.TextArea
             className="!mt-4"
             rows={2}
@@ -218,11 +249,11 @@ export function BookPage() {
             showCount
           />
           <div className="mt-6 flex gap-3">
-            <Button block onClick={() => setStep(1)}>
+            <Button block onClick={() => setStep(0)}>
               ย้อนกลับ
             </Button>
             <Button block type="primary" onClick={submit}>
-              ยืนยันการจอง
+              ยืนยันและไปโอนมัดจำ
             </Button>
           </div>
         </Card>

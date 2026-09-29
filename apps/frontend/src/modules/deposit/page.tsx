@@ -1,5 +1,5 @@
 import { UploadSimple } from '@phosphor-icons/react';
-import { getBar, getBooking, promptPayPayload, submitDeposit } from '@nightlist/mock';
+import { depositFor, getBar, getBooking, PLATFORM, promptPayPayload, submitDeposit } from '@nightlist/mock';
 import { Alert, App, Button, Card, Result, Upload } from 'antd';
 import { QRCodeSVG } from 'qrcode.react';
 import { useState } from 'react';
@@ -26,7 +26,7 @@ function toSmallDataUrl(file: File): Promise<string> {
   });
 }
 
-/** /bookings/:id/deposit — โอน PromptPay เข้าบัญชีร้าน + อัปโหลดสลิป */
+/** /bookings/:id/deposit — โอน PromptPay เข้า NightList (แพลตฟอร์มถือเงินไว้ให้) + อัปโหลดสลิป */
 export function DepositPage() {
   useDemo();
   const { id = '' } = useParams();
@@ -36,6 +36,7 @@ export function DepositPage() {
   const b = getBooking(id);
   const bar = b ? getBar(b.barId) : null;
   if (!b || !bar) return <Result status="404" title="ไม่พบการจอง" />;
+  const amount = depositFor(bar, b.pax);
   if (b.status !== 'AWAITING_DEPOSIT') {
     return (
       <Result
@@ -54,17 +55,18 @@ export function DepositPage() {
           <div className="text-center">
             <div className="inline-block rounded-2xl bg-white p-3">
               <QRCodeSVG
-                value={promptPayPayload(bar.deposit.promptpayId, bar.deposit.amount)}
+                value={promptPayPayload(PLATFORM.promptpayId, amount)}
                 size={190}
               />
             </div>
-            <p className="mt-2 text-sm text-muted">PromptPay ของร้าน</p>
+            <p className="mt-2 text-sm text-muted">PromptPay: {PLATFORM.name}</p>
           </div>
           <div>
             <p className="text-muted">ยอดมัดจำ</p>
-            <p className="text-4xl font-bold text-gold-text">{baht(bar.deposit.amount)}</p>
+            <p className="text-4xl font-bold text-gold-text">{baht(amount)}</p>
             <p className="mt-2 text-sm text-muted">
-              โอนเข้าบัญชีร้านโดยตรง · NightList ไม่ได้ถือเงินของคุณ
+              โอนเข้า NightList — เราถือเงินไว้ให้ และส่งต่อให้ร้านหลังคุณเช็กอิน
+              ยกเลิกตามเงื่อนไขได้เงินคืนจากเราโดยตรง
             </p>
             <Alert
               className="mt-4"
@@ -107,7 +109,7 @@ export function DepositPage() {
           disabled={!slip}
           onClick={() => {
             submitDeposit(b.id, slip!);
-            message.success('ส่งสลิปแล้ว รอร้านตรวจสอบ');
+            message.success('ส่งสลิปแล้ว NightList จะตรวจและยืนยันโต๊ะให้');
             navigate(`/bookings/${b.id}`);
           }}
         >

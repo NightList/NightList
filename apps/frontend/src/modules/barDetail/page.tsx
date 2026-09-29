@@ -5,6 +5,8 @@ import {
   Gift,
   InstagramLogo,
   MapPin,
+  NavigationArrow,
+  Tag as PromoIcon,
   TiktokLogo,
 } from '@phosphor-icons/react';
 import { barReviews, CATEGORY_LABELS, getBarBySlug } from '@nightlist/mock';
@@ -20,6 +22,8 @@ import { ReviewList } from '@/ui/components/reviewList';
 import { useDemo } from '@/hooks/useDemo';
 import { baht } from '@/ui/utils/format';
 import { BarRating } from '@/ui/components/barRating';
+import { BarMap, directionsUrl } from '@/ui/components/barMap';
+import { PRBadge } from '@/ui/components/prBadge';
 
 const DAYS = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 
@@ -46,7 +50,7 @@ export function BarDetailPage() {
     );
   }
   const reviews = barReviews(bar.id);
-  const book = () => navigate(`/bars/${bar.slug}/book`, { state: est });
+  const book = () => navigate(`/bars/${bar.slug}/book`);
 
   return (
     <div className="pb-20">
@@ -112,12 +116,44 @@ export function BarDetailPage() {
                         {
                           key: 'd',
                           label: 'มัดจำ',
-                          children: bar.deposit.enabled
-                            ? `${baht(bar.deposit.amount)} / โต๊ะ`
-                            : 'ไม่ต้องมัดจำ',
+                          children: `${baht(bar.deposit.amount)} / ${bar.deposit.unit === 'PER_PERSON' ? 'คน' : 'โต๊ะ'} · โอนเข้า NightList`,
                         },
                       ]}
                     />
+                    <PRBadge pr={bar.pr} />
+                    {bar.promotions.some((p) => p.active) && (
+                      <div>
+                        <p className="mb-2 flex items-center gap-2 font-semibold">
+                          <PromoIcon /> โปรโมชัน (เลือกได้ตอนจอง)
+                        </p>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          {bar.promotions
+                            .filter((p) => p.active)
+                            .map((p) => (
+                              <div key={p.id} className="rounded-xl border border-gold/40 bg-gold/5 p-3">
+                                <p className="font-semibold">{p.title}</p>
+                                <p className="text-xs text-muted">
+                                  {p.description}
+                                  {p.cutoffTime && ` · เช็กอินก่อน ${p.cutoffTime} น.`}
+                                </p>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                    <div>
+                      <div className="mb-2 flex items-center justify-between">
+                        <p className="flex items-center gap-2 font-semibold">
+                          <MapPin /> แผนที่
+                        </p>
+                        <a href={directionsUrl(bar.lat, bar.lng)} target="_blank" rel="noreferrer noopener">
+                          <Button size="small" icon={<NavigationArrow />}>
+                            นำทาง
+                          </Button>
+                        </a>
+                      </div>
+                      <BarMap bars={[bar]} className="h-64" />
+                    </div>
                     <div>
                       <p className="mb-2 flex items-center gap-2 font-semibold">
                         <Clock /> เวลาเปิด-ปิด
@@ -163,17 +199,9 @@ export function BarDetailPage() {
                 label: 'เมนู & ราคา',
                 children: (
                   <div className="space-y-6">
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      {bar.packages.map((p) => (
-                        <Card key={p.id} size="small">
-                          <p className="font-semibold">{p.name}</p>
-                          <p className="text-xl font-bold text-gold-text">{baht(p.totalPrice)}</p>
-                          <p className="text-xs text-muted">
-                            {p.paxMin}–{p.paxMax} คน · ยังไม่รวม SC/VAT
-                          </p>
-                        </Card>
-                      ))}
-                    </div>
+                    <p className="text-sm text-muted">
+                      ราคาอ้างอิงสำหรับประเมินงบ — สั่งที่ร้านตอนไปถึง (ไม่มีสั่งล่วงหน้า)
+                    </p>
                     <Table
                       size="small"
                       rowKey="id"
@@ -251,7 +279,7 @@ export function BarDetailPage() {
         size="large"
         footer={
           <Button block type="primary" size="large" onClick={book}>
-            จองด้วยรายการนี้
+            จองโต๊ะ
           </Button>
         }
       >

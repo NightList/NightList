@@ -4,7 +4,7 @@ import { App, Button, Card, Result, Timeline } from 'antd';
 import { QRCodeSVG } from 'qrcode.react';
 import { Link, useParams } from 'react-router';
 import { BookingStatusTag } from '@/ui/components/bookingStatusTag';
-import { PriceSummary } from '@/ui/components/priceSummary';
+import { DepositSummary } from '@/ui/components/depositCard';
 import { useAuth } from '@/services/auth';
 import { useDemo } from '@/hooks/useDemo';
 import { BOOKING_STATUS, dateTime } from '@/ui/utils/format';
@@ -107,7 +107,7 @@ export function BookingDetailPage() {
                 onClick={() =>
                   modal.confirm({
                     title: 'ยกเลิกการจองนี้?',
-                    content: bar.deposit.enabled ? bar.deposit.policy : undefined,
+                    content: bar.deposit.policy,
                     okText: 'ยกเลิกการจอง',
                     okButtonProps: { danger: true },
                     cancelText: 'ไม่ยกเลิก',
@@ -123,8 +123,14 @@ export function BookingDetailPage() {
             )}
           </div>
         </Card>
-        <Card title="ราคาโดยประมาณ (ตอนจอง)">
-          <PriceSummary estimate={b.estimate} rates={bar.fees} />
+        {b.promotionTitle && (
+          <Card title="โปรโมชันที่เลือก">
+            <p className="font-semibold">{b.promotionTitle}</p>
+            <p className="text-sm text-muted">แจ้งพนักงานตอนเช็กอิน</p>
+          </Card>
+        )}
+        <Card title="มัดจำ">
+          <DepositSummary booking={b} />
         </Card>
         <Card title="ประวัติสถานะ">
           <Timeline
@@ -158,7 +164,7 @@ export function BookingDetailPage() {
               {b.status === 'CHECKED_IN' || b.status === 'COMPLETED'
                 ? `เช็กอินแล้ว${b.checkedInAt ? ` · ${dateTime(b.checkedInAt)}` : ''} ขอให้สนุกนะ!`
                 : ['PENDING', 'AWAITING_DEPOSIT', 'DEPOSIT_SUBMITTED'].includes(b.status)
-                  ? 'จะแสดงเมื่อร้านยืนยันการจองแล้ว'
+                  ? 'จะแสดงเมื่อ NightList ตรวจสลิปมัดจำแล้ว'
                   : 'การจองนี้ไม่สามารถเช็กอินได้แล้ว'}
             </p>
           </div>

@@ -1,70 +1,82 @@
-import { barBookings, reviewDeposit } from '@nightlist/mock';
-import { App, Button, Card, Empty, Image } from 'antd';
-import { useAuth } from '@/services/auth';
+import { barLedger } from '@nightlist/mock';
+import { Card, Col, Empty, Row, Statistic, Table, Tag } from 'antd';
 import { PageHeader } from '@/ui/components/pageHeader';
-import { baht, dateTime, timeAgo } from '@/ui/utils/format';
+import { SETTLEMENT_LABEL } from '@/ui/components/depositCard';
+import { baht, dateTime } from '@/ui/utils/format';
 import { useMerchantBar } from '@/hooks/useMerchantBar';
 
+/**
+ * /merchant/deposits — เงินมัดจำของร้าน
+ * ลูกค้าโอนเข้า NightList · แพลตฟอร์มตรวจสลิปและถือเงินไว้ · ลูกค้าเช็กอิน/ไม่มา → เงินเป็นของร้าน
+ * แล้ว NightList โอนเข้าบัญชีร้าน หรือเก็บเป็นเครดิตร้านตามที่ตกลง
+ */
 export function MerchantDepositsPage() {
   const bar = useMerchantBar();
-  const { user } = useAuth();
-  const { message } = App.useApp();
-  const rows = barBookings(bar.id).filter((b) => b.status === 'DEPOSIT_SUBMITTED');
+  const ledger = barLedger(bar.id);
   return (
     <div>
-      <PageHeader title="ตรวจสลิปมัดจำ" subtitle="เทียบยอดและเวลาในสลิปกับบัญชีของร้านก่อนยืนยัน" />
-      {rows.length === 0 ? (
-        <Empty description="ไม่มีสลิปรอตรวจ" />
+      <PageHeader
+        title="เงินมัดจำ"
+        subtitle={`โอนเข้า ${bar.payout.bankName} ${bar.payout.accountNo} (${bar.payout.accountName}) · แก้ได้ที่ตั้งค่าการจอง`}
+      />
+      <Row gutter={[16, 16]} className="mb-6">
+        <Col xs={12} md={6}>
+          <Card>
+            <Statistic title="NightList ถือไว้ (ยังไม่เช็กอิน)" value={ledger.held} prefix="฿" />
+          </Card>
+        </Col>
+        <Col xs={12} md={6}>
+          <Card>
+            <Statistic
+              title="รอโอนให้ร้าน"
+              value={ledger.payoutPending}
+              prefix="฿"
+              styles={{ content: { color: 'var(--gold-text)' } }}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} md={6}>
+          <Card>
+            <Statistic title="โอนแล้ว" value={ledger.paidOut} prefix="฿" />
+          </Card>
+        </Col>
+        <Col xs={12} md={6}>
+          <Card>
+            <Statistic title="เครดิตในร้าน" value={ledger.credit} prefix="฿" />
+          </Card>
+        </Col>
+      </Row>
+      {ledger.rows.length === 0 ? (
+        <Empty description="ยังไม่มีมัดจำ" />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {rows.map((b) => (
-            <Card
-              key={b.id}
-              title={`${b.userName} · ${b.code}`}
-              extra={
-                <span className="text-xs text-muted">
-                  {b.deposit && timeAgo(b.deposit.submittedAt)}
-                </span>
-              }
-            >
-              <p className="text-sm text-muted">
-                {dateTime(b.datetime)} · {b.pax} คน
-              </p>
-              <p className="my-2 text-2xl font-bold text-gold-text">
-                {baht(b.deposit?.amount ?? bar.deposit.amount)}
-              </p>
-              {b.deposit?.slipDataUrl ? (
-                <Image src={b.deposit.slipDataUrl} alt="สลิป" height={220} />
-              ) : (
-                <div className="grid h-40 place-items-center rounded-lg border border-dashed border-border text-muted">
-                  (ข้อมูลตัวอย่าง — ไม่มีรูปสลิป)
-                </div>
-              )}
-              <div className="mt-4 flex gap-2">
-                <Button
-                  block
-                  danger
-                  onClick={() => {
-                    reviewDeposit(b.id, false, user?.displayName ?? 'ร้าน');
-                    message.info('แจ้งลูกค้าให้ส่งสลิปใหม่แล้ว');
-                  }}
-                >
-                  สลิปไม่ผ่าน
-                </Button>
-                <Button
-                  block
-                  type="primary"
-                  onClick={() => {
-                    reviewDeposit(b.id, true, user?.displayName ?? 'ร้าน');
-                    message.success('ยืนยันการจองแล้ว');
-                  }}
-                >
-                  ยืนยันมัดจำ
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
+        <Table
+          rowKey="id"
+          size="small"
+          pagination={{ pageSize: 20 }}
+          dataSource={ledger.rows}
+          columns={[
+            { title: 'รหัสจอง', dataIndex: 'code', width: 110 },
+            { title: 'ลูกค้า', dataIndex: 'userName' },
+            { title: 'วันที่จอง', dataIndex: 'datetime', render: (v: string) => dateTime(v) },
+            {
+              title: 'ยอด',
+              align: 'right',
+              render: (_, b) => baht(b.deposit!.amount),
+            },
+            {
+              title: 'สถานะเงิน',
+              render: (_, b) => (
+                <Tag color={SETTLEMENT_LABEL[b.deposit!.settlement!].color}>
+                  {SETTLEMENT_LABEL[b.deposit!.settlement!].label}
+                </Tag>
+              ),
+            },
+            {
+              title: 'อัปเดต',
+              render: (_, b) => dateTime(b.deposit!.settledAt ?? b.deposit!.verifiedAt ?? b.deposit!.submittedAt),
+            },
+          ]}
+        />
       )}
     </div>
   );

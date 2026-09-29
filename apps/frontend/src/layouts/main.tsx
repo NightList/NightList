@@ -5,7 +5,6 @@ import { NAV } from '@/configs/nav';
 import { useDemo } from '@/hooks/useDemo';
 import { useAuth } from '@/services/auth';
 import { AgeGate } from '@/ui/components/ageGate';
-import { DemoBanner } from '@/ui/components/demoBanner';
 import { BottomIsland, Navbar, type NavItem } from '@/ui/components/navbar';
 
 /**
@@ -24,7 +23,6 @@ export function MainLayout() {
   return (
     <Layout className="min-h-dvh !bg-background">
       <AgeGate />
-      <DemoBanner />
       <header className="sticky top-0 z-40 h-0">
         <div className="flex justify-center px-3 pt-3 md:pt-4">
           <Navbar items={items} overVideo={isHome} />

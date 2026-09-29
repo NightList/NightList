@@ -1,4 +1,4 @@
-import { MagnifyingGlass } from '@phosphor-icons/react';
+import { MagnifyingGlass, MapTrifold, SquaresFour } from '@phosphor-icons/react';
 import { CATEGORY_LABELS, DISTRICTS, listBars, STYLES, type BarFilter } from '@nightlist/mock';
 import type { BarCategory, CrowdStatus } from '@nightlist/types';
 import { Checkbox, Empty, Input, Segmented, Select, Slider } from 'antd';
@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { BarCard } from '@/ui/components/barCard';
 import { PageHeader } from '@/ui/components/pageHeader';
+import { BarMap } from '@/ui/components/barMap';
 import { useDemo } from '@/hooks/useDemo';
 import { baht } from '@/ui/utils/format';
 
@@ -21,6 +22,7 @@ export function SearchPage() {
     crowd: [],
     sort: 'relevance',
   });
+  const [view, setView] = useState<'grid' | 'map'>('grid');
   const set = (patch: Partial<BarFilter>) => setF((prev) => ({ ...prev, ...patch }));
   const bars = listBars(f);
 
@@ -100,6 +102,11 @@ export function SearchPage() {
             />
           </div>
           <div>
+            <Checkbox checked={!!f.hasPR} onChange={(e) => set({ hasPR: e.target.checked || undefined })}>
+              เฉพาะร้านที่มี PR
+            </Checkbox>
+          </div>
+          <div>
             <p className="mb-2 text-sm text-muted">Safety Score ขั้นต่ำ {f.minSafety ?? 0}</p>
             <Slider
               min={0}
@@ -111,7 +118,15 @@ export function SearchPage() {
           </div>
         </aside>
         <section>
-          <div className="mb-4 flex justify-end">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <Segmented
+              value={view}
+              onChange={(v) => setView(v as 'grid' | 'map')}
+              options={[
+                { value: 'grid', icon: <SquaresFour />, label: 'รายการ' },
+                { value: 'map', icon: <MapTrifold />, label: 'แผนที่' },
+              ]}
+            />
             <Select
               value={f.sort}
               onChange={(v) => set({ sort: v })}
@@ -126,6 +141,8 @@ export function SearchPage() {
           </div>
           {bars.length === 0 ? (
             <Empty description="ไม่พบร้านตามตัวกรอง ลองลดเงื่อนไขดู" />
+          ) : view === 'map' ? (
+            <BarMap bars={bars} className="h-[70vh]" />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {bars.map((b) => (

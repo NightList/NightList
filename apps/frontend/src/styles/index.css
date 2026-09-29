@@ -33,3 +33,24 @@
     background: rgba(255, 255, 255, 0.12) !important;
   }
 }
+
+/* หมุดแผนที่ (Leaflet divIcon) — ทอง + ขอบม่วง ให้เข้าธีม */
+.nl-pin {
+  width: 28px;
+  height: 28px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: linear-gradient(135deg, #f5c542, #c8961e);
+  border: 2px solid #5b1f8a;
+  box-shadow: 0 6px 14px -4px rgba(0, 0, 0, 0.6);
+}
+.leaflet-container {
+  font-family: inherit;
+  background: #e9e6df;
+}
+.dark .leaflet-container {
+  background: #1a1a22;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+}

@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   addReview,
+  barLedger,
+  getBooking,
+  settleDeposit,
   checkInByCode,
   createBooking,
   demoLoginAs,
@@ -32,14 +35,18 @@ describe('demo data', () => {
       zoneId: bar.zones[1]!.id,
       datetime: date,
       pax: 4,
-      packageId: bar.packages[1]!.id,
-      items: [],
     });
     expect(b.status).toBe('AWAITING_DEPOSIT');
     submitDeposit(b.id, 'data:image/png;base64,xx');
-    reviewDeposit(b.id, true, 'owner');
+    // แอดมินแพลตฟอร์มตรวจสลิป → เงินถูกถือไว้ที่แพลตฟอร์ม
+    reviewDeposit(b.id, true, 'admin');
+    expect(getBooking(b.id)!.deposit?.settlement).toBe('HELD');
     const checked = checkInByCode(bar.id, b.code, 'staff');
     expect(checked.status).toBe('CHECKED_IN');
+    // เช็กอินแล้ว → มัดจำเป็นของร้าน รอโอน → แอดมินโอน/เก็บเครดิต
+    expect(getBooking(b.id)!.deposit?.settlement).toBe('PAYOUT_PENDING');
+    settleDeposit(b.id, 'CREDIT', 'admin');
+    expect(barLedger(bar.id).credit).toBeGreaterThanOrEqual(500);
     transition(b.id, 'COMPLETED', 'STAFF', 'staff');
     expect(addReview(b.id, 5, 'ดีมาก').rating).toBe(5);
     expect(() => addReview(b.id, 4, 'ซ้ำ')).toThrow();

@@ -4,7 +4,7 @@ import { nextStatuses } from '@nightlist/utils';
 import { App, Button, Card, Drawer, Segmented, Space, Table, Timeline } from 'antd';
 import { useState } from 'react';
 import { BookingStatusTag } from '@/ui/components/bookingStatusTag';
-import { PriceSummary } from '@/ui/components/priceSummary';
+import { DepositSummary } from '@/ui/components/depositCard';
 import { useAuth } from '@/services/auth';
 import { PageHeader } from '@/ui/components/pageHeader';
 import { BOOKING_STATUS, dateTime } from '@/ui/utils/format';
@@ -145,8 +145,13 @@ export function MerchantBookingsPage() {
                 </div>
               )}
             </dl>
-            <Card size="small" title="Price snapshot (ตอนจอง)">
-              <PriceSummary estimate={open.estimate} rates={bar.fees} />
+            {open.promotionTitle && (
+              <Card size="small" title="โปรโมชันที่ลูกค้าเลือก">
+                {open.promotionTitle}
+              </Card>
+            )}
+            <Card size="small" title="มัดจำ">
+              <DepositSummary booking={open} />
             </Card>
             {open.deposit?.slipDataUrl && (
               <img src={open.deposit.slipDataUrl} alt="สลิปมัดจำ" className="max-h-72 rounded-lg" />
