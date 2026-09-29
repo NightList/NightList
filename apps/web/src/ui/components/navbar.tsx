@@ -15,9 +15,16 @@ export interface NavItem {
   end?: boolean;
 }
 
-/** พื้นกระจกของ island — มืดเสมอ ให้อ่านออกทั้งบนวิดีโอและบนพื้นหน้า (dark/light) */
-const ISLAND =
-  'border border-white/10 bg-white/20 text-white shadow-[0_12px_40px_-12px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm';
+/**
+ * พื้นกระจกของ island มี 2 โหมด
+ * - overVideo (หน้าแรก ยังไม่เลื่อน): กระจกใสบนวิดีโอ ตัวหนังสือขาว
+ * - ปกติ: ใช้สีตามธีม (surface/text) → อ่านออกทั้ง dark และ light
+ */
+const ISLAND = {
+  overVideo:
+    'border-white/15 bg-white/15 text-white shadow-[0_12px_40px_-12px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-md',
+  page: 'border-border bg-surface/85 text-text shadow-[0_12px_40px_-12px_rgba(0,0,0,0.35)] backdrop-blur-xl',
+} as const;
 
 const spring = { type: 'spring', stiffness: 420, damping: 34 } as const;
 
@@ -27,19 +34,20 @@ const spring = { type: 'spring', stiffness: 420, damping: 34 } as const;
  * - แถบไฮไลต์เลื่อนตามเมนูที่เลือก (layoutId)
  * - มือถือ: แสดงแค่โลโก้ + ปุ่ม, เมนูอยู่ที่ <BottomIsland>
  */
-export function Navbar({ items }: { items: NavItem[] }) {
+export function Navbar({ items, overVideo = false }: { items: NavItem[]; overVideo?: boolean }) {
   useDemo();
   const { user } = useAuth();
   const scrolled = useScrolled();
   const reduce = useReducedMotion();
   const unread = user ? myNotifications().filter((n) => !n.readAt).length : 0;
+  const glass = overVideo && !scrolled;
+  const dim = glass ? 'text-white/75 hover:text-white' : 'text-muted hover:text-text';
 
   return (
     <motion.div
       layout={!reduce}
       transition={spring}
-      className={`flex items-center gap-2 rounded-full px-2 ${ISLAND} ${scrolled ? 'h-12 w-full max-w-2xl' : 'h-14 w-full max-w-3xl'
-        }`}
+      className={`flex items-center gap-2 rounded-full border px-2 transition-colors duration-300 ${glass ? ISLAND.overVideo : ISLAND.page} ${scrolled ? 'h-12 w-full max-w-2xl' : 'h-14 w-full max-w-3xl'}`}
     >
       <Link
         to="/"
@@ -53,7 +61,11 @@ export function Navbar({ items }: { items: NavItem[] }) {
           height={35}
           className={scrolled ? 'size-8' : 'size-9'}
         />
-        <span className="font-display text-lg font-bold text-gold">NightList</span>
+        <span
+          className={`font-display text-lg font-bold ${glass ? 'text-gold' : 'text-gold-text'}`}
+        >
+          NightList
+        </span>
       </Link>
 
       <nav className="ml-auto hidden items-center md:flex" aria-label="เมนูหลัก">
@@ -63,8 +75,7 @@ export function Navbar({ items }: { items: NavItem[] }) {
             to={n.to}
             end={n.end}
             className={({ isActive }) =>
-              `relative isolate rounded-full px-3.5 py-1.5 text-sm transition-colors ${isActive ? 'text-[#07070d]' : 'text-white/70 hover:text-white'
-              }`
+              `relative isolate rounded-full px-3.5 py-1.5 text-sm transition-colors ${isActive ? 'text-on-gold' : dim}`
             }
           >
             {({ isActive }) => (
@@ -83,7 +94,9 @@ export function Navbar({ items }: { items: NavItem[] }) {
         ))}
       </nav>
 
-      <div className="ml-auto flex items-center gap-0.5 md:ml-1 [&_.ant-btn]:!text-white/80 [&_.ant-btn:hover]:!text-white">
+      <div
+        className={`ml-auto flex items-center gap-0.5 md:ml-1 ${glass ? '[&_.ant-btn]:!text-white/85 [&_.ant-btn:hover]:!text-white' : ''}`}
+      >
         <ThemeToggle />
         {user && (
           <Link to="/notifications">
@@ -122,7 +135,7 @@ export function BottomIsland({ items }: { items: NavItem[] }) {
       className="fixed inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 flex justify-center px-3 md:hidden"
     >
       <div
-        className={`flex w-full max-w-md items-center justify-between rounded-full p-1.5 ${ISLAND}`}
+        className={`flex w-full max-w-md items-center justify-between rounded-full border p-1.5 ${ISLAND.page}`}
       >
         {items.map((n) => (
           <NavLink
@@ -130,8 +143,7 @@ export function BottomIsland({ items }: { items: NavItem[] }) {
             to={n.to}
             end={n.end}
             className={({ isActive }) =>
-              `relative isolate flex flex-1 flex-col items-center gap-0.5 rounded-full py-1.5 text-[11px] ${isActive ? 'text-[#07070d]' : 'text-white/65'
-              }`
+              `relative isolate flex flex-1 flex-col items-center gap-0.5 rounded-full py-1.5 text-[11px] ${isActive ? 'text-on-gold' : 'text-muted'}`
             }
           >
             {({ isActive }) => (

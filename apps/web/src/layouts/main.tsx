@@ -33,7 +33,7 @@ export function MainLayout() {
       <DemoBanner />
       <header className="sticky top-0 z-40 h-0">
         <div className="flex justify-center px-3 pt-3 md:pt-4">
-          <Navbar items={items} />
+          <Navbar items={items} overVideo={isHome} />
         </div>
       </header>
 
