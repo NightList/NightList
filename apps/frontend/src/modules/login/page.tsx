@@ -93,7 +93,7 @@ export function LoginPage() {
           type="primary"
           htmlType="submit"
           loading={loading}
-          className="btn-auth mx-auto !flex w-[62%] min-w-40"
+          className="mx-auto !flex w-[62%] min-w-40"
         >
           เข้าสู่ระบบ
         </Button>
@@ -101,7 +101,12 @@ export function LoginPage() {
 
       <p className="mb-3 mt-6 text-center text-xs text-white/80">หรือดำเนินการต่อด้วย</p>
       <div className="mx-auto flex w-[80%] min-w-52 flex-col gap-2.5">
-        <Button block className="btn-oauth" icon={<GoogleLogo size={18} weight="bold" />} onClick={() => oauth('google')}>
+        <Button
+          block
+          className="btn-oauth"
+          icon={<GoogleLogo size={18} weight="bold" />}
+          onClick={() => oauth('google')}
+        >
           ดำเนินการต่อด้วย Google
         </Button>
         <Button
@@ -128,7 +133,12 @@ export function LoginPage() {
             <Button size="small" type="text" icon={<User />} onClick={() => quick('customer')}>
               ลูกค้า
             </Button>
-            <Button size="small" type="text" icon={<Storefront />} onClick={() => quick('merchant')}>
+            <Button
+              size="small"
+              type="text"
+              icon={<Storefront />}
+              onClick={() => quick('merchant')}
+            >
               เจ้าของร้าน
             </Button>
             <Button size="small" type="text" icon={<ShieldStar />} onClick={() => quick('staff')}>

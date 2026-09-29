@@ -66,7 +66,7 @@ export function RankingPage() {
               initial={reduce ? false : { opacity: 0, x: -12 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: row * 0.06, duration: 0.25 }}
-              className="flex gap-3 rounded-2xl border border-border bg-card p-3"
+              className="flex gap-3 rounded-2xl border border-border bg-card p-3 items-center"
             >
               <TierStars tier={t} size="lg" label={t === 'C' ? '1–2 ดาว' : undefined} />
               <div className="flex flex-1 gap-3 overflow-x-auto pb-1">
@@ -82,7 +82,7 @@ export function RankingPage() {
                   >
                     <Link
                       to={`/bars/${b.slug}`}
-                      className="block w-44 shrink-0 overflow-hidden rounded-xl border border-border !text-text hover:border-gold hover:shadow-glow"
+                      className="block w-44 shrink-0 overflow-hidden rounded-xl border border-border text-text! hover:border-gold hover:shadow-glow"
                     >
                       <BarCover bar={b} className="h-24" />
                       <div className="p-2">
