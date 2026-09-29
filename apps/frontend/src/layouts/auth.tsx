@@ -64,7 +64,7 @@ export function AuthLayout() {
 
         <header className="sticky top-0 z-40 h-0">
           <div className="flex justify-center px-3 pt-3 md:pt-4">
-            <Navbar items={NAV} overVideo />
+            <Navbar items={NAV} overVideo minimal />
           </div>
         </header>
 

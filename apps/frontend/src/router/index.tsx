@@ -16,6 +16,8 @@ setInterval(runTimeouts, DEMO_TIMEOUT_INTERVAL);
  * ทุกหน้ายกเว้น Home โหลดแบบ lazy (แยก chunk ต่อหน้า) — bundle แรกเล็กลง หน้าแรกขึ้นไว
  */
 const routes: RouteObject[] = [
+  // แผนที่เต็มจอ (ไม่มี navbar — มีปุ่มลอยของตัวเอง)
+  { path: 'map', lazy: () => import('@/modules/map/page').then((m) => ({ Component: m.MapPage })) },
   {
     element: <AuthLayout />,
     children: [

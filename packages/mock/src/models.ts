@@ -89,6 +89,8 @@ export interface Bar {
   description: string;
   styles: string[];
   cover: string; // css gradient (ไม่มีรูปจริงในเดโม)
+  /** รูปปกร้านจริง (Supabase Storage) — ถ้าไม่มีใช้ cover gradient */
+  coverUrl?: string;
   hours: OpeningHours[];
   menu: MenuItem[];
   packages: PricePackage[];

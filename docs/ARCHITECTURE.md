@@ -67,7 +67,7 @@ flowchart LR
 | Shared UI / Contract | `packages/ui`, `packages/types` | theme tokens, คอมโพเนนต์ร่วม, Zod schema / DTO |
 | Domain logic (pure) | `packages/utils` | price calculator, star → tier, status transition map |
 | Demo data | `packages/mock` | โหมดเดโม: ข้อมูลสมมติ + store ในเบราว์เซอร์ (ใช้เมื่อยังไม่ตั้ง Supabase) — ขั้นตอนเชื่อม Supabase ดู `docs/SUPABASE.md` |
-| Map | `react-leaflet` + OpenStreetMap | แผนที่ร้าน (หน้าร้าน + หน้าค้นหาแบบแผนที่) ไม่ต้องมี API key · ปุ่มนำทางเปิด Google Maps |
+| Map | `react-leaflet` + OpenStreetMap / CARTO basemap | แผนที่ร้าน (หน้าร้าน, หน้าค้นหา, หน้า `/map` เต็มจอ พื้นแผนที่ dark/light ตามธีม) ไม่ต้องมี API key · ปุ่มนำทางเปิด Google Maps |
 | API | `apps/backend/src` (controllers) | controller, guard, pipe, Swagger |
 | Application / Domain | `apps/backend/src/modules` | booking, pricing, ranking, notification ฯลฯ (NestJS modules) |
 | Data | `apps/backend/supabase` | migrations, RLS, DB functions, seed |
