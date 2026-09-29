@@ -1,6 +1,6 @@
 import { User } from '@phosphor-icons/react';
 import { Layout } from 'antd';
-import { Link, Outlet, useLocation } from 'react-router';
+import { Link, Outlet, useLocation, useMatches } from 'react-router';
 import { NAV } from '@/configs/nav';
 import { useDemo } from '@/hooks/useDemo';
 import { useAuth } from '@/services/auth';
@@ -17,6 +17,9 @@ export function MainLayout() {
   const { user } = useAuth();
   const { pathname } = useLocation();
   const isHome = pathname === '/';
+  // หน้าที่วาดเต็มจอเอง (ภาพพื้นหลังเต็มจอ + navbar ใส) ตั้ง handle: { fullBleed: true } ใน router
+  const fullBleed = useMatches().some((m) => (m.handle as { fullBleed?: boolean } | undefined)?.fullBleed);
+  const bleed = isHome || fullBleed;
   const isShop = user?.role === 'MERCHANT' || user?.role === 'STAFF';
   const items: NavItem[] = [...NAV, ...(isShop ? [{ to: '/merchant', label: 'ร้านของฉัน' }] : [])];
 
@@ -25,11 +28,11 @@ export function MainLayout() {
       <AgeGate />
       <header className="sticky top-0 z-40 h-0">
         <div className="flex justify-center px-3 pt-3 md:pt-4">
-          <Navbar items={items} overVideo={isHome} />
+          <Navbar items={items} overVideo={bleed} />
         </div>
       </header>
 
-      {isHome ? (
+      {bleed ? (
         <main className="flex-1 pb-24 md:pb-0">
           <Outlet />
         </main>
@@ -39,7 +42,7 @@ export function MainLayout() {
         </main>
       )}
 
-      <footer className="relative hidden overflow-hidden border-t border-border md:block">
+      <footer className={`relative hidden overflow-hidden border-t border-border ${fullBleed ? '' : 'md:block'}`}>
         <img
           src="/images/home/city-strip.jpg"
           alt=""

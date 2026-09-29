@@ -91,7 +91,11 @@ const routes: RouteObject[] = [
           },
         ],
       },
-      { path: '*', lazy: () => import('@/modules/notFound/page').then((m) => ({ Component: m.NotFoundPage })) },
+      {
+        path: '*',
+        handle: { fullBleed: true },
+        lazy: () => import('@/modules/notFound/page').then((m) => ({ Component: m.NotFoundPage })),
+      },
     ],
   },
 ];
