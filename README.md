@@ -14,7 +14,7 @@
 
 **ลองเส้นทางหลัก:** ลูกค้าจอง Moonlit Cellar → จ่ายมัดจำ (อัปโหลดรูปอะไรก็ได้) → สลับเป็นเจ้าของร้าน ยืนยันสลิปที่ `/merchant/deposits` → เปิด `/merchant/tonight` กรอกรหัสจองเพื่อเช็กอิน → กลับเป็นลูกค้า เขียนรีวิว
 
-> web กับ admin เป็นคนละ origin จึงเก็บข้อมูลเดโมแยกกัน · ข้อมูลเดโมอยู่ใน `packages/mock` (แทนที่ด้วย API จริงทีละหน้า)
+> ตอน dev web กับ admin เป็นคนละ origin จึงเก็บข้อมูลเดโมแยกกัน · ข้อมูลเดโมอยู่ใน `packages/mock` (แทนที่ด้วย API จริงทีละหน้า)
 
 ---
 
@@ -46,7 +46,7 @@
 pnpm install
 cp .env.example .env                 # ใส่ค่า Supabase หลัง db:start
 pnpm --filter @nightlist/backend db:start   # Supabase local (Studio :54323)
-pnpm dev                             # frontend :5173 · admin :5174 · (api: pnpm --filter @nightlist/backend dev → :3000/docs)
+pnpm dev                             # frontend :5173 · admin :5174 · (api: pnpm --filter @nightlist/backend dev → :3000/api/docs)
 ```
 
 | คำสั่ง | ทำอะไร |
@@ -65,7 +65,7 @@ pnpm dev                             # frontend :5173 · admin :5174 · (api: pn
 | Backend | NestJS (TypeScript) + nestjs-zod + Swagger |
 | Database | Supabase (PostgreSQL, Auth, Storage, Realtime, RLS, pg_cron) |
 | Infra | Terraform (Vercel + Supabase providers) |
-| Hosting | Vercel (`web`, `admin`, `api`) |
+| Hosting | Vercel project เดียว — services `frontend` (/), `admin` (/admin), `backend` (/api) ใน `vercel.json` |
 | Monorepo | pnpm workspaces + Turborepo |
 | Auth | Supabase Auth: email + password · Turnstile · MFA สำหรับ Admin |
 | Notification | Web Push, LINE Messaging API, In-app |

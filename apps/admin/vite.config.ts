@@ -6,6 +6,7 @@ import { defineConfig } from 'vite';
 const pkg = (name: string) => fileURLToPath(new URL(`../../packages/${name}/src/index.ts`, import.meta.url));
 
 export default defineConfig({
+  base: '/admin/', // เสิร์ฟใต้ /admin บน Vercel services
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: [

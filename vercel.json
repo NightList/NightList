@@ -1,0 +1,31 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "frontend": {
+      "root": "apps/frontend",
+      "framework": "vite",
+      "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+      "buildCommand": "cd ../.. && pnpm turbo run build --filter=@nightlist/frontend",
+      "outputDirectory": "dist"
+    },
+    "admin": {
+      "root": "apps/admin",
+      "framework": "vite",
+      "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+      "buildCommand": "cd ../.. && pnpm turbo run build --filter=@nightlist/admin",
+      "outputDirectory": "dist"
+    },
+    "backend": {
+      "root": "apps/backend",
+      "runtime": "node",
+      "entrypoint": "api/index.js",
+      "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+      "buildCommand": "cd ../.. && pnpm turbo run build --filter=@nightlist/backend"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": { "service": "backend" } },
+    { "source": "/admin/(.*)", "destination": { "service": "admin" } },
+    { "source": "/(.*)", "destination": { "service": "frontend" } }
+  ]
+}

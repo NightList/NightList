@@ -14,10 +14,10 @@ flowchart LR
   end
 
   subgraph Vercel["Vercel"]
-    WEB["apps/frontend<br/>React + antd + Tailwind"]
-    ADM["apps/admin<br/>React + antd Pro"]
+    WEB["apps/frontend  /<br/>React + antd + Tailwind"]
+    ADM["apps/admin  /admin<br/>React + antd Pro"]
     OG["api/og<br/>OG image + meta"]
-    API["apps/backend<br/>NestJS (Function)"]
+    API["apps/backend  /api<br/>NestJS (Function)"]
   end
 
   subgraph Supabase["Supabase (ap-southeast-1)"]
@@ -265,8 +265,10 @@ sequenceDiagram
 | Env | Vercel | Supabase | Deploy |
 |---|---|---|---|
 | dev | preview ต่อ PR | `nightlist-dev` | อัตโนมัติทุก PR |
-| staging | `staging.*` | `nightlist-staging` | merge เข้า `main` |
-| prod | `nightlist.app`, `admin.`, `api.` | `nightlist-prod` | manual approval |
+| staging | `staging.nightlist.app` | `nightlist-staging` | merge เข้า `main` |
+| prod | `nightlist.app` | `nightlist-prod` | manual approval |
+
+**Vercel services (project เดียว, โดเมนเดียว):** `vercel.json` ที่ root กำหนด 3 services และ rewrites — `frontend` → `/`, `admin` → `/admin/*` (Vite `base: /admin/`), `backend` → `/api/*` (NestJS `setGlobalPrefix('api')`, Swagger ที่ `/api/docs`) · เว็บและแอดมินเรียก API แบบ same-origin จึงไม่ต้องตั้ง `VITE_API_URL` ตอน deploy · ยังไม่มี binding เพราะไม่มี service เรียกกันเองฝั่ง server · ทดสอบรวมด้วย `vercel dev`
 
 **Pipeline:** `lint → test → build → terraform plan/apply → supabase db push → vercel deploy`
 
