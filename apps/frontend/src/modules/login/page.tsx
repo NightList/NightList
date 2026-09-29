@@ -1,6 +1,6 @@
-import { ShieldStar, Storefront, User } from '@phosphor-icons/react';
+import { FacebookLogo, GoogleLogo, ShieldStar, Storefront, User } from '@phosphor-icons/react';
 import { demoLogin, demoLoginAs } from '@nightlist/mock';
-import { App, Button, Checkbox, Form, Input } from 'antd';
+import { App, Button, Form, Input } from 'antd';
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { useAuth } from '@/services/auth';
@@ -10,12 +10,14 @@ import { AuthCard } from '@/ui/components/authCard';
 interface LoginForm {
   email: string;
   password: string;
-  remember: boolean;
 }
 
+type Provider = 'google' | 'facebook';
+
 /**
- * /login — email + password (Supabase Auth) · ดีไซน์ตาม Figma "login 2"
- * โหมดเดโม: มีปุ่มเข้าเร็วตามบทบาท แทนส่วน "หรือล็อกอินด้วย"
+ * /login — ดีไซน์ตาม Figma "Login": โลโก้ · อีเมล/รหัสผ่านมีป้ายกำกับ · ลืมรหัสผ่านชิดขวา ·
+ * ปุ่มม่วง "เข้าสู่ระบบ" · "หรือดำเนินการต่อด้วย" Google / Facebook · ลิงก์สมัครสมาชิก
+ * โหมดเดโม: ปุ่มเข้าเร็วตามบทบาทอยู่ท้ายการ์ด
  */
 export function LoginPage() {
   const { message } = App.useApp();
@@ -25,14 +27,13 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false);
   const next = params.get('next') ?? '/';
 
-  const onFinish = async ({ email, password, remember }: LoginForm) => {
+  const onFinish = async ({ email, password }: LoginForm) => {
     setLoading(true);
     try {
       if (isDemo) {
-        demoLogin(email, remember);
+        demoLogin(email);
       } else {
         // TODO: Cloudflare Turnstile → options: { captchaToken }
-        // TODO: remember = false → สร้าง client ด้วย storage: sessionStorage
         const { error } = await supabase!.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
@@ -44,6 +45,18 @@ export function LoginPage() {
     }
   };
 
+  const oauth = async (provider: Provider) => {
+    if (isDemo) {
+      message.info('โหมดเดโม: ใช้ปุ่มเข้าเร็วด้านล่างแทน');
+      return;
+    }
+    const { error } = await supabase!.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: `${window.location.origin}${next}` },
+    });
+    if (error) message.error('เข้าสู่ระบบไม่สำเร็จ ลองใหม่อีกครั้ง');
+  };
+
   const quick = (role: 'customer' | 'merchant' | 'staff') => {
     demoLoginAs(role);
     navigate(role === 'customer' ? next : role === 'staff' ? '/merchant/tonight' : '/merchant', {
@@ -52,77 +65,78 @@ export function LoginPage() {
   };
 
   return (
-    <AuthCard
-      subtitle="จัดอันดับร้านเหล้า คัดมาแล้วจากคนจริง บอกต่อร้านดี ๆ"
-      footer={
-        <>
-          สำหรับผู้มีอายุ 20 ปีขึ้นไป · การเข้าสู่ระบบถือว่ายอมรับ <Link to="/terms">เงื่อนไข</Link>{' '}
-          และ <Link to="/privacy">นโยบายความเป็นส่วนตัว</Link>
-        </>
-      }
-    >
-      <Form<LoginForm>
-        size="large"
-        requiredMark={false}
-        initialValues={{ remember: true }}
-        onFinish={onFinish}
-      >
+    <AuthCard>
+      <Form<LoginForm> layout="vertical" size="large" requiredMark={false} onFinish={onFinish}>
         <Form.Item
           name="email"
-          className="!mb-3"
+          label="อีเมล"
+          className="!mb-4"
           rules={[{ required: true, type: 'email', message: 'กรอกอีเมลให้ถูกต้อง' }]}
         >
-          <Input aria-label="อีเมล" placeholder="อีเมล" autoComplete="email" inputMode="email" />
+          <Input autoComplete="email" inputMode="email" />
         </Form.Item>
         <Form.Item
           name="password"
-          className="!mb-4"
+          label="รหัสผ่าน"
+          className="!mb-1"
           rules={[{ required: true, message: 'กรอกรหัสผ่าน' }]}
         >
-          <Input.Password
-            aria-label="รหัสผ่าน"
-            placeholder="รหัสผ่าน"
-            autoComplete="current-password"
-          />
+          <Input.Password autoComplete="current-password" />
         </Form.Item>
-
-        <div className="mb-6 flex items-center justify-between">
-          <Form.Item name="remember" valuePropName="checked" noStyle>
-            <Checkbox>จดจำฉันไว้</Checkbox>
-          </Form.Item>
-          <Link to="/forgot-password" className="font-semibold !text-white hover:!text-[#b98cff]">
-            ลืมรหัสผ่าน
+        <div className="mb-5 text-right">
+          <Link to="/forgot-password" className="text-xs !text-white/80 hover:!text-white">
+            ลืมรหัสผ่าน ?
           </Link>
         </div>
 
-        <Button type="primary" htmlType="submit" block loading={loading} className="btn-auth">
+        <Button
+          type="primary"
+          htmlType="submit"
+          loading={loading}
+          className="btn-auth mx-auto !flex w-[62%] min-w-40"
+        >
           เข้าสู่ระบบ
         </Button>
       </Form>
 
+      <p className="mb-3 mt-6 text-center text-xs text-white/80">หรือดำเนินการต่อด้วย</p>
+      <div className="mx-auto flex w-[80%] min-w-52 flex-col gap-2.5">
+        <Button block className="btn-oauth" icon={<GoogleLogo size={18} weight="bold" />} onClick={() => oauth('google')}>
+          ดำเนินการต่อด้วย Google
+        </Button>
+        <Button
+          block
+          className="btn-oauth"
+          icon={<FacebookLogo size={18} weight="fill" />}
+          onClick={() => oauth('facebook')}
+        >
+          ดำเนินการต่อด้วย Facebook
+        </Button>
+      </div>
+
+      <p className="mt-8 text-center text-xs text-white/85">
+        ยังไม่มีบัญชี ?{' '}
+        <Link to="/register" className="font-bold !text-[#c4a6ff] hover:!text-white">
+          สมัครสมาชิก
+        </Link>
+      </p>
+
       {isDemo && (
-        <div className="mt-7 text-center">
-          <p className="mb-3 text-white/85">หรือเข้าเร็วด้วยบัญชีเดโม</p>
+        <div className="mt-7 border-t border-white/10 pt-5 text-center">
+          <p className="mb-2.5 text-xs text-white/60">เดโม — เข้าเร็วตามบทบาท</p>
           <div className="grid grid-cols-3 gap-2">
-            <Button icon={<User />} onClick={() => quick('customer')}>
+            <Button size="small" type="text" icon={<User />} onClick={() => quick('customer')}>
               ลูกค้า
             </Button>
-            <Button icon={<Storefront />} onClick={() => quick('merchant')}>
+            <Button size="small" type="text" icon={<Storefront />} onClick={() => quick('merchant')}>
               เจ้าของร้าน
             </Button>
-            <Button icon={<ShieldStar />} onClick={() => quick('staff')}>
+            <Button size="small" type="text" icon={<ShieldStar />} onClick={() => quick('staff')}>
               Staff
             </Button>
           </div>
         </div>
       )}
-
-      <p className="mt-8 text-center text-base text-white">
-        ยังไม่มีบัญชี?{' '}
-        <Link to="/register" className="font-bold !text-[#a36cf5] hover:!text-[#b98cff]">
-          สมัครสมาชิก
-        </Link>
-      </p>
     </AuthCard>
   );
 }

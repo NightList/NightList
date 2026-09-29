@@ -1,12 +1,14 @@
 import { getAntdTheme } from '@nightlist/ui';
-import { Button, ConfigProvider, type ThemeConfig } from 'antd';
-import { Link, Outlet, useLocation } from 'react-router';
+import { ConfigProvider, type ThemeConfig } from 'antd';
+import { Outlet } from 'react-router';
+import { NAV } from '@/configs/nav';
 import { AgeGate } from '@/ui/components/ageGate';
+import { Navbar } from '@/ui/components/navbar';
 
 /**
- * ธีมเฉพาะหน้า Auth (Figma: Login/Register → login 2)
- * พื้นหลังเป็นภาพกลางคืนเสมอ จึงล็อกเป็น dark ไม่ขึ้นกับสวิตช์ธีม
- * ช่องกรอก: พื้นดำโปร่ง ขอบเทา #323232 มุม 10px · ปุ่มหลัก/checkbox: ม่วง
+ * ธีมเฉพาะหน้า Auth (Figma: "Login" 1600×1024)
+ * พื้นหลังเป็นภาพเมืองกลางคืนโทนม่วงเสมอ จึงล็อกเป็น dark ไม่ขึ้นกับสวิตช์ธีม
+ * ช่องกรอก: กล่องเทาโปร่ง มุม 6px ไม่มีขอบ · ปุ่มหลัก: ม่วง
  */
 const base = getAntdTheme('dark');
 const authTheme: ThemeConfig = {
@@ -14,65 +16,59 @@ const authTheme: ThemeConfig = {
   cssVar: { key: 'nightlist-auth' },
   token: {
     ...base.token,
-    colorPrimary: '#8b4fe3',
+    colorPrimary: '#6d4bc4',
     colorTextLightSolid: '#ffffff',
-    colorLink: '#b98cff',
-    borderRadius: 10,
+    colorLink: '#c4a6ff',
+    borderRadius: 6,
   },
   components: {
     ...base.components,
     Input: {
-      colorBgContainer: 'rgba(9, 9, 9, 0.55)',
-      colorBorder: '#323232',
-      hoverBorderColor: '#6d4bb0',
-      activeBorderColor: '#8b4fe3',
-      activeShadow: '0 0 0 3px rgba(139, 79, 227, 0.25)',
-      controlHeightLG: 52,
-      paddingInlineLG: 18,
+      colorBgContainer: 'rgba(255, 255, 255, 0.10)',
+      colorBorder: 'transparent',
+      hoverBorderColor: 'rgba(255, 255, 255, 0.25)',
+      activeBorderColor: '#8b6fe0',
+      activeShadow: '0 0 0 3px rgba(139, 111, 224, 0.25)',
+      colorTextPlaceholder: 'rgba(255, 255, 255, 0.35)',
+      controlHeightLG: 42,
+      paddingInlineLG: 14,
     },
     DatePicker: {
-      colorBgContainer: 'rgba(9, 9, 9, 0.55)',
-      colorBorder: '#323232',
-      controlHeightLG: 52,
+      colorBgContainer: 'rgba(255, 255, 255, 0.10)',
+      colorBorder: 'transparent',
+      controlHeightLG: 42,
     },
-    Button: { primaryColor: '#ffffff', controlHeightLG: 52, fontWeight: 600 },
+    Form: { labelColor: 'rgba(255, 255, 255, 0.9)', verticalLabelPadding: '0 0 6px' },
+    Button: { primaryColor: '#ffffff', controlHeightLG: 44, fontWeight: 600 },
   },
 };
 
 /**
  * Layout ของหน้า Auth ทั้งหมด (login / register / forgot / reset / verify / invite)
- * Desktop: การ์ดอยู่ครึ่งขวา ให้ภาพพื้นหลังโชว์ฝั่งซ้าย · Mobile: การ์ดกลางจอ
+ * Figma "Login": navbar แคปซูลลอยแบบเดียวกับหน้าหลัก · การ์ดกระจกอยู่กลางจอ · ภาพเมืองกลางคืนเต็มจอ
  */
 export function AuthLayout() {
-  const { pathname } = useLocation();
-  const onRegister = pathname === '/register';
-
   return (
     <ConfigProvider theme={authTheme}>
-      <div className="dark relative isolate min-h-dvh overflow-hidden bg-[#07070d] text-[#f5f1e8]">
+      <div className="dark relative isolate flex min-h-dvh flex-col overflow-hidden bg-[#07070d] text-[#f5f1e8]">
         <AgeGate />
         <img
           src="/images/login/bg.jpg"
           alt=""
+          fetchPriority="high"
           className="absolute inset-0 -z-10 size-full object-cover object-[30%_center]"
         />
-        <div className="absolute inset-0 -z-10 bg-black/70" />
+        {/* ย้อมม่วง + มืดลง ให้การ์ดเด่นและอ่านออก (Figma: overlay ม่วงเข้ม) */}
+        <div className="absolute inset-0 -z-10 bg-[#1a0b33]/55 mix-blend-multiply" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-black/55 via-black/35 to-black/70" />
 
-        <header className="flex h-16 items-center justify-between px-4 md:px-8">
-          <Link
-            to="/"
-            className="flex items-center gap-2 !text-[#f5f1e8]"
-            aria-label="กลับหน้าแรก NightList"
-          >
-            <img src="/images/common/logo.png" alt="" width={36} height={35} className="size-9" />
-            <span className="font-display text-lg font-bold text-gold">NightList</span>
-          </Link>
-          <Link to={onRegister ? '/login' : '/register'}>
-            <Button type="primary">{onRegister ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก'}</Button>
-          </Link>
+        <header className="sticky top-0 z-40 h-0">
+          <div className="flex justify-center px-3 pt-3 md:pt-4">
+            <Navbar items={NAV} overVideo />
+          </div>
         </header>
 
-        <main className="flex min-h-[calc(100dvh-4rem)] items-center justify-center px-4 pb-12 lg:justify-end lg:pr-[9vw]">
+        <main className="flex flex-1 items-center justify-center px-4 pb-10 pt-24">
           <Outlet />
         </main>
       </div>

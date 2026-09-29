@@ -2,8 +2,8 @@ import { Typography } from 'antd';
 import type { ReactNode } from 'react';
 
 /**
- * การ์ดกระจกของหน้า Auth (Figma: login 2)
- * โลโก้ลอยคร่อมขอบบนการ์ด · มุม 30px · พื้นดำโปร่ง + blur
+ * การ์ดกระจกของหน้า Auth (Figma: "Login")
+ * กว้าง ~460px กลางจอ · โลโก้อยู่ในการ์ดด้านบน · มุม 16px · พื้นดำโปร่ง + blur · ขอบขาวจาง
  */
 export function AuthCard({
   title,
@@ -11,35 +11,35 @@ export function AuthCard({
   children,
   footer,
 }: {
-  /** หัวข้อ (ไม่ใส่ก็ได้ — หน้า login ใช้แค่ subtitle ตาม Figma) */
+  /** หัวข้อ (ไม่ใส่ก็ได้ — หน้า login มีแค่โลโก้ตาม Figma) */
   title?: string;
   subtitle?: string;
   children: ReactNode;
   footer?: ReactNode;
 }) {
   return (
-    <div className="relative w-full max-w-[520px] pt-[84px]">
-      <img
-        src="/images/common/logo.png"
-        alt="NightList"
-        width={177}
-        height={172}
-        className="absolute left-1/2 top-0 z-10 w-[150px] -translate-x-1/2 drop-shadow-[0_12px_30px_rgba(139,79,227,0.45)] sm:w-[177px]"
-      />
-      <div className="rounded-[30px] border border-white/15 bg-[#0c0a12]/75 px-6 pb-9 pt-[104px] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)] backdrop-blur-xl sm:px-14">
-        <div className="mb-7 text-center">
-          {title && (
-            <Typography.Title level={3} className="!mb-1">
-              {title}
-            </Typography.Title>
-          )}
-          {subtitle && (
-            <p className="text-balance text-base text-white/85 sm:text-lg">{subtitle}</p>
-          )}
-        </div>
+    <div className="w-full max-w-[460px]">
+      <div className="rounded-2xl border border-white/15 bg-[#0b0910]/60 px-6 pb-8 pt-7 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl sm:px-14">
+        <img
+          src="/images/common/logo.png"
+          alt="NightList"
+          width={177}
+          height={172}
+          className="mx-auto mb-5 w-[120px] drop-shadow-[0_10px_28px_rgba(139,79,227,0.45)]"
+        />
+        {(title || subtitle) && (
+          <div className="mb-6 text-center">
+            {title && (
+              <Typography.Title level={4} className="!mb-1 !text-white">
+                {title}
+              </Typography.Title>
+            )}
+            {subtitle && <p className="text-balance text-sm text-white/75">{subtitle}</p>}
+          </div>
+        )}
         {children}
       </div>
-      {footer && <div className="mt-5 text-center text-xs text-white/60">{footer}</div>}
+      {footer && <div className="mt-4 text-center text-xs text-white/60">{footer}</div>}
     </div>
   );
 }
