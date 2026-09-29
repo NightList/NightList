@@ -1,18 +1,12 @@
-import { CalendarCheck, Crown, House, MagnifyingGlass, User } from '@phosphor-icons/react';
+import { User } from '@phosphor-icons/react';
 import { Layout } from 'antd';
 import { Link, Outlet, useLocation } from 'react-router';
+import { NAV } from '@/configs/nav';
 import { useDemo } from '@/hooks/useDemo';
 import { useAuth } from '@/services/auth';
 import { AgeGate } from '@/ui/components/ageGate';
 import { DemoBanner } from '@/ui/components/demoBanner';
 import { BottomIsland, Navbar, type NavItem } from '@/ui/components/navbar';
-
-const NAV: NavItem[] = [
-  { to: '/', label: 'หน้าแรก', icon: House, end: true },
-  { to: '/ranking', label: 'จัดอันดับ', icon: Crown },
-  { to: '/search', label: 'ค้นหา', icon: MagnifyingGlass },
-  { to: '/bookings', label: 'การจอง', icon: CalendarCheck },
-];
 
 /**
  * Layout หลักฝั่งลูกค้า

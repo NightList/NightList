@@ -9,14 +9,27 @@
 
 @layer components {
   /* ปุ่มหลักหน้า Auth (Figma login 2: ไล่ม่วง #b38bef → #553a80 บนพื้นมืด) */
+  /* ปุ่มหลักหน้า Auth (Figma "Login": ม่วง #5b3fa0 มุม 6px) */
   .btn-auth {
-    height: 3.5rem !important;
+    height: 2.75rem !important;
     border: 0 !important;
-    font-size: 1.0625rem !important;
-    background: linear-gradient(90deg, #8a6cc0, #4b3474) !important;
-    box-shadow: none !important;
+    font-size: 0.9375rem !important;
+    background: linear-gradient(180deg, #6a4bc0, #4f3496) !important;
+    box-shadow: 0 8px 24px -8px rgba(106, 75, 192, 0.7) !important;
   }
   .btn-auth:hover:not(:disabled) {
-    background: linear-gradient(90deg, #9a7cd0, #5b4284) !important;
+    background: linear-gradient(180deg, #7a5bd0, #5f44a6) !important;
+  }
+  /* ปุ่ม OAuth: พื้นโปร่ง ขอบขาวจาง ตัวหนังสือขาว */
+  .btn-oauth {
+    height: 2.5rem !important;
+    border-color: rgba(255, 255, 255, 0.45) !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    color: #fff !important;
+    font-size: 0.8125rem !important;
+  }
+  .btn-oauth:hover:not(:disabled) {
+    border-color: #fff !important;
+    background: rgba(255, 255, 255, 0.12) !important;
   }
 }
