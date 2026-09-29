@@ -68,7 +68,7 @@ Age Gate (20+) → Onboarding (ความชอบ) → Home / Tier List / Sea
 - จัดอันดับร้านเป็น **ระดับดาว 1–5 ดาว (⭐–⭐⭐⭐⭐⭐)** แยกตามประเภท (ผับ/บาร์, นั่งชิล, ร้านอาหารที่มีเครื่องดื่ม) และตามย่าน
   - ระบบคำนวณคะแนนรวม 0–100 แล้วแปลงเป็นดาว: 90+ = 5 ดาว, 75–89 = 4 ดาว, 60–74 = 3 ดาว, 40–59 = 2 ดาว, ต่ำกว่า 40 = 1 ดาว
   - ร้านที่มีรีวิวจากการเช็กอินจริงน้อยกว่า 5 รีวิว ให้แสดงเป็น "ร้านใหม่" แทนดาว
-  - หน้า Tier List แบ่งแถวเป็น **S / A / B / C** โดยแปลงจากดาว (S = 5★, A = 4★, B = 3★, C = 1–2★) ดูสีได้ที่หัวข้อ "Tier Badge" ในส่วนดีไซน์
+  - หน้าจัดอันดับแบ่งแถวตาม **ดาว** (5★ → 4★ → 3★ → 1–2★) ไม่แสดงตัวอักษร S/A/B/C ให้ผู้ใช้เห็น ดูหัวข้อ "ระดับร้าน = ดาว" ในส่วนดีไซน์
   - ดาวของ NightList ต่างจากคะแนนรีวิว (rating ที่ลูกค้าให้) ต้องแสดงแยกกันให้ชัด
 - **คะแนนคำนวณจาก:**
   - รีวิวที่มาจากการเช็กอินจริงเท่านั้น (ถ่วงน้ำหนักตามความใหม่ของรีวิว)
@@ -373,9 +373,12 @@ Age Gate (20+) → Onboarding (ความชอบ) → Home / Tier List / Sea
 ```
 night-list/
 ├── apps/
-│   ├── web/                # React (Vite) — ฝั่งลูกค้า + ฝั่งร้าน (/merchant) + Staff Scanner (PWA)
+│   ├── frontend/           # React (Vite) — ฝั่งลูกค้า + ฝั่งร้าน (/merchant) + Staff Scanner (PWA)
 │   │   └── api/og/         # Vercel Function สร้าง meta/OG image ให้ /bars/:slug และ /share/:token
-│   └── admin/              # React (Vite) + Ant Design v6 + ProComponents — Backoffice ทีม NightList (อนุมัติร้าน, Safety, ดาว, โปรโมท, Review, Billing, Audit)
+│   ├── admin/              # React (Vite) + Ant Design v6 + ProComponents — Backoffice ทีม NightList (อนุมัติร้าน, Safety, ดาว, โปรโมท, Review, Billing, Audit)
+│   └── backend/            # NestJS app (Vercel Function): src/ = HTTP entry (controllers, guards, pipes)
+│                           #   src/modules/ = domain modules (booking, pricing, ranking, notification, jobs ...)
+│                           #   supabase/ = migrations (SQL), RLS policies, DB functions, seed data
 │
 ├── packages/
 │   ├── ui/                 # antd theme + Tailwind preset + คอมโพเนนต์ร่วม (dark nightlife) ใช้ร่วมกัน 2 แอป
@@ -383,12 +386,6 @@ night-list/
 │   ├── config/             # eslint, tsconfig, tailwind preset, env schema
 │   ├── utils/              # price calculator, star calculator, date/timezone (Asia/Bangkok), status transition map, formatters
 │   └── mock/               # โหมดเดโม: seed ร้านสมมติ + store (localStorage) + service ที่หน้าเว็บเรียก จนกว่าจะต่อ API จริง
-│
-├── backend/
-│   ├── api/                # NestJS app — HTTP entry (controllers, guards, pipes), deploy เป็น Vercel Function
-│   ├── services/           # NestJS domain modules: auth, bars, availability, booking, deposit, checkin, review,
-│   │                       #   tier, promotion, billing, notification, jobs (auto-cancel, expiry, tier calc, retry, cleanup)
-│   └── database/           # Supabase migrations (SQL), RLS policies, DB functions, seed data, generated DB types
 │
 ├── infra/
 │   └── terraform/
@@ -405,7 +402,7 @@ night-list/
 **หลักการแบ่งหน้าที่**
 - `apps/*` ไม่เขียนลง DB ตรงสำหรับงานสำคัญ (booking, status, check-in, deposit, billing, promotion) ต้องเรียกผ่าน NestJS API
 - การอ่านข้อมูลสาธารณะ (รายชื่อร้าน, เมนู) และ Realtime (Crowd Status, สถานะ booking) ใช้ Supabase client + RLS จาก frontend ได้โดยตรง เพราะ NestJS บน Vercel เป็น serverless จึงถือ websocket ไม่ได้
-- `backend/api` เป็นชั้นบางๆ (controller + guard + validation) ส่วน business logic อยู่ใน `backend/services` เพื่อให้ jobs และ API ใช้ logic เดียวกัน
+- `apps/backend` แยกเป็น controller (ชั้นบาง: guard + validation) กับ `src/modules/*` (business logic ของ booking, pricing, ranking, notification) เพื่อให้ jobs และ API ใช้ logic เดียวกัน
 - Status transition map, ตัวคำนวณราคา และตัวคำนวณดาว อยู่ใน `packages/utils` ให้ทั้ง frontend (แสดงผล) และ NestJS (validate) ใช้โค้ดเดียวกัน
 - `apps/admin` deploy แยกโดเมน (เช่น admin.nightlist.app) และเข้าได้เฉพาะ role ADMIN
 
@@ -415,7 +412,7 @@ night-list/
 ## Tech Stack
 | ชั้น | เทคโนโลยี |
 |---|---|
-| **Frontend (web)** | **React** 19 + TypeScript + Vite + React Router + TanStack Query + **Ant Design v6** + **Tailwind CSS** (layout/ตกแต่ง) + **Phosphor Icons** + **Motion** (`motion/react`) + Zod (`apps/web`) |
+| **Frontend (web)** | **React** 19 + TypeScript + Vite + React Router + TanStack Query + **Ant Design v6** + **Tailwind CSS** (layout/ตกแต่ง) + **Phosphor Icons** + **Motion** (`motion/react`) + Zod (`apps/frontend`) |
 | **Frontend (admin)** | **React** 19 + TypeScript + Vite + React Router + TanStack Query + **Ant Design v6** (`antd@^6`) + **ProComponents** (`@ant-design/pro-components`: ProLayout, ProTable, ProForm) + Tailwind CSS + Phosphor Icons + Zod (`apps/admin`) |
 | **Backend** | **NestJS** (TypeScript) + nestjs-zod (ใช้ schema ร่วมจาก `packages/types`) + Swagger/OpenAPI + Guards สำหรับ RBAC |
 | **DB** | **Supabase** — PostgreSQL (+ btree_gist, pg_cron, pg_net), Auth, Storage (รูปร้าน/สลิป), Realtime, RLS |
@@ -427,7 +424,7 @@ night-list/
 | แจ้งเตือน | Web Push, LINE Messaging API (ผ่าน LINE OA opt-in) และ In-app |
 | แชร์ | LINE share URL / LIFF + Web Share API |
 | QR | สร้าง QR ใน NestJS (signed JWT) + สแกนด้วยกล้องผ่านเว็บ (เช่น html5-qrcode) |
-| PWA | vite-plugin-pwa (Manifest + Service Worker) ใน `apps/web` |
+| PWA | vite-plugin-pwa (Manifest + Service Worker) ใน `apps/frontend` |
 
 **Background Jobs (เพราะ NestJS รันแบบ serverless บน Vercel)**
 - ใช้ **Supabase pg_cron + pg_net** เรียก endpoint `POST /jobs/*` ของ NestJS ตามรอบเวลา และป้องกัน endpoint ด้วย `JOB_SECRET`
@@ -438,7 +435,7 @@ night-list/
 - แจ้งเตือนใช้ outbox pattern: บันทึกลง `notification_deliveries` สถานะ QUEUED ใน transaction เดียวกับ event แล้วให้ job ส่งพร้อม retry
 
 **SEO / แชร์ลิงก์ (เพราะ React SPA)**
-- `apps/web` เป็น SPA ส่วนหน้า `/bars/:slug` และ `/share/:token` ใช้ Vercel rewrites ส่ง bot/crawler (LINE, Facebook, X) ไปที่ `api/og` เพื่อคืน HTML ที่มี meta/OG tags และรูป OG ที่สร้างด้วย `@vercel/og`
+- `apps/frontend` เป็น SPA ส่วนหน้า `/bars/:slug` และ `/share/:token` ใช้ Vercel rewrites ส่ง bot/crawler (LINE, Facebook, X) ไปที่ `api/og` เพื่อคืน HTML ที่มี meta/OG tags และรูป OG ที่สร้างด้วย `@vercel/og`
 - ทำ `sitemap.xml` ของหน้าร้านจาก Vercel Function
 
 ## Infrastructure as Code (Terraform)
@@ -446,7 +443,7 @@ night-list/
   - Vercel: สร้าง 3 projects (`web`, `admin`, `api`) ผูก Git repo, root directory, build command, environment variables ต่อ environment, custom domains (nightlist.app, admin.nightlist.app, api.nightlist.app)
   - Supabase: project ต่อ environment (dev / staging / prod), region `ap-southeast-1` (Singapore), ตั้งค่า Auth (เปิดเฉพาะ Email provider, MFA TOTP), redirect URLs, storage buckets
   - Secrets (Supabase keys, LINE channel secret/token, JOB_SECRET, QR signing key) ส่งเป็นตัวแปร `sensitive` จาก Terraform Cloud / GitHub Secrets และห้าม commit ลง repo
-- **ไม่ใช้ Terraform จัดการ schema:** migrations, RLS และ DB functions อยู่ใน `backend/database` แล้วรันด้วย `supabase db push` ใน CI
+- **ไม่ใช้ Terraform จัดการ schema:** migrations, RLS และ DB functions อยู่ใน `apps/backend/supabase` แล้วรันด้วย `supabase db push` ใน CI
 - **CI/CD (GitHub Actions):**
   - PR: lint + test + build + `terraform plan` (comment ผลลงใน PR)
   - merge `main`: `terraform apply` (staging) → `supabase db push` → Vercel deploy
@@ -485,7 +482,6 @@ night-list/
 **กฎ contrast (WCAG AA)**
 - ข้อความขนาดปกติต้องได้ ≥ 4.5:1
 - `#A738F5` บนพื้นดำได้แค่ 4.3:1 จึงใช้เป็นสี accent / ขอบ / ไอคอน / ตัวอักษรใหญ่เท่านั้น ส่วนลิงก์และข้อความม่วงขนาดเล็กให้ใช้ `--link`
-- **ป้าย Tier:** S ใช้ตัวอักษร `#07070D`, A ใช้ `#F5F1E8`, B ใช้ `#F5F1E8` แบบตัวหนาหรือตัวใหญ่, C ใช้ `#07070D`
 - ใน Light mode ห้ามใช้ `#E8B64C` เป็นตัวอักษรบนพื้นขาว ให้ใช้ `--gold-text` (`#8A5A00`) แทน
 - ทองและม่วงใช้เป็นสีเน้น ไม่ใช้เต็มพื้นที่ใหญ่ ยกเว้น gradient ใน hero
 
@@ -516,7 +512,7 @@ night-list/
   - Tailwind `darkMode: 'class'`: ใส่ class `dark` / `light` ที่ `<html>` และสลับค่า CSS variables ตาม class
   - **กันจอกะพริบ (FOUC):** ใส่ inline script เล็กๆ ใน `<head>` ของ `index.html` ให้อ่านค่าธีมแล้วตั้ง class ก่อน React render
   - ตั้ง `<meta name="theme-color">` ให้เปลี่ยนตามธีม (`#07070D` / `#FAF8F3`)
-  - `ThemeProvider` + hook `useTheme()` อยู่ใน `packages/ui` ใช้ร่วมกันทั้ง `apps/web` และ `apps/admin`
+  - `ThemeProvider` + hook `useTheme()` อยู่ใน `packages/ui` ใช้ร่วมกันทั้ง `apps/frontend` และ `apps/admin`
   - `apps/admin` (antd): map token เดียวกันเข้า `ConfigProvider` (ดูหัวข้อ "Ant Design ใน Backoffice")
 - **หน้าที่ต้องเป็น Dark เสมอ:** Staff Scanner (`/merchant/tonight`) เพราะใช้ในร้านที่มืด เพื่อไม่ให้แสบตา
 - **รูปภาพ:** รูปร้านไม่ต้องปรับตามธีม แต่ overlay และ gradient บนรูปต้องเปลี่ยนตามธีม
@@ -557,20 +553,22 @@ night-list/
 - motion ต้องไม่ขวางการใช้งาน ผู้ใช้ต้องกดปุ่มได้ทันทีโดยไม่ต้องรอ animation จบ
 - Staff Scanner ใช้ motion น้อยที่สุด เน้นความเร็ว
 
-### Tier Badge (S / A / B / C)
-ดาวใช้แสดงคะแนนของร้าน ส่วน Tier ใช้แบ่งแถวในหน้า Tier List โดยแปลงจากดาว:
+### ระดับร้าน = ดาว (ไม่แสดงตัวอักษร S / A / B / C)
+ผู้ใช้เห็นระดับร้านเป็น **ดาว 1–5** เท่านั้น ตัวอักษร Tier (S/A/B/C) ใช้แค่ภายในโค้ดและฐานข้อมูล:
 
-| Tier | ป้าย | เงื่อนไข | สีพื้น |
-|---|---|---|---|
-| **S** | Legendary | 5 ดาว | `--tier-s` #E8B64C |
-| **A** | Excellent | 4 ดาว | `--tier-a` #963BE8 |
-| **B** | Good | 3 ดาว | `--tier-b` #5869C8 |
-| **C** | Normal | 1–2 ดาว | `--tier-c` #74788B |
+| ภายใน | ที่ผู้ใช้เห็น | เงื่อนไข (คะแนนรวม) |
+|---|---|---|
+| S | ★★★★★ 5 ดาว | ≥ 90 |
+| A | ★★★★☆ 4 ดาว | 75–89 |
+| B | ★★★☆☆ 3 ดาว | 60–74 |
+| C | ★★☆☆☆ / ★☆☆☆☆ 1–2 ดาว | < 60 |
 
-- ร้านที่ขึ้นเป็น "ร้านใหม่" (รีวิวน้อยกว่า 5) ยังไม่อยู่ใน Tier List
-- **หน้า Tier List:** แสดงป้าย Tier เป็นช่องสี่เหลี่ยมใหญ่ด้านซ้ายของแต่ละแถว และการ์ดร้านเรียงแนวนอน เลื่อนได้บนมือถือ
+- component: `<TierStars stars|tier size="sm|lg" />` (packages/ui) · ในการ์ด/หน้าร้านใช้ `<BarRating bar />` = ดาว + คะแนนรีวิวเฉลี่ย + จำนวนรีวิว
+- ร้านที่ขึ้นเป็น "ร้านใหม่" (รีวิวน้อยกว่า 5) ยังไม่มีดาวและยังไม่อยู่ในหน้าจัดอันดับ
+- **หน้าจัดอันดับ:** หัวแถวเป็นกล่องดาวใหญ่ (5 ดาว → 1–2 ดาว) ด้านซ้าย การ์ดร้านเรียงแนวนอน เลื่อนได้บนมือถือ
+- ดาวเป็นสีทองเสมอ (`--gold-text`) สี `--tier-*` เก็บไว้ใช้ในกราฟของ admin เท่านั้น
 
-### Ant Design + Tailwind (ทั้ง `apps/web` และ `apps/admin`)
+### Ant Design + Tailwind (ทั้ง `apps/frontend` และ `apps/admin`)
 - **antd v6** เป็นคอมโพเนนต์หลักทั้ง 2 แอป (`apps/admin` ใช้ ProComponents เพิ่ม) ส่วน **Tailwind** ใช้กับ layout, spacing, responsive และของตกแต่ง (gradient, glow) ไม่ใช้สร้างคอมโพเนนต์ซ้ำกับ antd
 - **Theme:** มี `ConfigProvider` ตัวเดียวที่ root ใช้ `theme.darkAlgorithm` / `theme.defaultAlgorithm` ตามธีมที่เลือก และ map Midnight Gold token:
   - `colorPrimary: '#E8B64C'`, `colorLink: '#B86BFA'` (Light: `#7E22CE`), `colorInfo: '#A738F5'`
@@ -707,12 +705,12 @@ night-list/
 2. Wireframe หน้าหลัก: Home (ร้านแนะนำ + Ranking ดาว), Restaurant Detail, Booking + Deposit, บัตรจองที่แชร์, Staff Scanner
 3. Setup monorepo (pnpm + Turborepo) ตามโครงสร้าง `night-list/`: React (Vite) 2 แอป, NestJS, packages/config, types, ui, utils
 4. `infra/terraform`: Vercel 3 projects + Supabase (dev/staging) + CI pipeline
-5. `backend/database`: migrations, RLS, exclusion constraint, DB functions, pg_cron schedules
+5. `apps/backend/supabase`: migrations, RLS, exclusion constraint, DB functions, pg_cron schedules
 6. Seed data ร้านสมมติ 15 ร้านในกรุงเทพฯ ให้ครบ 3 ประเภท พร้อม hours, styles, safety, zones/tables และ commission rules โดยทำตามนโยบายถ้อยคำ
-7. NestJS (`backend/services` + `backend/api`): auth guard → availability → booking (overlap protection + snapshot) → status transitions → deposit → check-in → billing events → promoted listings
+7. NestJS (`apps/backend`): auth guard → availability → booking (overlap protection + snapshot) → status transitions → deposit → check-in → billing events → promoted listings
 8. NestJS jobs (`/jobs/*` เรียกจาก pg_cron): auto-cancel/no-show, pending expiry, notification outbox + retry, คำนวณดาว, เปิด/ปิดโปรโมท
-9. `apps/web` ฝั่งลูกค้า: Search → Restaurant Detail → Pricing → Booking → Deposit → Share → QR → Review + OG/SEO function
-10. `apps/web/merchant`: Dashboard + Tonight + Crowd Status (Realtime) + Promote
+9. `apps/frontend` ฝั่งลูกค้า: Search → Restaurant Detail → Pricing → Booking → Deposit → Share → QR → Review + OG/SEO function
+10. `apps/frontend/merchant`: Dashboard + Tonight + Crowd Status (Realtime) + Promote
 11. `apps/admin`: Backoffice ทั้งหมด
 12. PWA, Testing, Production Deployment (terraform apply prod + manual approval) และ README
 

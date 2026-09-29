@@ -1,0 +1,49 @@
+{
+  "name": "@nightlist/backend",
+  "version": "0.0.0",
+  "private": true,
+  "description": "NightList backend — NestJS REST API + domain modules + Supabase migrations",
+  "main": "./dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json && node --env-file-if-exists=../../.env --watch dist/main.js",
+    "start": "node dist/main.js",
+    "lint": "eslint src test",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:diff": "supabase db diff -f",
+    "db:push": "supabase db push",
+    "db:types": "supabase gen types typescript --local > src/database.types.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.2.6",
+    "@nestjs/config": "^4.0.4",
+    "@nestjs/core": "^11.2.6",
+    "@nestjs/platform-express": "^11.2.6",
+    "@nestjs/swagger": "^11.4.7",
+    "@nestjs/throttler": "^6.7.1",
+    "@nightlist/types": "workspace:*",
+    "@nightlist/utils": "workspace:*",
+    "jose": "^6.2.12",
+    "nestjs-zod": "^5.5.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "^11.2.6",
+    "@nightlist/config": "workspace:*",
+    "@swc/core": "^1.16.2",
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.0.0",
+    "@types/supertest": "^7.2.1",
+    "supabase": "^2.40.0",
+    "supertest": "^7.3.0",
+    "typescript": "~5.9.3",
+    "unplugin-swc": "^2.0.0",
+    "vitest": "^5.0.2"
+  }
+}
