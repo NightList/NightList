@@ -25,10 +25,7 @@ export function MainLayout() {
   const { pathname } = useLocation();
   const isHome = pathname === '/';
   const isShop = user?.role === 'MERCHANT' || user?.role === 'STAFF';
-  const items: NavItem[] = [
-    ...NAV,
-    ...(isShop ? [{ to: '/merchant', label: 'ร้านของฉัน' }] : []),
-  ];
+  const items: NavItem[] = [...NAV, ...(isShop ? [{ to: '/merchant', label: 'ร้านของฉัน' }] : [])];
 
   return (
     <Layout className="min-h-dvh !bg-background">

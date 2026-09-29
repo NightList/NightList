@@ -1,16 +1,17 @@
 import { CATEGORY_LABELS, DISTRICTS, tierList } from '@nightlist/mock';
 import type { BarCategory, Tier } from '@nightlist/types';
-import { StarRating, TierBadge, tierColors } from '@nightlist/ui';
+import { TierStars } from '@nightlist/ui';
 import { Empty, Segmented, Select } from 'antd';
 import { motion, useReducedMotion } from 'motion/react';
 import { Link, useSearchParams } from 'react-router';
 import { BarCover } from '@/ui/components/barCard';
+import { BarRating } from '@/ui/components/barRating';
 import { PageHeader } from '@/ui/components/pageHeader';
 import { useDemo } from '@/hooks/useDemo';
 
 const TIERS: Tier[] = ['S', 'A', 'B', 'C'];
 
-/** /ranking — Tier List แบ่งแถว S/A/B/C (แปลงจากดาว) */
+/** /ranking — จัดอันดับแบ่งแถวตามดาว 5 → 1 (ภายในยังเป็น Tier S/A/B/C) */
 export function RankingPage() {
   useDemo();
   const reduce = useReducedMotion();
@@ -30,7 +31,7 @@ export function RankingPage() {
   return (
     <div>
       <PageHeader
-        title="Tier List ร้านกลางคืน"
+        title="จัดอันดับร้านกลางคืน"
         subtitle="จัดอันดับจากรีวิวคนเช็กอินจริง · ความปลอดภัย · ความครบของข้อมูลราคา (จ่ายเงินเพิ่มดาวไม่ได้)"
       />
       <div className="mb-6 flex flex-wrap gap-3">
@@ -67,12 +68,10 @@ export function RankingPage() {
               transition={{ delay: row * 0.06, duration: 0.25 }}
               className="flex gap-3 rounded-2xl border border-border bg-card p-3"
             >
-              <TierBadge tier={t} size="lg" />
+              <TierStars tier={t} size="lg" label={t === 'C' ? '1–2 ดาว' : undefined} />
               <div className="flex flex-1 gap-3 overflow-x-auto pb-1">
                 {tiers[t].length === 0 && (
-                  <p className="self-center text-sm text-muted">
-                    — ยังไม่มีร้านใน Tier {t} ({tierColors[t].label})
-                  </p>
+                  <p className="self-center text-sm text-muted">ยังไม่มีร้านระดับนี้</p>
                 )}
                 {tiers[t].map((b, i) => (
                   <motion.div
@@ -88,7 +87,9 @@ export function RankingPage() {
                       <BarCover bar={b} className="h-24" />
                       <div className="p-2">
                         <p className="truncate text-sm font-semibold">{b.name}</p>
-                        <StarRating value={b.rating} size={12} reviewCount={b.reviewCount} />
+                        <p className="text-xs">
+                          <BarRating bar={b} compact />
+                        </p>
                         <p className="text-xs text-muted">{b.district}</p>
                       </div>
                     </Link>
@@ -100,7 +101,8 @@ export function RankingPage() {
         </div>
       )}
       <p className="mt-6 text-xs text-muted">
-        S = 5★ · A = 4★ · B = 3★ · C = 1–2★ · ร้านที่รีวิวน้อยกว่า 5 ยังไม่ขึ้น Tier
+        ดาวคำนวณจากรีวิวของคนที่เช็กอินจริง · ร้านที่มีรีวิวน้อยกว่า 5 รีวิวยังไม่ได้ดาว ·
+        โฆษณาไม่มีผลต่อดาว
       </p>
     </div>
   );

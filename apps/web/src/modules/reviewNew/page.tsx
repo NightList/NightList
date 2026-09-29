@@ -17,7 +17,7 @@ export function ReviewNewPage() {
 
   return (
     <div className="mx-auto max-w-xl">
-      <PageHeader title={`รีวิว ${bar.name}`} subtitle="รีวิวของคุณช่วยคำนวณดาวและ Tier ของร้าน" />
+      <PageHeader title={`รีวิว ${bar.name}`} subtitle="รีวิวของคุณช่วยคำนวณดาวของร้าน" />
       <Card>
         <Form
           layout="vertical"
