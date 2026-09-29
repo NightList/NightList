@@ -43,14 +43,17 @@ export function NotFoundPage() {
           <motion.h1
             {...rise(0.08)}
             aria-label="404"
-            className="font-display text-[9rem] font-semibold leading-none text-gold drop-shadow-[0_8px_40px_rgba(232,182,76,0.25)] md:text-[14rem] lg:text-[18rem] lg:tracking-tight"
+            className="font-sans text-[9rem] font-light leading-none text-gold drop-shadow-[0_8px_40px_rgba(232,182,76,0.25)] md:text-[14rem] lg:text-[18rem] lg:tracking-tight"
           >
             404
           </motion.h1>
           <motion.h2 {...rise(0.16)} className="mt-4 text-2xl font-bold md:text-4xl">
             ไม่พบหน้าที่คุณกำลังค้นหา
           </motion.h2>
-          <motion.p {...rise(0.22)} className="mt-3 text-balance text-sm text-white/70 md:text-base">
+          <motion.p
+            {...rise(0.22)}
+            className="mt-3 text-balance text-sm text-white/70 md:text-base"
+          >
             ขออภัย หน้าที่คุณต้องการอาจถูกย้ายหรือไม่อยู่ในระบบ
             <br className="hidden md:block" /> ลองกลับไปยังหน้าหลัก หรือค้นหาร้านที่อยากไปคืนนี้
           </motion.p>
