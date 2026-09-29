@@ -61,7 +61,8 @@ function PodiumCard({ bar, place }: { bar: RankedBar; place: 0 | 1 | 2 }) {
 
 /**
  * แท่นรางวัล 3 อันดับ (Carousel dynamics)
- * เลื่อนมาถึง → การ์ดที่ซ้อนกันอยู่กางออกเป็นพัด (scrub ตามการเลื่อน) + ตัวเลขโหวตนับขึ้นครั้งเดียว
+ * ยังไม่เห็นจนกว่าจะเลื่อนมาถึง → การ์ดค่อยๆ ลอยขึ้นจากด้านล่างแล้วกางเป็นพัด ผูกกับการเลื่อน (scrub)
+ * เลื่อนกลับขึ้น = หุบกลับ · ตัวเลขโหวตนับขึ้นครั้งเดียวเมื่อกางเกือบสุด
  * เปลี่ยนสัปดาห์/เดือน (key ใหม่) → เล่นใหม่
  */
 export function Podium({ top3 }: { top3: RankedBar[] }) {
@@ -73,12 +74,12 @@ export function Podium({ top3 }: { top3: RankedBar[] }) {
       mm.add(MOTION_OK, () => {
         const cards = gsap.utils.toArray<HTMLElement>('[data-podium-card]');
         const tl = gsap.timeline({
-          scrollTrigger: { trigger: root.current, start: 'top 80%', end: 'top 30%', scrub: 0.8 },
+          scrollTrigger: { trigger: root.current, start: 'top 95%', end: 'top 30%', scrub: 0.8 },
         });
         cards.forEach((el) => {
           tl.fromTo(
             el,
-            { xPercent: 0, yPercent: 12, rotation: 0, opacity: 0.6, scale: 0.92 },
+            { xPercent: 0, yPercent: 45, rotation: 0, opacity: 0, scale: 0.9 },
             {
               xPercent: Number(el.dataset.x),
               yPercent: Number(el.dataset.y),
@@ -90,7 +91,7 @@ export function Podium({ top3 }: { top3: RankedBar[] }) {
             0,
           );
         });
-        tl.from('[data-podium-label]', { yPercent: 60, opacity: 0, stagger: 0.08, ease: EASE_OUT }, 0.2);
+        tl.from('[data-podium-label]', { yPercent: 80, opacity: 0, stagger: 0.08, ease: EASE_OUT }, 0.35);
 
         // ตัวเลขโหวตนับขึ้น (ครั้งเดียว ไม่ผูกกับ scrub — ตัวเลขที่คนอ่านต้องนิ่ง)
         gsap.utils.toArray<HTMLElement>('[data-votes]').forEach((el) => {
@@ -100,7 +101,7 @@ export function Podium({ top3 }: { top3: RankedBar[] }) {
             v: target,
             duration: 1.1,
             ease: EASE_OUT,
-            scrollTrigger: { trigger: root.current, start: 'top 60%', once: true },
+            scrollTrigger: { trigger: root.current, start: 'top 45%', once: true },
             onUpdate: () => {
               el.textContent = String(Math.round(n.v));
             },

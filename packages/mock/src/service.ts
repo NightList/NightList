@@ -16,6 +16,7 @@ import type {
   DepositSettlement,
   PromotionOrder,
   Review,
+  ReviewMedia,
 } from './models';
 import { DEMO_USERS } from './seed';
 import { getSessionUserId, getState, mutate, setSessionUserId } from './store';
@@ -511,6 +512,21 @@ export function autoCancelAt(b: Booking): Date {
 
 /* =========================== Reviews =========================== */
 
+/** ร้านนี้ผู้ใช้ปัจจุบันรีวิวได้ไหม — คืน booking ที่เช็กอินแล้วแต่ยังไม่รีวิว (ถ้ามี) */
+export function reviewableBooking(barId: string): Booking | null {
+  const u = currentUser();
+  if (!u) return null;
+  return (
+    getState().bookings.find(
+      (b) =>
+        b.barId === barId &&
+        b.userId === u.id &&
+        ['CHECKED_IN', 'COMPLETED'].includes(b.status) &&
+        !b.reviewed,
+    ) ?? null
+  );
+}
+
 export function barReviews(barId: string): Review[] {
   return getState()
     .reviews.filter((r) => r.barId === barId)
@@ -522,7 +538,12 @@ export function myReviews(): Review[] {
   return u ? getState().reviews.filter((r) => r.userId === u.id) : [];
 }
 
-export function addReview(bookingId: string, rating: number, comment: string): Review {
+export function addReview(
+  bookingId: string,
+  rating: number,
+  comment: string,
+  media: ReviewMedia[] = [],
+): Review {
   const u = currentUser();
   const b = getBooking(bookingId);
   if (!u || !b) throw new Error('ไม่พบการจอง');
@@ -538,6 +559,7 @@ export function addReview(bookingId: string, rating: number, comment: string): R
     rating,
     comment,
     createdAt: nowIso(),
+    media: media.length ? media : undefined,
   };
   mutate((s) => {
     s.reviews.unshift(review);

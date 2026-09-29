@@ -120,6 +120,20 @@ export interface Bar {
   perks: string[];
 }
 
+/** รูป/วิดีโอแนบรีวิว — ของจริงอยู่ Supabase Storage bucket `review-media` */
+export interface ReviewMedia {
+  id: string;
+  type: 'image' | 'video';
+  /** รูป: data URL (เดโม) หรือ URL จริง · วิดีโอ: URL จริง (เดโมใช้ blobKey แทน) */
+  src?: string;
+  /** เดโม: วิดีโอเก็บใน IndexedDB ของเบราว์เซอร์ (ใหญ่เกิน localStorage) */
+  blobKey?: string;
+  /** ภาพหน้าปกวิดีโอ (data URL) */
+  poster?: string;
+  /** ความยาววิดีโอ (วินาที) */
+  duration?: number;
+}
+
 export interface Review {
   id: string;
   barId: string;
@@ -130,6 +144,7 @@ export interface Review {
   createdAt: string;
   reported?: boolean;
   userId?: string;
+  media?: ReviewMedia[];
 }
 
 export type DepositSettlement = 'HELD' | 'PAYOUT_PENDING' | 'PAID_OUT' | 'CREDIT' | 'REFUNDED';

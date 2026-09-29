@@ -46,6 +46,7 @@
 - PR ของร้าน (ชาย/หญิงกี่คน) ร้านกรอกเองใน `/merchant/settings` แสดงในหน้าร้าน/การ์ด และกรองได้ในหน้าค้นหา
 - แผนที่ใช้ Leaflet + vector tiles OpenFreeMap (ฟรี ไม่ต้องมี key) สีตามพาเลต Google Maps ปกติ/กลางคืน (`ui/utils/mapStyle.ts`) — ไม่ใช้ Google Maps API / CARTO · สำรองเป็น OSM raster · หน้า `/map` เต็มจอ หมุดและการ์ดใช้รูปร้าน `barImage()` (coverUrl หรือรูปแทน `/images/bars/placeholder.webp`)
 - หน้าจัดอันดับเป็นรายสัปดาห์/รายเดือนตามจำนวนโหวต (1 การจองที่เช็กอิน = 1 โหวต) ใช้ GSAP + ScrollTrigger (`modules/ranking/utils/gsap.ts`) — GSAP ใช้เฉพาะหน้านั้น ที่อื่นใช้ Motion ตามเดิม
+- รีวิวแนบรูป/วิดีโอได้สูงสุด 6 ไฟล์ (วิดีโอ ≤ 60 วิ / 60MB) · ของจริงเก็บ Supabase Storage `review-media` (migration 0003) · เดโม: รูปเป็น data URL, วิดีโอเก็บ IndexedDB (`services/mediaStore.ts`)
 - ธีมมืดเป็นค่าเริ่มต้น · หน้า Auth ไม่มีปุ่มเปลี่ยนธีม/ปุ่มเข้าสู่ระบบบน navbar (`<Navbar minimal />`)
 - ไม่มีแถบ "โหมดเดโม" บนหน้าเว็บ (ยังมีปุ่มเข้าเร็วเดโมในหน้า login และปุ่มรีเซ็ตในตั้งค่า)
 

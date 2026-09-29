@@ -243,7 +243,7 @@ const COMMENTS = [
 const REVIEWERS = ['ต้น', 'ฝน', 'เมย์', 'บอส', 'แพร', 'นิว', 'กอล์ฟ', 'มายด์', 'เจ', 'ปาล์ม'];
 
 export interface DemoState {
-  version: 2;
+  version: 3;
   bars: Bar[];
   reviews: Review[];
   bookings: Booking[];
@@ -377,6 +377,14 @@ export function createSeed(): DemoState {
         comment: COMMENTS[Math.floor(rand() * COMMENTS.length)]!,
         createdAt: isoDaysAgo(Math.floor(rand() * 60)),
         reported: b.id === 'bar-3' && k === 0,
+        // ตัวอย่างรีวิวที่แนบรูป (รีวิวแรกของทุกร้าน) — ของจริงเป็นรูปจาก Storage
+        media:
+          k === 0
+            ? [
+                { id: `md-${b.id}-1`, type: 'image', src: '/images/bars/placeholder.webp' },
+                { id: `md-${b.id}-2`, type: 'image', src: '/images/home/hero-poster.jpg' },
+              ]
+            : undefined,
       });
     }
   });
@@ -485,7 +493,7 @@ export function createSeed(): DemoState {
   ];
 
   return {
-    version: 2,
+    version: 3,
     bars,
     reviews,
     bookings,
