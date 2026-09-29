@@ -1,6 +1,6 @@
 # infra/terraform
 
-สร้าง **Vercel** (web, admin, api) + **Supabase** ต่อ environment
+สร้าง **Vercel** (project เดียว — services frontend/admin/backend ตาม `vercel.json` ที่ root) + **Supabase** ต่อ environment
 
 ```bash
 cd infra/terraform

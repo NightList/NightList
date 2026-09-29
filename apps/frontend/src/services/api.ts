@@ -1,6 +1,7 @@
 import { supabase } from '@/services/supabase';
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+// dev: NestJS แยก port · deploy (Vercel services): same-origin /api
+const API_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? 'http://localhost:3000/api' : '/api');
 
 export class ApiError extends Error {
   constructor(

@@ -1,7 +1,10 @@
 variable "name" { type = string }
 variable "github_repo" { type = string }
 variable "production_branch" { type = string }
-variable "root_directory" { type = string }
+variable "root_directory" {
+  type    = string
+  default = null
+}
 
 variable "framework" {
   type    = string
@@ -13,11 +16,14 @@ variable "output_directory" {
   default = null
 }
 
-variable "build_command" { type = string }
+variable "build_command" {
+  type    = string
+  default = null
+}
 
 variable "install_command" {
   type    = string
-  default = "cd ../.. && pnpm install --frozen-lockfile"
+  default = null
 }
 
 variable "domain" {
