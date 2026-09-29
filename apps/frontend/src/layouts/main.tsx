@@ -1,10 +1,11 @@
 import { User } from '@phosphor-icons/react';
 import { Layout } from 'antd';
-import { Link, Outlet, useLocation, useMatches } from 'react-router';
+import { Outlet, useLocation, useMatches } from 'react-router';
 import { NAV } from '@/configs/nav';
 import { useDemo } from '@/hooks/useDemo';
 import { useAuth } from '@/services/auth';
 import { AgeGate } from '@/ui/components/ageGate';
+import { SiteFooter } from '@/ui/components/siteFooter';
 import { BottomIsland, Navbar, type NavItem } from '@/ui/components/navbar';
 
 /**
@@ -35,7 +36,7 @@ export function MainLayout() {
       </header>
 
       {bleed ? (
-        <main className={`flex-1 ${hideFooter ? '' : fullBleed ? '' : 'pb-24 md:pb-0'}`}>
+        <main className="flex-1">
           <Outlet />
         </main>
       ) : (
@@ -44,23 +45,7 @@ export function MainLayout() {
         </main>
       )}
 
-      <footer className={`relative hidden overflow-hidden border-t border-border ${hideFooter ? '' : 'md:block'}`}>
-        <img
-          src="/images/home/city-strip.jpg"
-          alt=""
-          className="absolute inset-0 size-full object-cover opacity-40"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-background/60 to-background/20" />
-        <div className="relative py-14 text-center text-sm text-muted">
-          <nav className="mb-3 flex justify-center gap-6">
-            <Link to="/about">เกี่ยวกับเรา</Link>
-            <Link to="/terms">เงื่อนไขการใช้งาน</Link>
-            <Link to="/privacy">นโยบายความเป็นส่วนตัว</Link>
-            <Link to="/cookies">คุกกี้</Link>
-          </nav>
-          <p>สำหรับผู้มีอายุ 20 ปีขึ้นไป · ดื่มไม่ขับ · © NightList</p>
-        </div>
-      </footer>
+      {!hideFooter && <SiteFooter />}
 
       <BottomIsland items={[...NAV, { to: '/profile', label: 'โปรไฟล์', icon: User }]} />
     </Layout>

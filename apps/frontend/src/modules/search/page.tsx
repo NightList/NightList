@@ -19,6 +19,8 @@ export function SearchPage() {
     // ลิงก์จากการ์ดหมวดหมู่หน้าแรก: ?category=PUB_BAR หรือ ?style=Rooftop
     category: (params.get('category') as BarFilter['category']) ?? 'ALL',
     styles: params.getAll('style'),
+    // ลิงก์จากช่องค้นหาหน้าแรก (เลือกย่าน)
+    district: params.get('district') ?? undefined,
     crowd: [],
     sort: 'relevance',
   });

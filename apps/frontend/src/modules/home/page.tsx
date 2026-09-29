@@ -1,48 +1,44 @@
+import { ArrowRight } from '@phosphor-icons/react';
 import { listBars } from '@nightlist/mock';
-import { Button } from 'antd';
 import { Link } from 'react-router';
 import { useDemo } from '@/hooks/useDemo';
-import { BarCard } from '@/ui/components/barCard';
 import { CategoryRow } from './components/categoryRow';
 import { Hero } from './components/hero';
+import { Newsletter } from './components/newsletter';
+import { WeeklyBarCard } from './components/weeklyBarCard';
 
-/** / — หน้าแรก (Figma: Main) */
+/** / — หน้าแรก (Figma: Main) Hero → หมวดหมู่ → ร้านประจำสัปดาห์ → สมัครข่าวสาร (ฟุตเตอร์อยู่ใน MainLayout) */
 export function HomePage() {
   useDemo();
-  // ร้านโปรโมทขึ้นก่อน (มีป้าย "แนะนำ · โฆษณา" บนการ์ด) แล้วต่อด้วยร้านคะแนนสูงสุด
+  // ร้านโปรโมทขึ้นก่อน (มีป้าย "แนะนำ") แล้วต่อด้วยร้านคะแนนสูงสุด
   const weekly = listBars().slice(0, 6);
 
   return (
     <>
       <Hero />
-      <div className="space-y-14 px-4 py-10 md:py-14">
+      <div className="space-y-16 py-10 md:space-y-24 md:py-14">
         <CategoryRow />
 
-        <section aria-labelledby="home-weekly" className="max-w-7xl mx-auto">
-          <div className="mb-4 flex items-baseline justify-between gap-4">
-            <h2 id="home-weekly" className="text-xl font-semibold">
-              ร้านแนะนำประจำสัปดาห์
+        <section aria-labelledby="home-weekly" className="mx-auto max-w-7xl px-4 md:px-8">
+          <div className="mb-5 flex items-center justify-between gap-4">
+            <h2 id="home-weekly" className="text-2xl font-bold md:text-3xl">
+              ร้านอาหารประจำสัปดาห์
             </h2>
-            <Link to="/ranking" className="text-sm">
-              ดูอันดับทั้งหมด
+            <Link
+              to="/ranking"
+              className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium !text-purple hover:!text-purple/80"
+            >
+              ดูทั้งหมด <ArrowRight size={16} weight="bold" />
             </Link>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
             {weekly.map((b) => (
-              <BarCard key={b.id} bar={b} />
+              <WeeklyBarCard key={b.id} bar={b} />
             ))}
           </div>
         </section>
 
-        <section className="flex flex-col items-start justify-between gap-4 rounded-2xl border border-border bg-card p-6 md:flex-row md:items-center">
-          <div>
-            <p className="font-semibold">เป็นเจ้าของร้าน?</p>
-            <p className="text-sm text-muted">ลงร้านฟรี รับจองโต๊ะ และดูว่าลูกค้ามาจากไหน</p>
-          </div>
-          <Link to="/merchant/join">
-            <Button shape="round">ลงทะเบียนร้าน</Button>
-          </Link>
-        </section>
+        <Newsletter />
       </div>
     </>
   );
