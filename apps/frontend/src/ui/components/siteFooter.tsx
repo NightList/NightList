@@ -44,7 +44,9 @@ function Column({ title, links }: { title: string; links: { to: string; label: s
  */
 export function SiteFooter({ className = '' }: { className?: string }) {
   return (
-    <footer className={`relative isolate overflow-hidden px-4 pb-28 pt-24 md:px-8 md:pb-10 md:pt-40 ${className}`}>
+    <footer
+      className={`relative isolate overflow-hidden px-4 pb-28 pt-24 md:px-8 md:pb-10 md:pt-40 ${className}`}
+    >
       <img
         src="/images/home/city-strip.jpg"
         alt=""
@@ -58,7 +60,13 @@ export function SiteFooter({ className = '' }: { className?: string }) {
         <div className="flex flex-col gap-8 md:flex-row md:items-stretch md:gap-12">
           <div className="md:flex-1">
             <Link to="/" className="inline-flex items-center gap-3 !text-white">
-              <img src="/images/common/logo.png" alt="" width={48} height={48} className="size-12 object-contain" />
+              <img
+                src="/images/common/logo.png"
+                alt=""
+                width={48}
+                height={48}
+                className="size-12 object-contain"
+              />
               <span className="text-2xl font-bold text-purple">NightList</span>
             </Link>
             <p className="mt-4 text-white/85">ค้นหาร้านเหล้า บาร์ และสถานที่นั่งชิล ใกล้คุณ</p>
@@ -88,9 +96,8 @@ export function SiteFooter({ className = '' }: { className?: string }) {
           </div>
         </div>
 
-        <div className="mt-8 flex flex-col gap-1 border-t border-white/15 pt-5 text-xs text-white/60 sm:flex-row sm:justify-between">
+        <div className="mt-8 flex flex-col gap-1 border-t border-white/15 pt-5 text-xs text-white/60 sm:flex-row sm:justify-center">
           <p>2026 Nightlist. สงวนลิขสิทธิ์ทั้งหมด</p>
-          <p>Made By UTCC COE 69</p>
         </div>
       </div>
     </footer>
