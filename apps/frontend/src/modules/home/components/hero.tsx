@@ -43,10 +43,10 @@ export function Hero() {
       <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 -z-10 h-24 bg-gradient-to-t from-background to-transparent" />
 
-      <div className="mx-auto w-full max-w-7xl px-4 pb-16 md:px-8 md:pb-24">
-        <h1 className="flex items-end gap-x-2 font-bold leading-none text-white md:gap-x-5">
+      <div className="mx-auto flex w-full max-w-7xl flex-col items-center px-4 pb-16 text-center md:px-8 md:pb-24">
+        <h1 className="flex items-end justify-center gap-x-2 font-bold leading-none text-white md:gap-x-5">
           <span className="shrink-0 pb-[0.35em] text-xl drop-shadow sm:text-3xl md:text-5xl">คืนนี้ไป</span>
-          <span className="bg-gradient-to-b from-[#ffe39a] via-gold to-[#b9832a] bg-clip-text pb-[0.08em] text-[3.9rem] text-transparent sm:text-[5.5rem] drop-shadow-[0_4px_24px_rgba(232,182,76,0.35)] md:text-[9rem]">
+          <span className="bg-gradient-to-b from-[#ffe39a] via-gold to-[#b9832a] -mt-[0.3em] bg-clip-text pb-[0.1em] pt-[0.3em] text-[3.9rem] leading-[1.1] text-transparent sm:text-[5.5rem] drop-shadow-[0_4px_24px_rgba(232,182,76,0.35)] md:text-[9rem]">
             ร้านไหน
           </span>
           <span className="shrink-0 pb-[0.35em] text-xl drop-shadow sm:text-3xl md:text-5xl">ดี</span>
@@ -57,7 +57,7 @@ export function Hero() {
 
         <form
           role="search"
-          className="mt-8 flex max-w-3xl items-center gap-2 rounded-full border border-white/15 bg-white/10 p-1.5 pl-5 shadow-[0_8px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl"
+          className="mt-8 flex w-full max-w-3xl items-center text-left gap-2 rounded-full border border-white/15 bg-white/10 p-1.5 pl-5 shadow-[0_8px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl"
           onSubmit={(e) => {
             e.preventDefault();
             const q = new FormData(e.currentTarget).get('q')?.toString().trim() ?? '';
