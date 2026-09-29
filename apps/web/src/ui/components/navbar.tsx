@@ -17,7 +17,7 @@ export interface NavItem {
 
 /** พื้นกระจกของ island — มืดเสมอ ให้อ่านออกทั้งบนวิดีโอและบนพื้นหน้า (dark/light) */
 const ISLAND =
-  'border border-white/10 bg-[#0c0a12]/90 text-[#f5f1e8] shadow-[0_12px_40px_-12px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl';
+  'border border-white/10 bg-white/20 text-white shadow-[0_12px_40px_-12px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm';
 
 const spring = { type: 'spring', stiffness: 420, damping: 34 } as const;
 
@@ -38,13 +38,12 @@ export function Navbar({ items }: { items: NavItem[] }) {
     <motion.div
       layout={!reduce}
       transition={spring}
-      className={`flex items-center gap-2 rounded-full px-2 ${ISLAND} ${
-        scrolled ? 'h-12 w-full max-w-2xl' : 'h-14 w-full max-w-3xl'
-      }`}
+      className={`flex items-center gap-2 rounded-full px-2 ${ISLAND} ${scrolled ? 'h-12 w-full max-w-2xl' : 'h-14 w-full max-w-3xl'
+        }`}
     >
       <Link
         to="/"
-        className="flex shrink-0 items-center gap-2 rounded-full pr-2 !text-[#f5f1e8]"
+        className="flex shrink-0 items-center gap-2 rounded-full pr-2 !text-gold"
         aria-label="NightList หน้าแรก"
       >
         <img
@@ -64,8 +63,7 @@ export function Navbar({ items }: { items: NavItem[] }) {
             to={n.to}
             end={n.end}
             className={({ isActive }) =>
-              `relative isolate rounded-full px-3.5 py-1.5 text-sm transition-colors ${
-                isActive ? 'text-[#07070d]' : 'text-white/70 hover:text-white'
+              `relative isolate rounded-full px-3.5 py-1.5 text-sm transition-colors ${isActive ? 'text-[#07070d]' : 'text-white/70 hover:text-white'
               }`
             }
           >
@@ -125,8 +123,7 @@ export function BottomIsland({ items }: { items: NavItem[] }) {
             to={n.to}
             end={n.end}
             className={({ isActive }) =>
-              `relative isolate flex flex-1 flex-col items-center gap-0.5 rounded-full py-1.5 text-[11px] ${
-                isActive ? 'text-[#07070d]' : 'text-white/65'
+              `relative isolate flex flex-1 flex-col items-center gap-0.5 rounded-full py-1.5 text-[11px] ${isActive ? 'text-[#07070d]' : 'text-white/65'
               }`
             }
           >
