@@ -15,10 +15,10 @@ export function HomePage() {
   return (
     <>
       <Hero />
-      <div className="mx-auto max-w-7xl space-y-14 px-4 py-10 md:py-14">
+      <div className="space-y-14 px-4 py-10 md:py-14">
         <CategoryRow />
 
-        <section aria-labelledby="home-weekly">
+        <section aria-labelledby="home-weekly" className='max-w-7xl mx-auto'>
           <div className="mb-4 flex items-baseline justify-between gap-4">
             <h2 id="home-weekly" className="text-xl font-semibold">
               ร้านแนะนำประจำสัปดาห์
