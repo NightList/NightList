@@ -18,7 +18,7 @@ function graphemes(text: string): string[] {
  * 1) คำนำ ("สัปดาห์นี้") ขึ้นมาจากใต้เส้น (mask) ทั้งคำ
  * 2) "ผู้ชนะได้แก่" ขึ้นทีละตัวอักษร (stagger 35ms, expo.out) พร้อมคลายตัวจากเอียง
  * 3) จุด "…" เด้งทีละจุดวนช้าๆ เหมือนรอประกาศผล (ช่วงลุ้น — delight tier)
- * เล่นเมื่อเลื่อนมาถึง (ครั้งเดียว) · เปลี่ยนสัปดาห์/เดือน (key ใหม่) เล่นใหม่
+ * ผูกกับการเลื่อน (scrub) ค่อยๆ โผล่ตามระยะเลื่อน · เปลี่ยนสัปดาห์/เดือน (key ใหม่) เล่นใหม่
  */
 export function SplitHeading({ lead, text }: { lead: string; text: string }) {
   const root = useRef<HTMLHeadingElement>(null);
@@ -28,8 +28,9 @@ export function SplitHeading({ lead, text }: { lead: string; text: string }) {
     () => {
       const mm = gsap.matchMedia();
       mm.add(MOTION_OK, () => {
+        // ตัวอักษรขึ้นตามการเลื่อน (scrub) — เลื่อนช้าก็ขึ้นช้า · จุด "..." เด้งวนหลังขึ้นครบ
         const tl = gsap.timeline({
-          scrollTrigger: { trigger: root.current, start: 'top 85%', once: true },
+          scrollTrigger: { trigger: root.current, start: 'top 95%', end: 'top 55%', scrub: 0.6 },
         });
         tl.from('[data-lead]', { yPercent: 110, duration: 0.7, ease: EASE_OUT })
           .from(
@@ -49,13 +50,15 @@ export function SplitHeading({ lead, text }: { lead: string; text: string }) {
             { yPercent: 60, opacity: 0, duration: 0.35, ease: EASE_OUT, stagger: 0.12 },
             '-=0.2',
           )
-          // จุดลุ้นผล: ขึ้นลงทีละจุด วนเรื่อยๆ (แอมพลิจูดเล็ก ไม่แย่งสายตาจากการ์ด)
-          .to('[data-dot]', {
-            yPercent: -35,
-            duration: 0.45,
-            ease: 'sine.inOut',
-            stagger: { each: 0.15, repeat: -1, yoyo: true },
-          });
+          ;
+        // จุดลุ้นผล: ขึ้นลงทีละจุด วนเรื่อยๆ (แอมพลิจูดเล็ก ไม่แย่งสายตาจากการ์ด) — เริ่มเมื่อเลื่อนมาเกือบสุด
+        gsap.to('[data-dot]', {
+          y: '-0.12em',
+          duration: 0.45,
+          ease: 'sine.inOut',
+          stagger: { each: 0.15, repeat: -1, yoyo: true },
+          scrollTrigger: { trigger: root.current, start: 'top 55%', toggleActions: 'play pause resume pause' },
+        });
       });
       mm.add(MOTION_REDUCE, () => {
         gsap.from(root.current, {

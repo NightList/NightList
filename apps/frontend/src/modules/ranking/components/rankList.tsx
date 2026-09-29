@@ -2,10 +2,13 @@ import type { RankedBar } from '@nightlist/mock';
 import { useRef } from 'react';
 import { Link } from 'react-router';
 import { barImage } from '@/ui/utils/barImage';
-import { EASE_OUT, MOTION_OK, ScrollTrigger, gsap, useGSAP } from '../utils/gsap';
+import { EASE_OUT, MOTION_OK, gsap, useGSAP } from '../utils/gsap';
 import { RatingBadge } from './ratingBadge';
 
-/** อันดับ 4–10 — แถวเลื่อนขึ้นทีละแถวตอนเข้าจอ (ScrollTrigger.batch, stagger 60ms, ครั้งเดียว) */
+/**
+ * อันดับ 4–10 — แต่ละแถวค่อยๆ โผล่ขึ้นมาตามการเลื่อน (scrub ต่อแถว) ยิ่งเลื่อนลงยิ่งชัด
+ * เลื่อนกลับขึ้นจะจางกลับ · แถวถัดไปตามมาเองเพราะอยู่ต่ำกว่า (ไม่ต้อง stagger)
+ */
 export function RankList({ rows }: { rows: RankedBar[] }) {
   const root = useRef<HTMLOListElement>(null);
 
@@ -13,12 +16,19 @@ export function RankList({ rows }: { rows: RankedBar[] }) {
     () => {
       const mm = gsap.matchMedia();
       mm.add(MOTION_OK, () => {
-        gsap.set('[data-rank-row]', { opacity: 0, y: 24 });
-        ScrollTrigger.batch('[data-rank-row]', {
-          start: 'top 92%',
-          once: true,
-          onEnter: (els) =>
-            gsap.to(els, { opacity: 1, y: 0, duration: 0.5, ease: EASE_OUT, stagger: 0.06 }),
+        gsap.utils.toArray<HTMLElement>('[data-rank-row]').forEach((el, i) => {
+          gsap.fromTo(
+            el,
+            { opacity: 0, yPercent: 60, scale: 0.96, xPercent: i % 2 ? 4 : -4 },
+            {
+              opacity: 1,
+              yPercent: 0,
+              scale: 1,
+              xPercent: 0,
+              ease: EASE_OUT,
+              scrollTrigger: { trigger: el, start: 'top 98%', end: 'top 72%', scrub: 0.6 },
+            },
+          );
         });
       });
       return () => mm.revert();

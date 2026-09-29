@@ -6,6 +6,7 @@ import { useDemo } from '@/hooks/useDemo';
 import { Podium } from './components/podium';
 import { RadialCarousel } from './components/radialCarousel';
 import { RankList } from './components/rankList';
+import { ScrollReveal } from './components/scrollReveal';
 import { SplitHeading } from './components/splitHeading';
 
 const PERIOD_LABEL: Record<RankingPeriod, string> = { WEEK: 'สัปดาห์นี้', MONTH: 'เดือนนี้' };
@@ -44,7 +45,7 @@ export function RankingPage() {
       </RadialCarousel>
 
       <section className="mx-auto max-w-7xl px-4 pt-16 sm:pt-24">
-        <div className="flex flex-col items-center gap-3">
+        <ScrollReveal className="flex flex-col items-center gap-3">
           <Segmented
             size="large"
             value={period}
@@ -67,7 +68,7 @@ export function RankingPage() {
             ]}
           />
           </div>
-        </div>
+        </ScrollReveal>
 
         <div className="mt-14 sm:mt-20">
           <SplitHeading key={period} lead={PERIOD_LABEL[period]} text="ผู้ชนะได้แก่" />
@@ -86,10 +87,12 @@ export function RankingPage() {
           </>
         )}
 
+        <ScrollReveal>
         <p className="mx-auto mt-10 max-w-2xl text-center text-xs text-muted">
           อันดับรีเซ็ตทุกวันจันทร์ (รายสัปดาห์) และวันที่ 1 (รายเดือน) · 1 การจองที่เช็กอินแล้ว = 1 โหวต ·
           ร้านที่มีรีวิวน้อยกว่า 5 รีวิวยังไม่ติดอันดับ
         </p>
+        </ScrollReveal>
       </section>
     </div>
   );

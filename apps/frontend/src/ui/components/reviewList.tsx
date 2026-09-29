@@ -4,6 +4,7 @@ import { Avatar, Button, Listy } from 'antd';
 import { ListRow } from '@/ui/components/listRow';
 import { Link } from 'react-router';
 import { timeAgo } from '@/ui/utils/format';
+import { ReviewMediaGallery } from './reviewMediaGallery';
 
 export function ReviewList({ reviews, more }: { reviews: Review[]; more?: string }) {
   return (
@@ -22,7 +23,12 @@ export function ReviewList({ reviews, more }: { reviews: Review[]; more?: string
                 </span>
               </span>
             }
-            description={r.comment}
+            description={
+              <>
+                {r.comment}
+                {r.media?.length ? <ReviewMediaGallery media={r.media} /> : null}
+              </>
+            }
           />
         )}
       />
