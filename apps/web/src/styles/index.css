@@ -1,0 +1,22 @@
+/* ลำดับ layer: Tailwind preflight (base) อยู่ก่อน antd → ไม่ทับ style ของ antd */
+@layer theme, base, antd, components, utilities;
+
+@import 'tailwindcss';
+@import '@nightlist/ui/theme.css';
+
+/* ให้ Tailwind สแกน class ที่ใช้ใน packages/ui ด้วย */
+@source '../../../../packages/ui/src';
+
+@layer components {
+  /* ปุ่มหลักหน้า Auth (Figma login 2: ไล่ม่วง #b38bef → #553a80 บนพื้นมืด) */
+  .btn-auth {
+    height: 3.5rem !important;
+    border: 0 !important;
+    font-size: 1.0625rem !important;
+    background: linear-gradient(90deg, #8a6cc0, #4b3474) !important;
+    box-shadow: none !important;
+  }
+  .btn-auth:hover:not(:disabled) {
+    background: linear-gradient(90deg, #9a7cd0, #5b4284) !important;
+  }
+}
