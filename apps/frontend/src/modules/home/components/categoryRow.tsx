@@ -10,8 +10,8 @@ import {
   MusicNotes,
   Tree,
 } from '@phosphor-icons/react';
-import { animate, motion, useMotionValue, useReducedMotion } from 'motion/react';
-import { useCallback, useEffect, useRef, useState, type WheelEvent } from 'react';
+import { motion, useMotionValue, useReducedMotion } from 'motion/react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import type { HomeCategory } from '../type/category';
 
@@ -93,14 +93,17 @@ const STEP = 160 + 16;
 /** px/s ของ auto-scroll */
 const SCROLL_SPEED = 40;
 /** หยุด auto-scroll นานเท่านี้หลังผู้ใช้เลื่อนเอง (ms) */
-const RESUME_DELAY = 1500;
+const RESUME_DELAY = 1200;
+/** ความหนืดของการไล่ตามเป้า (ยิ่งมากยิ่งไว) — ทำให้ล้อเมาส์/ลูกศรลื่น ไม่กระตุก */
+const EASE = 14;
 
-function CategoryCard({ category: c }: { category: HomeCategory }) {
+function CategoryCard({ category: c, hidden }: { category: HomeCategory; hidden?: boolean }) {
   return (
-    <li className="shrink-0">
+    <li className="shrink-0" aria-hidden={hidden || undefined}>
       <Link
         to={c.to}
         draggable={false}
+        tabIndex={hidden ? -1 : undefined}
         className="group relative flex h-52 w-40 flex-col overflow-hidden rounded-2xl border border-white/10 !text-white select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
       >
         <div
@@ -122,117 +125,122 @@ function CategoryCard({ category: c }: { category: HomeCategory }) {
 }
 
 /**
- * แถวการ์ดหมวดหมู่ — วนลูปไม่มีสุด (ลิสต์ซ้ำ 2 ชุด)
- * เลื่อนได้ 4 ทาง: auto-scroll · ลากด้วยเมาส์/นิ้ว · ล้อเมาส์/แทร็กแพด · ปุ่มลูกศร
- * ผู้ใช้เลื่อนเองเมื่อไหร่ auto-scroll หยุด แล้วกลับมาเล่นต่อหลังนิ่ง 1.5 วิ
- * prefers-reduced-motion → ไม่ auto-scroll (ยังลาก/กดลูกศรได้)
+ * แถวการ์ดหมวดหมู่ — วนลูปไม่มีสุด
+ *
+ * ทำงานด้วย loop เดียว (requestAnimationFrame):
+ *  - `target` = ตำแหน่งที่อยากไป, `pos` = ตำแหน่งจริง ไล่ตาม target แบบนุ่ม
+ *  - auto-scroll = ดัน target ไปทางซ้ายทีละนิด · ล้อเมาส์/ลูกศร = บวก target
+ *  - เลยรอบ (period = ความกว้างการ์ด 1 ชุด) → เลื่อนทั้ง pos/target กลับ 1 รอบ (มองไม่เห็นรอยต่อ)
+ * จำนวนชุดที่ซ้ำคำนวณจากความกว้างจอ → จอกว้างแค่ไหนก็ไม่มีช่องว่างโผล่
+ * ล้อเมาส์เร็วแค่ไหนก็ไม่หลุด เพราะ wrap ทุกเฟรม + จำกัด delta ต่อครั้ง
+ * prefers-reduced-motion → ไม่ auto-scroll และขยับทันทีไม่มี easing
  */
 export function CategoryRow() {
   const reduce = useReducedMotion();
   const x = useMotionValue(0);
+  const viewportRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLUListElement>(null);
-  const isDragging = useRef(false);
-  const isHovering = useRef(false);
-  const animRef = useRef<ReturnType<typeof animate> | null>(null);
-  const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** ให้ animation ที่จบแล้วเรียกตัวเองรอบใหม่ได้ โดยไม่ต้องอ้างถึง startScroll ก่อนประกาศ */
-  const restart = useRef<() => void>(() => {});
-  const [halfWidth, setHalfWidth] = useState(0);
 
-  // ความกว้างของชุดการ์ดแรก = จุดที่ต้องวนกลับ
-  // วัดใหม่ทุกครั้งที่แถวเปลี่ยนขนาด (ฟอนต์ไทยโหลดเสร็จช้ากว่า React render → ค่าแรกอาจเป็น 0/ผิด
-  // แล้วการ์ดจะเลื่อนหลุดจอเหลือแค่ไม่กี่ใบ) — ResizeObserver จับได้ทั้ง resize และฟอนต์มาทีหลัง
+  const period = useRef(0);
+  const pos = useRef(0);
+  const target = useRef(0);
+  const dragging = useRef(false);
+  const hovering = useRef(false);
+  const lastInput = useRef(0);
+  const [copies, setCopies] = useState(2);
+
+  // วัด period (จุดเริ่มชุดที่ 2 เทียบชุดแรก — แม่นกว่า scrollWidth/2 เพราะรวม gap ถูก)
+  // และจำนวนชุดที่ต้องมีให้เต็มจอ · วัดใหม่เมื่อจอ/ฟอนต์เปลี่ยนขนาด
   useEffect(() => {
-    const el = trackRef.current;
-    if (!el) return;
-    const measure = () => setHalfWidth(el.scrollWidth / 2);
+    const vp = viewportRef.current;
+    const track = trackRef.current;
+    if (!vp || !track) return;
+    const measure = () => {
+      const second = track.children[CATEGORIES.length] as HTMLElement | undefined;
+      const first = track.children[0] as HTMLElement | undefined;
+      if (!first || !second) return;
+      const p = second.offsetLeft - first.offsetLeft;
+      if (p <= 0) return;
+      period.current = p;
+      setCopies(Math.max(2, Math.ceil(vp.clientWidth / p) + 1));
+    };
     measure();
     const ro = new ResizeObserver(measure);
-    ro.observe(el);
+    ro.observe(vp);
+    ro.observe(track);
     document.fonts?.ready.then(measure).catch(() => {});
     return () => ro.disconnect();
   }, []);
 
-  // halfWidth เปลี่ยน (เช่นฟอนต์มา) → ดึง x กลับเข้าช่วงที่ถูกต้องทันที
+  // loop หลัก
   useEffect(() => {
-    if (halfWidth <= 0) return;
-    let n = x.get() % halfWidth;
-    if (n > 0) n -= halfWidth;
-    x.set(n);
-  }, [halfWidth, x]);
-
-  const stopScroll = useCallback(() => {
-    animRef.current?.stop();
-    animRef.current = null;
-  }, []);
-
-  /** เก็บ x ให้อยู่ใน (-halfWidth, 0] เสมอ — เลยขอบก็วนกลับอีกฝั่ง (ชุดซ้ำทำให้มองไม่เห็นรอยต่อ) */
-  const wrap = useCallback(
-    (v: number) => {
-      if (halfWidth <= 0) return v;
-      let n = v % halfWidth;
-      if (n > 0) n -= halfWidth;
-      return n;
-    },
-    [halfWidth],
-  );
-
-  const startScroll = useCallback(() => {
-    if (reduce || halfWidth <= 0) return;
-    stopScroll();
-    const current = wrap(x.get());
-    x.set(current);
-    const remaining = halfWidth + current; // current เป็นลบ
-    animRef.current = animate(x, -halfWidth, {
-      duration: Math.max(remaining, 1) / SCROLL_SPEED,
-      ease: 'linear',
-      onComplete: () => {
-        x.set(0);
-        if (!isDragging.current && !isHovering.current) restart.current();
-      },
+    let raf = 0;
+    let prev = performance.now();
+    let visible = true;
+    const io = new IntersectionObserver(([e]) => {
+      visible = e?.isIntersecting ?? true;
     });
-  }, [reduce, halfWidth, x, stopScroll, wrap]);
+    if (viewportRef.current) io.observe(viewportRef.current);
 
-  useEffect(() => {
-    restart.current = startScroll;
-  }, [startScroll]);
+    const tick = (now: number) => {
+      const dt = Math.min((now - prev) / 1000, 0.05); // กันกระโดดตอนสลับแท็บกลับมา
+      prev = now;
+      const p = period.current;
+      if (p > 0 && visible && !dragging.current) {
+        const idle = now - lastInput.current > RESUME_DELAY;
+        if (!reduce && idle && !hovering.current) target.current -= SCROLL_SPEED * dt;
 
-  /** ผู้ใช้เลื่อนเอง: หยุด auto แล้วนัดกลับมาเล่นต่อ */
-  const pauseThenResume = useCallback(() => {
-    stopScroll();
-    if (resumeTimer.current) clearTimeout(resumeTimer.current);
-    resumeTimer.current = setTimeout(() => {
-      if (!isDragging.current && !isHovering.current) startScroll();
-    }, RESUME_DELAY);
-  }, [stopScroll, startScroll]);
+        pos.current = reduce
+          ? target.current
+          : pos.current + (target.current - pos.current) * (1 - Math.exp(-EASE * dt));
 
-  /** เลื่อนไปทีละ delta px (ลบ = ไปทางขวา) พร้อม wrap */
-  const nudge = useCallback(
-    (delta: number, smooth: boolean) => {
-      pauseThenResume();
-      const target = wrap(x.get() + delta);
-      // ถ้า wrap แล้วกระโดดข้ามขอบ ให้ set ทันทีแทน animate (กันวิ่งย้อนทั้งแถว)
-      if (!smooth || Math.abs(target - x.get()) > halfWidth / 2) x.set(target);
-      else animate(x, target, { duration: 0.35, ease: [0.22, 1, 0.36, 1] });
-    },
-    [pauseThenResume, wrap, x, halfWidth],
-  );
+        // wrap ให้อยู่ในช่วง (-p, 0] — เลื่อน target ไปพร้อมกันเพื่อไม่ให้ easing วิ่งย้อน
+        while (pos.current <= -p) {
+          pos.current += p;
+          target.current += p;
+        }
+        while (pos.current > 0) {
+          pos.current -= p;
+          target.current -= p;
+        }
+        x.set(pos.current);
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+      io.disconnect();
+    };
+  }, [reduce, x]);
 
-  /** ล้อเมาส์แนวตั้ง → เลื่อนแนวนอน · แทร็กแพดปัดซ้ายขวาก็ใช้ได้ */
-  const onWheel = (e: WheelEvent<HTMLDivElement>) => {
-    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-    if (delta === 0 || halfWidth <= 0) return; // ยังวัดความกว้างไม่ได้ → ห้ามเลื่อน (กันหลุดขอบ)
-    e.preventDefault();
-    nudge(-delta, false);
+  /** ผู้ใช้เลื่อนเอง (px, ลบ = ไปทางขวา) */
+  const nudge = (delta: number) => {
+    lastInput.current = performance.now();
+    target.current += delta;
   };
 
+  // ล้อเมาส์ต้องเป็น listener แบบ non-passive ถึงจะ preventDefault ได้ (React onWheel เป็น passive)
   useEffect(() => {
-    startScroll();
-    return () => {
-      stopScroll();
-      if (resumeTimer.current) clearTimeout(resumeTimer.current);
+    const vp = viewportRef.current;
+    if (!vp) return;
+    const onWheel = (e: WheelEvent) => {
+      const horizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY);
+      const raw = horizontal ? e.deltaX : e.deltaY;
+      if (raw === 0 || period.current <= 0) return;
+      e.preventDefault();
+      // deltaMode 1 = บรรทัด (Firefox) → แปลงเป็น px · จำกัดต่อครั้งกันปัดแรงแล้วพุ่ง
+      const px = e.deltaMode === 1 ? raw * 32 : raw;
+      const limit = period.current / 3;
+      lastInput.current = performance.now();
+      target.current -= Math.max(-limit, Math.min(limit, px));
+      // ไม่ให้เป้าวิ่งนำตำแหน่งจริงเกิน 1 รอบ (ไม่งั้นปล่อยล้อแล้วยังไหลต่อยาว)
+      const lead = target.current - pos.current;
+      if (Math.abs(lead) > period.current) target.current = pos.current + Math.sign(lead) * period.current;
     };
-  }, [startScroll, stopScroll]);
+    vp.addEventListener('wheel', onWheel, { passive: false });
+    return () => vp.removeEventListener('wheel', onWheel);
+  }, []);
 
   return (
     <section aria-labelledby="home-categories">
@@ -244,7 +252,7 @@ export function CategoryRow() {
           <button
             type="button"
             aria-label="เลื่อนไปทางซ้าย"
-            onClick={() => nudge(STEP, true)}
+            onClick={() => nudge(STEP)}
             className="grid size-9 place-items-center rounded-full border border-border bg-card text-text transition hover:border-gold hover:text-gold-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
           >
             <CaretLeft size={18} weight="bold" />
@@ -252,7 +260,7 @@ export function CategoryRow() {
           <button
             type="button"
             aria-label="เลื่อนไปทางขวา"
-            onClick={() => nudge(-STEP, true)}
+            onClick={() => nudge(-STEP)}
             className="grid size-9 place-items-center rounded-full border border-border bg-card text-text transition hover:border-gold hover:text-gold-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
           >
             <CaretRight size={18} weight="bold" />
@@ -261,20 +269,18 @@ export function CategoryRow() {
       </div>
 
       <div
+        ref={viewportRef}
         className="overflow-hidden overscroll-x-contain"
-        onWheel={onWheel}
         onMouseEnter={() => {
-          isHovering.current = true;
-          stopScroll();
+          hovering.current = true;
         }}
         onMouseLeave={() => {
-          isHovering.current = false;
-          if (!isDragging.current) startScroll();
+          hovering.current = false;
         }}
       >
         <motion.ul
           ref={trackRef}
-          className="flex w-max gap-4 pb-2"
+          className="flex w-max gap-4 pb-2 will-change-transform"
           style={{ x, cursor: 'grab' }}
           drag="x"
           dragElastic={0}
@@ -282,31 +288,36 @@ export function CategoryRow() {
           whileDrag={{ cursor: 'grabbing' }}
           onClickCapture={(e) => {
             // กันคลิกลิงก์ตอนกำลังลาก
-            if (isDragging.current) {
+            if (dragging.current) {
               e.preventDefault();
               e.stopPropagation();
             }
           }}
           onDragStart={() => {
-            isDragging.current = true;
-            stopScroll();
+            dragging.current = true;
           }}
-          onDrag={() => x.set(wrap(x.get()))}
+          onDrag={() => {
+            // ระหว่างลาก motion เป็นคนขยับ x → wrap เองแล้ว sync กลับเข้า loop
+            const p = period.current;
+            let v = x.get();
+            if (p > 0) {
+              while (v <= -p) v += p;
+              while (v > 0) v -= p;
+              if (v !== x.get()) x.set(v);
+            }
+            pos.current = target.current = v;
+          }}
           onDragEnd={() => {
+            pos.current = target.current = x.get();
+            lastInput.current = performance.now();
             setTimeout(() => {
-              isDragging.current = false;
+              dragging.current = false;
             }, 0);
-            x.set(wrap(x.get()));
-            pauseThenResume();
           }}
         >
-          {CATEGORIES.map((c) => (
-            <CategoryCard key={`a-${c.key}`} category={c} />
-          ))}
-          {/* ชุดซ้ำเพื่อวนลูปไม่มีรอยต่อ */}
-          {CATEGORIES.map((c) => (
-            <CategoryCard key={`b-${c.key}`} category={c} />
-          ))}
+          {Array.from({ length: copies }, (_, i) =>
+            CATEGORIES.map((c) => <CategoryCard key={`${i}-${c.key}`} category={c} hidden={i > 0} />),
+          )}
         </motion.ul>
       </div>
     </section>
