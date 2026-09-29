@@ -58,7 +58,12 @@ export function RegisterPage() {
 
   return (
     <AuthCard title="สร้างบัญชี" subtitle="ใช้เวลาไม่ถึงนาที · สำหรับผู้ที่อายุ 20 ปีขึ้นไป">
-      <Form<RegisterForm> layout="vertical" size="large" requiredMark={false} onFinish={onFinish}>
+      <Form<RegisterForm>
+        layout="vertical"
+        size="large"
+        requiredMark={false}
+        onFinish={onFinish}
+      >
         <Form.Item name="displayName" label="ชื่อที่แสดง" rules={[{ required: true, max: 60 }]}>
           <Input prefix={<UserCircle className="text-muted" />} autoComplete="nickname" />
         </Form.Item>
@@ -130,7 +135,13 @@ export function RegisterPage() {
             <Link to="/privacy">นโยบายความเป็นส่วนตัว</Link>
           </Checkbox>
         </Form.Item>
-        <Button type="primary" htmlType="submit" block loading={loading} className="btn-auth">
+        <Button
+          type="primary"
+          htmlType="submit"
+          block
+          loading={loading}
+          className="btn-auth"
+        >
           สมัครสมาชิก
         </Button>
       </Form>

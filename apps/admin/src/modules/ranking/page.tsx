@@ -1,7 +1,7 @@
 import { PageContainer } from '@ant-design/pro-components';
 import { tierList } from '@nightlist/mock';
 import type { Tier } from '@nightlist/types';
-import { TierStars } from '@nightlist/ui';
+import { TierBadge } from '@nightlist/ui';
 import { Table, Tag } from 'antd';
 import { useDemo } from '@/hooks/useDemo';
 
@@ -13,20 +13,17 @@ export function RankingPage() {
   );
   return (
     <PageContainer
-      title="ดาว / อันดับ"
+      title="ดาว / Tier"
       content="คำนวณจากคะแนนรวม (รีวิวเช็กอินจริง · จำนวนเช็กอิน · Safety · ข้อมูลราคา) — การโปรโมทไม่มีผลต่อดาว"
     >
       <Table
         rowKey="id"
         dataSource={rows}
         columns={[
+          { title: 'Tier', dataIndex: 'tierKey', render: (t: Tier) => <TierBadge tier={t} /> },
           { title: 'ร้าน', dataIndex: 'name' },
           { title: 'คะแนนรวม', dataIndex: 'score' },
-          {
-            title: 'ดาว',
-            dataIndex: 'stars',
-            render: (n: number, r) => <TierStars stars={n} tier={r.tierKey as Tier} />,
-          },
+          { title: 'ดาว', dataIndex: 'stars' },
           { title: 'รีวิว', dataIndex: 'reviewCount' },
           {
             title: 'โปรโมท',

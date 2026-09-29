@@ -33,9 +33,7 @@ export function AuthCard({
               {title}
             </Typography.Title>
           )}
-          {subtitle && (
-            <p className="text-balance text-base text-white/85 sm:text-lg">{subtitle}</p>
-          )}
+          {subtitle && <p className="text-balance text-base text-white/85 sm:text-lg">{subtitle}</p>}
         </div>
         {children}
       </div>

@@ -1,10 +1,10 @@
 import { barReviews, getBarBySlug } from '@nightlist/mock';
+import { StarRating } from '@nightlist/ui';
 import { Empty, Result } from 'antd';
 import { Link, useParams } from 'react-router';
 import { ReviewList } from '@/ui/components/reviewList';
 import { PageHeader } from '@/ui/components/pageHeader';
 import { useDemo } from '@/hooks/useDemo';
-import { BarRating } from '@/ui/components/barRating';
 
 export function BarReviewsPage() {
   useDemo();
@@ -16,7 +16,7 @@ export function BarReviewsPage() {
     <div>
       <PageHeader
         title={`รีวิว ${bar.name}`}
-        subtitle={<BarRating bar={bar} />}
+        subtitle={<StarRating value={bar.rating} reviewCount={bar.reviewCount} />}
         extra={<Link to={`/bars/${bar.slug}`}>← กลับหน้าร้าน</Link>}
       />
       {reviews.length ? <ReviewList reviews={reviews} /> : <Empty description="ยังไม่มีรีวิว" />}

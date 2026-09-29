@@ -5,7 +5,6 @@ import { ListRow } from '@/ui/components/listRow';
 import { PageHeader } from '@/ui/components/pageHeader';
 import { timeAgo } from '@/ui/utils/format';
 import { useMerchantBar } from '@/hooks/useMerchantBar';
-import { BarRating } from '@/ui/components/barRating';
 
 export function MerchantReviewsPage() {
   const bar = useMerchantBar();
@@ -13,7 +12,10 @@ export function MerchantReviewsPage() {
   const reviews = barReviews(bar.id);
   return (
     <div>
-      <PageHeader title="รีวิว" subtitle={<BarRating bar={bar} />} />
+      <PageHeader
+        title="รีวิว"
+        subtitle={<StarRating value={bar.rating} reviewCount={bar.reviewCount} />}
+      />
       <Card>
         <Listy
           items={reviews}

@@ -1,6 +1,6 @@
 import { PageContainer } from '@ant-design/pro-components';
 import { getState, setBarStatus, updateBar, withTier } from '@nightlist/mock';
-import { TierStars } from '@nightlist/ui';
+import { TierBadge } from '@nightlist/ui';
 import { Button, Input, Popconfirm, Switch, Table, Tag } from 'antd';
 import { useState } from 'react';
 import { useDemo } from '@/hooks/useDemo';
@@ -25,9 +25,9 @@ export function BarsPage() {
           { title: 'ร้าน', dataIndex: 'name' },
           { title: 'ย่าน', dataIndex: 'district' },
           {
-            title: 'ดาว',
+            title: 'Tier',
             key: 't',
-            render: (_, b) => (b.stars ? <TierStars stars={b.stars} /> : <Tag>ร้านใหม่</Tag>),
+            render: (_, b) => (b.tier ? <TierBadge tier={b.tier} /> : <Tag>ร้านใหม่</Tag>),
           },
           { title: 'คะแนน', dataIndex: 'score', sorter: (a, b) => a.score - b.score },
           {

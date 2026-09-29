@@ -1,81 +1,16 @@
-import {
-  BeerStein,
-  City,
-  Door,
-  ForkKnife,
-  Martini,
-  MoonStars,
-  MusicNotes,
-  Tree,
-} from '@phosphor-icons/react';
+import { BeerStein, City, Door, ForkKnife, Martini, MoonStars, MusicNotes, Tree } from '@phosphor-icons/react';
 import { Link } from 'react-router';
 import type { HomeCategory } from '../type/category';
 
 const CATEGORIES: HomeCategory[] = [
-  {
-    key: 'pub',
-    title: 'ผับ / บาร์',
-    subtitle: 'แดนซ์ ปาร์ตี้',
-    to: '/ranking?category=PUB_BAR',
-    icon: BeerStein,
-    tone: 'amber',
-  },
-  {
-    key: 'chill',
-    title: 'นั่งชิล',
-    subtitle: 'คุยกันยาว ๆ',
-    to: '/ranking?category=CHILL',
-    icon: Martini,
-    tone: 'violet',
-  },
-  {
-    key: 'food',
-    title: 'ร้านอาหาร',
-    subtitle: 'กินจริงจัง',
-    to: '/ranking?category=RESTAURANT',
-    icon: ForkKnife,
-    tone: 'amber',
-  },
-  {
-    key: 'live',
-    title: 'ดนตรีสด',
-    subtitle: 'วงเล่นทุกคืน',
-    to: '/search?style=Live%20Music',
-    icon: MusicNotes,
-    tone: 'violet',
-  },
-  {
-    key: 'rooftop',
-    title: 'Rooftop',
-    subtitle: 'วิวเมือง',
-    to: '/search?style=Rooftop',
-    icon: City,
-    tone: 'amber',
-  },
-  {
-    key: 'quiet',
-    title: 'ร้านเงียบ',
-    subtitle: 'คุยงานได้',
-    to: '/search?style=Quiet',
-    icon: MoonStars,
-    tone: 'violet',
-  },
-  {
-    key: 'outdoor',
-    title: 'Outdoor',
-    subtitle: 'นั่งรับลม',
-    to: '/search?style=Outdoor',
-    icon: Tree,
-    tone: 'amber',
-  },
-  {
-    key: 'private',
-    title: 'ห้องส่วนตัว',
-    subtitle: 'มากันเป็นกลุ่ม',
-    to: '/search?style=Private%20Room',
-    icon: Door,
-    tone: 'violet',
-  },
+  { key: 'pub', title: 'ผับ / บาร์', subtitle: 'แดนซ์ ปาร์ตี้', to: '/ranking?category=PUB_BAR', icon: BeerStein, tone: 'amber' },
+  { key: 'chill', title: 'นั่งชิล', subtitle: 'คุยกันยาว ๆ', to: '/ranking?category=CHILL', icon: Martini, tone: 'violet' },
+  { key: 'food', title: 'ร้านอาหาร', subtitle: 'กินจริงจัง', to: '/ranking?category=RESTAURANT', icon: ForkKnife, tone: 'amber' },
+  { key: 'live', title: 'ดนตรีสด', subtitle: 'วงเล่นทุกคืน', to: '/search?style=Live%20Music', icon: MusicNotes, tone: 'violet' },
+  { key: 'rooftop', title: 'Rooftop', subtitle: 'วิวเมือง', to: '/search?style=Rooftop', icon: City, tone: 'amber' },
+  { key: 'quiet', title: 'ร้านเงียบ', subtitle: 'คุยงานได้', to: '/search?style=Quiet', icon: MoonStars, tone: 'violet' },
+  { key: 'outdoor', title: 'Outdoor', subtitle: 'นั่งรับลม', to: '/search?style=Outdoor', icon: Tree, tone: 'amber' },
+  { key: 'private', title: 'ห้องส่วนตัว', subtitle: 'มากันเป็นกลุ่ม', to: '/search?style=Private%20Room', icon: Door, tone: 'violet' },
 ];
 
 const TONE: Record<HomeCategory['tone'], string> = {
@@ -97,9 +32,7 @@ export function CategoryRow() {
               to={c.to}
               className="group relative flex h-52 w-40 flex-col overflow-hidden rounded-2xl border border-white/10 !text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
             >
-              <div
-                className={`relative flex flex-1 items-center justify-center bg-gradient-to-br ${TONE[c.tone]}`}
-              >
+              <div className={`relative flex flex-1 items-center justify-center bg-gradient-to-br ${TONE[c.tone]}`}>
                 <c.icon
                   size={64}
                   weight="duotone"

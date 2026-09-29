@@ -8,6 +8,7 @@ import {
   TiktokLogo,
 } from '@phosphor-icons/react';
 import { barReviews, CATEGORY_LABELS, getBarBySlug } from '@nightlist/mock';
+import { StarRating, TierBadge } from '@nightlist/ui';
 import { Button, Card, Descriptions, Drawer, Empty, Result, Table, Tabs, Tag } from 'antd';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -19,7 +20,6 @@ import { PriceEstimator, type EstimatorValue } from '@/ui/components/priceEstima
 import { ReviewList } from '@/ui/components/reviewList';
 import { useDemo } from '@/hooks/useDemo';
 import { baht } from '@/ui/utils/format';
-import { BarRating } from '@/ui/components/barRating';
 
 const DAYS = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 
@@ -58,6 +58,7 @@ export function BarDetailPage() {
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
         <div>
           <div className="flex flex-wrap items-center gap-2">
+            {bar.tier ? <TierBadge tier={bar.tier} /> : <Tag color="purple">ร้านใหม่</Tag>}
             <Tag>{CATEGORY_LABELS[bar.category]}</Tag>
             {bar.editorsPick && <Tag color="gold">Editor&apos;s Pick</Tag>}
             {bar.promoted && <Tag>แนะนำ · โฆษณา</Tag>}
@@ -69,7 +70,11 @@ export function BarDetailPage() {
           </div>
           <h1 className="mt-3 font-display text-4xl font-bold">{bar.name}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-4 text-sm">
-            <BarRating bar={bar} />
+            {bar.isNew ? (
+              <span className="text-muted">ร้านใหม่ · ยังไม่มีดาว</span>
+            ) : (
+              <StarRating value={bar.rating} reviewCount={bar.reviewCount} />
+            )}
             <span className="inline-flex items-center gap-1 text-muted">
               <MapPin /> {bar.district}
             </span>

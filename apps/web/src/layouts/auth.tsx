@@ -59,11 +59,7 @@ export function AuthLayout() {
         <div className="absolute inset-0 -z-10 bg-black/70" />
 
         <header className="flex h-16 items-center justify-between px-4 md:px-8">
-          <Link
-            to="/"
-            className="flex items-center gap-2 !text-[#f5f1e8]"
-            aria-label="กลับหน้าแรก NightList"
-          >
+          <Link to="/" className="flex items-center gap-2 !text-[#f5f1e8]" aria-label="กลับหน้าแรก NightList">
             <img src="/images/common/logo.png" alt="" width={36} height={35} className="size-9" />
             <span className="font-display text-lg font-bold text-gold">NightList</span>
           </Link>

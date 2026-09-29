@@ -3,4 +3,4 @@ export * from './antd-theme';
 export * from './ThemeProvider';
 export * from './components/ThemeToggle';
 export * from './components/StarRating';
-export * from './components/TierStars';
+export * from './components/TierBadge';
