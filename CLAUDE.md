@@ -13,6 +13,8 @@
 - สเปคหลักอยู่ที่ `docs/PROMPT.md` ถ้าสเปคเปลี่ยน ให้อัปเดตไฟล์นี้ใน branch `demo`
 
 ## Skills
+- **ทุกครั้งที่แก้ UI ต้องเปิด skill ที่เกี่ยวข้องก่อน** (frontend-design เสมอ + mobile-native ถ้าแตะมือถือ, antd ถ้าแตะคอมโพเนนต์ antd, animate ถ้าแตะ motion) เพื่อกันดีไซน์เพี้ยน
+- ก่อนเริ่มงาน: ดึง `demo` ล่าสุดของเพื่อนก่อนเสมอ แล้วทำต่อบนนั้น
 - `.claude/skills/ant-design` และ `.claude/skills/antd` (จาก ant-design/antd-skill) ใช้ทุกครั้งที่เขียน UI (antd v6 ใช้ทั้ง `apps/frontend` และ `apps/admin`)
 - ก่อนเขียนโค้ด antd: `antd info <Component> --format json` / หลังแก้: `antd lint <path> --format json`
 - Tailwind ใช้กับ layout/ตกแต่งเท่านั้น, ไอคอนใช้ Phosphor (`@phosphor-icons/react`) ห้ามใช้ `@ant-design/icons`

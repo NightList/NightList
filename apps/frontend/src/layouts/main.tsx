@@ -33,7 +33,7 @@ export function MainLayout() {
       </header>
 
       {bleed ? (
-        <main className="flex-1 pb-24 md:pb-0">
+        <main className={`flex-1 ${fullBleed ? '' : 'pb-24 md:pb-0'}`}>
           <Outlet />
         </main>
       ) : (
