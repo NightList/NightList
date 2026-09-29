@@ -18,14 +18,14 @@ export function AuthCard({
   footer?: ReactNode;
 }) {
   return (
-    <div className="w-full max-w-[460px]">
-      <div className="rounded-2xl border border-white/15 bg-[#0b0910]/60 px-6 pb-8 pt-7 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl sm:px-14">
+    <div className="w-full max-w-115">
+      <div className="rounded-2xl border border-purple/45 bg-grey/5 px-6 pb-8 pt-7 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] backdrop-blur-lg sm:px-14">
         <img
           src="/images/common/logo.png"
           alt="NightList"
           width={177}
           height={172}
-          className="mx-auto mb-5 w-[120px] drop-shadow-[0_10px_28px_rgba(139,79,227,0.45)]"
+          className="mx-auto mb-5 w-30"
         />
         {(title || subtitle) && (
           <div className="mb-6 text-center">

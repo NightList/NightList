@@ -16,7 +16,7 @@ const authTheme: ThemeConfig = {
   cssVar: { key: 'nightlist-auth' },
   token: {
     ...base.token,
-    colorPrimary: '#6d4bc4',
+    colorPrimary: '#a738f5',
     colorTextLightSolid: '#ffffff',
     colorLink: '#c4a6ff',
     borderRadius: 6,
@@ -53,14 +53,14 @@ export function AuthLayout() {
       <div className="dark relative isolate flex min-h-dvh flex-col overflow-hidden bg-[#07070d] text-[#f5f1e8]">
         <AgeGate />
         <img
-          src="/images/login/bg.jpg"
+          src="/images/login/logo-bg.png"
           alt=""
           fetchPriority="high"
           className="absolute inset-0 -z-10 size-full object-cover object-[30%_center]"
         />
         {/* ย้อมม่วง + มืดลง ให้การ์ดเด่นและอ่านออก (Figma: overlay ม่วงเข้ม) */}
         <div className="absolute inset-0 -z-10 bg-[#1a0b33]/55 mix-blend-multiply" />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-black/55 via-black/35 to-black/70" />
+        <div className="absolute inset-0 -z-10 bg-linear-to-b from-black/55 via-black/35 to-black/70" />
 
         <header className="sticky top-0 z-40 h-0">
           <div className="flex justify-center px-3 pt-3 md:pt-4">
