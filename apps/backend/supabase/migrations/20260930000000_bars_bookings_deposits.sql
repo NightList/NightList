@@ -133,6 +133,7 @@ create table public.bookings (
   zone_id           uuid not null references public.bar_zones (id),
   table_id          uuid references public.bar_tables (id),
   booking_datetime  timestamptz not null,
+  booking_end_datetime timestamptz not null,
   duration_minutes  integer not null default 120,
   pax               smallint not null check (pax between 1 and 50),
   status            public.booking_status not null default 'AWAITING_DEPOSIT',
@@ -146,9 +147,20 @@ create table public.bookings (
   -- โต๊ะเดียวกันซ้อนเวลากันไม่ได้ ขณะยังถือโต๊ะอยู่
   constraint bookings_no_overlap exclude using gist (
     table_id with =,
-    tstzrange(booking_datetime, booking_datetime + make_interval(mins => duration_minutes)) with &&
+    tstzrange(booking_datetime, booking_end_datetime) with &&
   ) where (table_id is not null and status in ('PENDING','AWAITING_DEPOSIT','DEPOSIT_SUBMITTED','CONFIRMED','CHECKED_IN'))
 );
+create or replace function public.set_booking_end_datetime() returns trigger
+language plpgsql
+as $$
+begin
+  new.booking_end_datetime := new.booking_datetime + (new.duration_minutes * interval '1 minute');
+  return new;
+end;
+$$;
+create trigger bookings_end_datetime_before_write
+before insert or update of booking_datetime, duration_minutes on public.bookings
+for each row execute function public.set_booking_end_datetime();
 create index bookings_bar_dt_idx on public.bookings (bar_id, booking_datetime);
 create index bookings_user_idx on public.bookings (user_id, created_at desc);
 create trigger bookings_updated_at before update on public.bookings
