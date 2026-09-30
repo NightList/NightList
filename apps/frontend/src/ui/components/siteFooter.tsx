@@ -1,4 +1,9 @@
-import { FacebookLogo, InstagramLogo, TiktokLogo, YoutubeLogo } from '@phosphor-icons/react';
+import {
+  FacebookLogoIcon,
+  InstagramLogoIcon,
+  TiktokLogoIcon,
+  YoutubeLogoIcon,
+} from '@phosphor-icons/react';
 import { Link } from 'react-router';
 
 const MENU = [
@@ -14,10 +19,10 @@ const CONTACT = [
   { to: '/merchant/join', label: 'ร่วมธุรกิจ' },
 ];
 const SOCIAL = [
-  { href: 'https://instagram.com', label: 'Instagram', icon: InstagramLogo },
-  { href: 'https://tiktok.com', label: 'TikTok', icon: TiktokLogo },
-  { href: 'https://facebook.com', label: 'Facebook', icon: FacebookLogo },
-  { href: 'https://youtube.com', label: 'YouTube', icon: YoutubeLogo },
+  { href: 'https://instagram.com', label: 'Instagram', icon: InstagramLogoIcon },
+  { href: 'https://tiktok.com', label: 'TikTok', icon: TiktokLogoIcon },
+  { href: 'https://facebook.com', label: 'Facebook', icon: FacebookLogoIcon },
+  { href: 'https://youtube.com', label: 'YouTube', icon: YoutubeLogoIcon },
 ];
 
 function Column({ title, links }: { title: string; links: { to: string; label: string }[] }) {
