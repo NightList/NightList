@@ -69,12 +69,18 @@ export function SplitHeading({ lead, text }: { lead: string; text: string }) {
         aria-label={`${lead} ${text}…`}
         className="max-w-full text-center text-5xl font-bold leading-[1.2] sm:text-7xl lg:text-8xl"
       >
-        <span aria-hidden className="inline-block overflow-hidden align-bottom pb-[0.12em]">
+        <span
+          aria-hidden
+          className="-mt-[0.3em] inline-block overflow-hidden align-bottom pb-[0.16em] pt-[0.3em]"
+        >
           <span data-lead className="inline-block text-muted">
             {lead}{' '}
           </span>
         </span>
-        <span aria-hidden className="inline-block overflow-hidden align-bottom pb-[0.12em]">
+        <span
+          aria-hidden
+          className="-mt-[0.3em] inline-block overflow-hidden align-bottom pb-[0.16em] pt-[0.3em]"
+        >
           <span className="inline-flex text-gold">
             {chars.map((c, i) => (
               <span
