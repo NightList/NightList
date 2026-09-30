@@ -65,7 +65,7 @@ export function MerchantDashboardPage() {
       >
         <Table
           rowKey="id"
-          size="small"
+
           pagination={false}
           dataSource={today}
           locale={{ emptyText: 'ยังไม่มีการจองวันนี้' }}

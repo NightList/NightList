@@ -130,18 +130,13 @@ export function LoginPage() {
         <div className="mt-7 border-t border-white/10 pt-5 text-center">
           <p className="mb-2.5 text-xs text-white/60">เดโม — เข้าเร็วตามบทบาท</p>
           <div className="grid grid-cols-3 gap-2">
-            <Button size="small" type="text" icon={<User />} onClick={() => quick('customer')}>
+            <Button type="text" icon={<User />} onClick={() => quick('customer')}>
               ลูกค้า
             </Button>
-            <Button
-              size="small"
-              type="text"
-              icon={<Storefront />}
-              onClick={() => quick('merchant')}
-            >
+            <Button type="text" icon={<Storefront />} onClick={() => quick('merchant')}>
               เจ้าของร้าน
             </Button>
-            <Button size="small" type="text" icon={<ShieldStar />} onClick={() => quick('staff')}>
+            <Button type="text" icon={<ShieldStar />} onClick={() => quick('staff')}>
               Staff
             </Button>
           </div>

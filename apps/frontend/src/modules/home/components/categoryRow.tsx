@@ -7,61 +7,200 @@ import type { HomeCategory } from '../type/category';
 const CATEGORIES: HomeCategory[] = [
   {
     key: 'pub',
-    image: '/images/categories/pub.webp',
+    image: '/images/categories/edm-dance-floor.webp',
     title: 'ผับ / บาร์',
     subtitle: 'แดนซ์ ปาร์ตี้',
     to: '/ranking?category=PUB_BAR',
   },
   {
     key: 'chill',
-    image: '/images/categories/chill.webp',
+    image: '/images/categories/intimate-cocktail-bar.webp',
     title: 'นั่งชิล',
     subtitle: 'คุยกันยาว ๆ',
     to: '/ranking?category=CHILL',
   },
   {
     key: 'food',
-    image: '/images/categories/food.webp',
+    image: '/images/categories/friends-at-dinner.webp',
     title: 'ร้านอาหาร',
     subtitle: 'กินจริงจัง',
     to: '/ranking?category=RESTAURANT',
   },
   {
     key: 'live',
-    image: '/images/categories/live.webp',
+    image: '/images/categories/live-music-dinner.webp',
     title: 'ดนตรีสด',
     subtitle: 'วงเล่นทุกคืน',
     to: '/search?style=Live%20Music',
   },
   {
     key: 'rooftop',
-    image: '/images/categories/rooftop.webp',
+    image: '/images/categories/rooftop-lounge-skyline.webp',
     title: 'Rooftop',
     subtitle: 'วิวเมือง',
     to: '/search?style=Rooftop',
   },
   {
     key: 'quiet',
-    image: '/images/categories/quiet.webp',
+    image: '/images/categories/vinyl-listening-bar.webp',
     title: 'ร้านเงียบ',
     subtitle: 'คุยงานได้',
     to: '/search?style=Quiet',
   },
   {
     key: 'outdoor',
-    image: '/images/categories/outdoor.webp',
+    image: '/images/categories/outdoor-garden-dinner.webp',
     title: 'Outdoor',
     subtitle: 'นั่งรับลม',
     to: '/search?style=Outdoor',
   },
   {
     key: 'private',
-    image: '/images/categories/private.webp',
+    image: '/images/categories/candlelit-dinner-date.webp',
     title: 'ห้องส่วนตัว',
     subtitle: 'มากันเป็นกลุ่ม',
     to: '/search?style=Private%20Room',
   },
+  {
+    key: 'beer',
+    image: '/images/categories/beer-pour.webp',
+    title: 'เบียร์',
+    subtitle: 'ชิล ๆ สักแก้ว',
+    to: '/search?style=Beer',
+  },
+  {
+    key: 'cocktail',
+    image: '/images/categories/orange-cocktail-splash.webp',
+    title: 'Cocktail',
+    subtitle: 'จิบสีสวย',
+    to: '/search?style=Cocktail',
+  },
+  {
+    key: 'wine',
+    image: '/images/categories/red-wine-pour.webp',
+    title: 'Wine',
+    subtitle: 'ดินเนอร์ละมุน',
+    to: '/search?style=Wine',
+  },
+  {
+    key: 'whisky',
+    image: '/images/categories/whisky-on-the-rocks.webp',
+    title: 'Whisky',
+    subtitle: 'นั่งจิบช้า ๆ',
+    to: '/search?style=Whisky',
+  },
+  {
+    key: 'sake',
+    image: '/images/categories/sake-set.webp',
+    title: 'Sake',
+    subtitle: 'ญี่ปุ่นสไตล์',
+    to: '/search?style=Sake',
+  },
+  {
+    key: 'shot',
+    image: '/images/categories/rainbow-shot.webp',
+    title: 'Shot',
+    subtitle: 'ชนแก้วให้สุด',
+    to: '/search?style=Shot',
+  },
+  {
+    key: 'soju',
+    image: '/images/categories/soju-bottle-and-cup.webp',
+    title: 'Soju',
+    subtitle: 'เกาหลีสายชิล',
+    to: '/search?style=Soju',
+  },
+  {
+    key: 'speakeasy',
+    image: '/images/categories/rooftop-cocktail-lounge.webp',
+    title: 'Speakeasy',
+    subtitle: 'บาร์ลับน่าค้นหา',
+    to: '/search?style=Speakeasy',
+  },
+  {
+    key: 'clubs',
+    image: '/images/categories/nightclub-entrance.webp',
+    title: 'Clubs & Events',
+    subtitle: 'คืนที่มีสีสัน',
+    to: '/search?style=Clubs%20%26%20Events',
+  },
+  {
+    key: 'craft-beer',
+    image: '/images/categories/friends-beer-toast.webp',
+    title: 'Craft Beer',
+    subtitle: 'เบียร์ทำมือ',
+    to: '/search?style=Craft%20Beer',
+  },
+  {
+    key: 'rooftop-bar',
+    image: '/images/categories/couple-arriving-at-rooftop.webp',
+    title: 'Rooftop Bar',
+    subtitle: 'วิวเมืองยามค่ำ',
+    to: '/search?style=Rooftop%20Bar',
+  },
+  {
+    key: 'korean',
+    image: '/images/categories/friends-dinner-toast.webp',
+    title: 'Korean Pop',
+    subtitle: 'สังสรรค์สไตล์เกาหลี',
+    to: '/search?style=Korean%20Pop',
+  },
+  {
+    key: 'japanese',
+    image: '/images/categories/woman-at-cocktail-bar.webp',
+    title: 'Japanese Bar',
+    subtitle: 'บาร์ญี่ปุ่นร่วมสมัย',
+    to: '/search?style=Japanese%20Bar',
+  },
+  {
+    key: 'party',
+    image: '/images/categories/night-out-group-toast.webp',
+    title: 'Party & Dancing',
+    subtitle: 'สายปาร์ตี้ตัวจริง',
+    to: '/search?style=Party%20%26%20Dancing',
+  },
+  {
+    key: 'date-night',
+    image: '/images/categories/sunset-rooftop-date.webp',
+    title: 'Date Night',
+    subtitle: 'ค่ำคืนของเรา',
+    to: '/search?style=Date%20Night',
+  },
+  {
+    key: 'walking-street',
+    image: '/images/categories/rainy-night-street.webp',
+    title: 'Walking Street',
+    subtitle: 'ถนนคนเดินยามค่ำ',
+    to: '/search?style=Walking%20Street',
+  },
 ];
+
+  const CATEGORY_TEXT_COLORS: Record<string, string> = {
+    pub: '#F4B7FF',
+    chill: '#FFD166',
+    food: '#FFCF70',
+    live: '#FFC857',
+    rooftop: '#E9C2FF',
+    quiet: '#F2B56B',
+    outdoor: '#FFD166',
+    private: '#FFB6C1',
+    beer: '#F4D35E',
+    cocktail: '#FFB347',
+    wine: '#F2A7BB',
+    whisky: '#D9A066',
+    sake: '#E8D3A8',
+    shot: '#FF9BD2',
+    soju: '#9FE870',
+    speakeasy: '#E9B872',
+    clubs: '#FF8FD8',
+    'craft-beer': '#FFD166',
+    'rooftop-bar': '#F0C4FF',
+    korean: '#FF9A76',
+    japanese: '#FFC1A1',
+    party: '#FF91C8',
+    'date-night': '#FFB4A2',
+    'walking-street': '#F7C873',
+  };
 
 /** px/s ของ auto-scroll */
 const SCROLL_SPEED = 40;
@@ -90,10 +229,17 @@ function CategoryCard({ category: c, hidden }: { category: HomeCategory; hidden?
           className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         {/* ไล่สีม่วงอ่อนจากล่าง (Figma) ให้อ่านชื่อหมวดออก */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#efe3ff] via-[#efe3ff]/70 via-35% to-transparent to-65%" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#A738F5] via-[#FFFFFF]/0 via-35% to-transparent to-65%" />
         <div className="relative px-3 pb-3">
-          <p className="text-[15px] font-bold leading-tight text-[#8a1fd6]">{c.title}</p>
-          <p className="text-xs text-[#5b3d78]">{c.subtitle}</p>
+            <p
+              className="text-[15px] font-bold leading-tight"
+              style={{ color: CATEGORY_TEXT_COLORS[c.key] }}
+            >
+              {c.title}
+            </p>
+            <p className="text-xs opacity-85 text-white">
+              {c.subtitle}
+            </p>
         </div>
       </Link>
     </li>

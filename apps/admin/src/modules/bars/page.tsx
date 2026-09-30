@@ -40,7 +40,6 @@ export function BarsPage() {
             dataIndex: 'editorsPick',
             render: (v: boolean, b) => (
               <Switch
-                size="small"
                 checked={v}
                 onChange={(editorsPick) => updateBar(b.id, { editorsPick }, ADMIN)}
               />
@@ -51,9 +50,7 @@ export function BarsPage() {
             key: 'a',
             render: (_, b) =>
               b.status === 'SUSPENDED' ? (
-                <Button size="small" onClick={() => setBarStatus(b.id, 'APPROVED', ADMIN)}>
-                  เปิดใช้งาน
-                </Button>
+                <Button onClick={() => setBarStatus(b.id, 'APPROVED', ADMIN)}>เปิดใช้งาน</Button>
               ) : (
                 <Popconfirm
                   title={`ระงับ ${b.name}?`}
@@ -61,9 +58,7 @@ export function BarsPage() {
                   cancelText="ยกเลิก"
                   onConfirm={() => setBarStatus(b.id, 'SUSPENDED', ADMIN)}
                 >
-                  <Button size="small" danger>
-                    ระงับ
-                  </Button>
+                  <Button danger>ระงับ</Button>
                 </Popconfirm>
               ),
           },

@@ -29,7 +29,11 @@ export function DepositsPage() {
     { title: 'ร้าน', dataIndex: 'barId', render: (id: string) => getBar(id)?.name },
     { title: 'ลูกค้า', dataIndex: 'userName' },
     { title: 'วันที่จอง', dataIndex: 'datetime', render: (v: string) => dateTime(v) },
-    { title: 'ยอด', align: 'right' as const, render: (_: unknown, b: typeof d.held[number]) => baht(b.deposit!.amount) },
+    {
+      title: 'ยอด',
+      align: 'right' as const,
+      render: (_: unknown, b: (typeof d.held)[number]) => baht(b.deposit!.amount),
+    },
   ];
 
   return (
@@ -72,7 +76,7 @@ export function DepositsPage() {
                       <Space>
                         <Button
                           type="primary"
-                          size="small"
+
                           onClick={() => {
                             reviewDeposit(b.id, true, ADMIN);
                             message.success('ยืนยันโต๊ะให้ลูกค้าแล้ว');
@@ -82,7 +86,7 @@ export function DepositsPage() {
                         </Button>
                         <Button
                           danger
-                          size="small"
+
                           onClick={() => {
                             reviewDeposit(b.id, false, ADMIN);
                             message.info('แจ้งลูกค้าให้ส่งสลิปใหม่');
@@ -110,12 +114,19 @@ export function DepositsPage() {
                     title: 'บัญชีร้าน',
                     render: (_, b) => {
                       const bar = getBar(b.barId);
-                      return bar ? `${bar.payout.bankName} ${bar.payout.accountNo} (${bar.payout.accountName})` : '-';
+                      return bar
+                        ? `${bar.payout.bankName} ${bar.payout.accountNo} (${bar.payout.accountName})`
+                        : '-';
                     },
                   },
                   {
                     title: 'ผล',
-                    render: (_, b) => (b.status === 'NO_SHOW' ? <Tag color="red">ไม่มาตามนัด</Tag> : <Tag color="green">เช็กอินแล้ว</Tag>),
+                    render: (_, b) =>
+                      b.status === 'NO_SHOW' ? (
+                        <Tag color="red">ไม่มาตามนัด</Tag>
+                      ) : (
+                        <Tag color="green">เช็กอินแล้ว</Tag>
+                      ),
                   },
                   {
                     title: '',
@@ -124,7 +135,7 @@ export function DepositsPage() {
                       <Space>
                         <Button
                           type="primary"
-                          size="small"
+
                           onClick={() => {
                             settleDeposit(b.id, 'PAID_OUT', ADMIN);
                             message.success('บันทึกว่าโอนให้ร้านแล้ว');
@@ -133,7 +144,6 @@ export function DepositsPage() {
                           โอนให้ร้านแล้ว
                         </Button>
                         <Button
-                          size="small"
                           onClick={() => {
                             settleDeposit(b.id, 'CREDIT', ADMIN);
                             message.success('เก็บเป็นเครดิตร้านแล้ว');
@@ -151,7 +161,19 @@ export function DepositsPage() {
           {
             key: 'held',
             label: `ถือไว้ (${d.held.length})`,
-            children: <Table rowKey="id" dataSource={d.held} columns={[...base, { title: 'ตรวจเมื่อ', render: (_, b) => dateTime(b.deposit!.verifiedAt ?? b.deposit!.submittedAt) }]} />,
+            children: (
+              <Table
+                rowKey="id"
+                dataSource={d.held}
+                columns={[
+                  ...base,
+                  {
+                    title: 'ตรวจเมื่อ',
+                    render: (_, b) => dateTime(b.deposit!.verifiedAt ?? b.deposit!.submittedAt),
+                  },
+                ]}
+              />
+            ),
           },
           {
             key: 'settled',
@@ -164,9 +186,16 @@ export function DepositsPage() {
                   ...base,
                   {
                     title: 'สถานะ',
-                    render: (_, b) => <Tag color={SETTLEMENT[b.deposit!.settlement!]!.color}>{SETTLEMENT[b.deposit!.settlement!]!.label}</Tag>,
+                    render: (_, b) => (
+                      <Tag color={SETTLEMENT[b.deposit!.settlement!]!.color}>
+                        {SETTLEMENT[b.deposit!.settlement!]!.label}
+                      </Tag>
+                    ),
                   },
-                  { title: 'เมื่อ', render: (_, b) => dateTime(b.deposit!.settledAt ?? b.deposit!.submittedAt) },
+                  {
+                    title: 'เมื่อ',
+                    render: (_, b) => dateTime(b.deposit!.settledAt ?? b.deposit!.submittedAt),
+                  },
                 ]}
               />
             ),
