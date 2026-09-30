@@ -13,6 +13,8 @@ export interface NavItem {
   label: string;
   icon?: Icon;
   end?: boolean;
+  /** แสดงเฉพาะ navbar บนจอใหญ่ (ไม่ใส่ใน BottomIsland มือถือ) */
+  desktopOnly?: boolean;
 }
 
 /**
@@ -56,7 +58,7 @@ export function Navbar({
     <motion.div
       layout={!reduce}
       transition={spring}
-      className={`flex items-center gap-2 rounded-full border px-2 transition-colors duration-300 ${glass ? ISLAND.overVideo : ISLAND.page} ${scrolled ? 'h-12 w-full max-w-2xl' : 'h-14 w-full max-w-3xl'}`}
+      className={`flex items-center gap-2 rounded-full border px-2 transition-colors duration-300 ${glass ? ISLAND.overVideo : ISLAND.page} ${scrolled ? 'h-12 w-full max-w-3xl' : 'h-14 w-full max-w-4xl'}`}
     >
       <Link
         to="/"
@@ -84,7 +86,7 @@ export function Navbar({
             to={n.to}
             end={n.end}
             className={({ isActive }) =>
-              `relative isolate rounded-full px-3.5 py-1.5 text-sm transition-colors ${isActive ? 'text-on-gold' : dim}`
+              `relative isolate rounded-full px-3 py-1.5 text-sm whitespace-nowrap transition-colors ${isActive ? 'text-on-gold' : dim}`
             }
           >
             {({ isActive }) => (
@@ -146,7 +148,7 @@ export function BottomIsland({ items }: { items: NavItem[] }) {
       <div
         className={`flex w-full max-w-md items-center justify-between rounded-full border p-1.5 ${ISLAND.page}`}
       >
-        {items.map((n) => (
+        {items.filter((n) => !n.desktopOnly).map((n) => (
           <NavLink
             key={n.to}
             to={n.to}

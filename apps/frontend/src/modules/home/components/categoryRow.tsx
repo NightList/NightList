@@ -1,15 +1,4 @@
-import {
-  BeerStein,
-  CaretLeft,
-  CaretRight,
-  City,
-  Door,
-  ForkKnife,
-  Martini,
-  MoonStars,
-  MusicNotes,
-  Tree,
-} from '@phosphor-icons/react';
+import { ArrowRight } from '@phosphor-icons/react';
 import { motion, useMotionValue, useReducedMotion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
@@ -18,83 +7,67 @@ import type { HomeCategory } from '../type/category';
 const CATEGORIES: HomeCategory[] = [
   {
     key: 'pub',
+    image: '/images/categories/pub.webp',
     title: 'ผับ / บาร์',
     subtitle: 'แดนซ์ ปาร์ตี้',
     to: '/ranking?category=PUB_BAR',
-    icon: BeerStein,
-    tone: 'amber',
   },
   {
     key: 'chill',
+    image: '/images/categories/chill.webp',
     title: 'นั่งชิล',
     subtitle: 'คุยกันยาว ๆ',
     to: '/ranking?category=CHILL',
-    icon: Martini,
-    tone: 'violet',
   },
   {
     key: 'food',
+    image: '/images/categories/food.webp',
     title: 'ร้านอาหาร',
     subtitle: 'กินจริงจัง',
     to: '/ranking?category=RESTAURANT',
-    icon: ForkKnife,
-    tone: 'amber',
   },
   {
     key: 'live',
+    image: '/images/categories/live.webp',
     title: 'ดนตรีสด',
     subtitle: 'วงเล่นทุกคืน',
     to: '/search?style=Live%20Music',
-    icon: MusicNotes,
-    tone: 'violet',
   },
   {
     key: 'rooftop',
+    image: '/images/categories/rooftop.webp',
     title: 'Rooftop',
     subtitle: 'วิวเมือง',
     to: '/search?style=Rooftop',
-    icon: City,
-    tone: 'amber',
   },
   {
     key: 'quiet',
+    image: '/images/categories/quiet.webp',
     title: 'ร้านเงียบ',
     subtitle: 'คุยงานได้',
     to: '/search?style=Quiet',
-    icon: MoonStars,
-    tone: 'violet',
   },
   {
     key: 'outdoor',
+    image: '/images/categories/outdoor.webp',
     title: 'Outdoor',
     subtitle: 'นั่งรับลม',
     to: '/search?style=Outdoor',
-    icon: Tree,
-    tone: 'amber',
   },
   {
     key: 'private',
+    image: '/images/categories/private.webp',
     title: 'ห้องส่วนตัว',
     subtitle: 'มากันเป็นกลุ่ม',
     to: '/search?style=Private%20Room',
-    icon: Door,
-    tone: 'violet',
   },
 ];
 
-/** โทนการ์ดตาม Figma: amber = สายเบียร์, violet = สายค็อกเทล */
-const TONE: Record<HomeCategory['tone'], string> = {
-  amber: 'from-[#ffd77a] via-[#e8963a] to-[#5b1f8a]',
-  violet: 'from-[#2a0f45] via-[#6d1fb0] to-[#e04fa0]',
-};
-
-/** ความกว้างการ์ด + ช่องว่าง (w-40 + gap-4) ใช้เป็นระยะกดลูกศร 1 ครั้ง */
-const STEP = 160 + 16;
 /** px/s ของ auto-scroll */
 const SCROLL_SPEED = 40;
 /** หยุด auto-scroll นานเท่านี้หลังผู้ใช้เลื่อนเอง (ms) */
 const RESUME_DELAY = 1200;
-/** ความหนืดของการไล่ตามเป้า (ยิ่งมากยิ่งไว) — ทำให้ล้อเมาส์/ลูกศรลื่น ไม่กระตุก */
+/** ความหนืดของการไล่ตามเป้า (ยิ่งมากยิ่งไว) — ทำให้ล้อเมาส์ลื่น ไม่กระตุก */
 const EASE = 14;
 
 function CategoryCard({ category: c, hidden }: { category: HomeCategory; hidden?: boolean }) {
@@ -104,20 +77,23 @@ function CategoryCard({ category: c, hidden }: { category: HomeCategory; hidden?
         to={c.to}
         draggable={false}
         tabIndex={hidden ? -1 : undefined}
-        className="group relative flex h-52 w-40 flex-col overflow-hidden rounded-2xl border border-white/10 !text-white select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+        className="group relative flex h-[172px] w-[132px] flex-col justify-end overflow-hidden rounded-[20px] bg-card select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
       >
-        <div
-          className={`relative flex flex-1 items-center justify-center bg-gradient-to-br ${TONE[c.tone]}`}
-        >
-          <c.icon
-            size={64}
-            weight="duotone"
-            className="text-white/90 drop-shadow-lg transition-transform duration-300 group-hover:scale-110"
-          />
-        </div>
-        <div className="bg-black/70 px-3 py-2.5 backdrop-blur">
-          <p className="font-semibold leading-tight">{c.title}</p>
-          <p className="text-xs text-white/65">{c.subtitle}</p>
+        <img
+          src={c.image}
+          alt=""
+          width={240}
+          height={312}
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+          className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+        {/* ไล่สีม่วงอ่อนจากล่าง (Figma) ให้อ่านชื่อหมวดออก */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#efe3ff] via-[#efe3ff]/70 via-35% to-transparent to-65%" />
+        <div className="relative px-3 pb-3">
+          <p className="text-[15px] font-bold leading-tight text-[#8a1fd6]">{c.title}</p>
+          <p className="text-xs text-[#5b3d78]">{c.subtitle}</p>
         </div>
       </Link>
     </li>
@@ -129,7 +105,7 @@ function CategoryCard({ category: c, hidden }: { category: HomeCategory; hidden?
  *
  * ทำงานด้วย loop เดียว (requestAnimationFrame):
  *  - `target` = ตำแหน่งที่อยากไป, `pos` = ตำแหน่งจริง ไล่ตาม target แบบนุ่ม
- *  - auto-scroll = ดัน target ไปทางซ้ายทีละนิด · ล้อเมาส์/ลูกศร = บวก target
+ *  - auto-scroll = ดัน target ไปทางซ้ายทีละนิด · ล้อเมาส์ = บวก target
  *  - เลยรอบ (period = ความกว้างการ์ด 1 ชุด) → เลื่อนทั้ง pos/target กลับ 1 รอบ (มองไม่เห็นรอยต่อ)
  * จำนวนชุดที่ซ้ำคำนวณจากความกว้างจอ → จอกว้างแค่ไหนก็ไม่มีช่องว่างโผล่
  * ล้อเมาส์เร็วแค่ไหนก็ไม่หลุด เพราะ wrap ทุกเฟรม + จำกัด delta ต่อครั้ง
@@ -214,12 +190,6 @@ export function CategoryRow() {
     };
   }, [reduce, x]);
 
-  /** ผู้ใช้เลื่อนเอง (px, ลบ = ไปทางขวา) */
-  const nudge = (delta: number) => {
-    lastInput.current = performance.now();
-    target.current += delta;
-  };
-
   // ล้อเมาส์ต้องเป็น listener แบบ non-passive ถึงจะ preventDefault ได้ (React onWheel เป็น passive)
   useEffect(() => {
     const vp = viewportRef.current;
@@ -244,28 +214,16 @@ export function CategoryRow() {
 
   return (
     <section aria-labelledby="home-categories">
-      <div className="mx-auto mb-4 flex max-w-7xl items-center justify-between px-4 md:px-0">
-        <h2 id="home-categories" className="text-xl font-semibold">
+      <div className="mx-auto mb-5 flex max-w-7xl items-center justify-between px-4 md:px-8">
+        <h2 id="home-categories" className="text-2xl font-bold md:text-3xl">
           หมวดหมู่
         </h2>
-        <div className="hidden gap-2 md:flex">
-          <button
-            type="button"
-            aria-label="เลื่อนไปทางซ้าย"
-            onClick={() => nudge(STEP)}
-            className="grid size-9 place-items-center rounded-full border border-border bg-card text-text transition hover:border-gold hover:text-gold-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
-          >
-            <CaretLeft size={18} weight="bold" />
-          </button>
-          <button
-            type="button"
-            aria-label="เลื่อนไปทางขวา"
-            onClick={() => nudge(-STEP)}
-            className="grid size-9 place-items-center rounded-full border border-border bg-card text-text transition hover:border-gold hover:text-gold-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
-          >
-            <CaretRight size={18} weight="bold" />
-          </button>
-        </div>
+        <Link
+          to="/search"
+          className="inline-flex items-center gap-1.5 text-sm font-medium !text-purple hover:!text-purple/80"
+        >
+          ดูทั้งหมด <ArrowRight size={16} weight="bold" />
+        </Link>
       </div>
 
       <div
@@ -280,7 +238,7 @@ export function CategoryRow() {
       >
         <motion.ul
           ref={trackRef}
-          className="flex w-max gap-4 pb-2 will-change-transform"
+          className="flex w-max touch-pan-y gap-4 pb-2 will-change-transform"
           style={{ x, cursor: 'grab' }}
           drag="x"
           dragElastic={0}

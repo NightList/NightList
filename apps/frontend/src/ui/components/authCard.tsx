@@ -30,7 +30,7 @@ export function AuthCard({
         {(title || subtitle) && (
           <div className="mb-6 text-center">
             {title && (
-              <Typography.Title level={4} className="!mb-1 !text-white">
+              <Typography.Title level={4} className="mb-1! text-white!">
                 {title}
               </Typography.Title>
             )}
