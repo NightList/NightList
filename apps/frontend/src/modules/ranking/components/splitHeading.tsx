@@ -65,7 +65,10 @@ export function SplitHeading({ lead, text }: { lead: string; text: string }) {
       ref={root}
       className="flex min-h-[100svh] items-center justify-center overflow-hidden"
     >
-      <h2 aria-label={`${lead} ${text}…`} className="text-center text-3xl font-bold leading-[1.35] sm:text-5xl">
+      <h2
+        aria-label={`${lead} ${text}…`}
+        className="max-w-full text-center text-5xl font-bold leading-[1.2] sm:text-7xl lg:text-8xl"
+      >
         <span aria-hidden className="inline-block overflow-hidden align-bottom pb-[0.12em]">
           <span data-lead className="inline-block text-muted">
             {lead}{' '}
