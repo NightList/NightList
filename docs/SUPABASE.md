@@ -1,17 +1,21 @@
 # เชื่อม Supabase (project ที่มีอยู่แล้ว)
 
+> Project จริง: **Nightlist Project** · ref `pxueavqyykdipcjqbxyd` · Tokyo (ap-northeast-1) · URL `https://pxueavqyykdipcjqbxyd.supabase.co`
+
 สถานะตอนนี้: แอปทำงานใน **โหมดเดโม** (`@nightlist/mock` เก็บใน localStorage) ถ้ามี `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` ระบบ **สมัคร/เข้าสู่ระบบ** จะไปที่ Supabase Auth ทันที ส่วนข้อมูลร้าน/การจองยังเป็นเดโมจนกว่าจะย้ายทีละหน้า (ดูข้อ 5)
 
 ## 1. เอาค่ามาจากไหน
 
-Supabase Dashboard → Project → **Settings → API**
+Supabase Dashboard → ปุ่ม **Connect** (บนสุด) หรือ **Project Settings → API Keys**
+
+Supabase ใหม่เรียก key ว่า **Publishable** (`sb_publishable_...`) และ **Secret** (`sb_secret_...`) ใช้แทน anon / service_role ได้เลย (ใส่ในตัวแปรชื่อเดิม)
 
 | ค่า | ใช้ที่ | ตัวแปร |
 |---|---|---|
 | Project URL | frontend, admin, backend | `VITE_SUPABASE_URL`, `SUPABASE_URL` |
 | anon public key | frontend, admin | `VITE_SUPABASE_ANON_KEY` |
 | service_role key (**ลับ** ห้ามใส่ฝั่งเว็บ) | backend เท่านั้น | `SUPABASE_SERVICE_ROLE_KEY` |
-| Connection string (Settings → Database) | migration | `DATABASE_URL` |
+| Connection string แบบ **Transaction pooler** port 6543 (ปุ่ม Connect) | backend บน Vercel | `DATABASE_URL` |
 
 ## 2. ใส่ค่าในเครื่อง
 
@@ -24,20 +28,61 @@ SUPABASE_URL=https://xxxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJ...   # backend เท่านั้น
 ```
 
-`.env` อยู่ใน `.gitignore` แล้ว **ห้าม commit**
+`.env` อยู่ใน `.gitignore` แล้ว **ห้าม commit** · frontend/admin อ่าน `.env` ไฟล์เดียวกันที่ root (`envDir` ใน `vite.config.ts`)
+
+บน Vercel ตัวแปร `VITE_*` ถูกส่งเข้า build ได้เพราะประกาศไว้ใน `turbo.json` → `tasks.build.env` (Turborepo strict mode จะตัดตัวแปรที่ไม่ได้ประกาศทิ้ง)
 
 ## 3. รัน migration (สร้างตาราง)
 
 ```bash
-pnpm --filter @nightlist/backend db:link    # ครั้งแรก: supabase link --project-ref <ref>
+pnpm --filter @nightlist/backend db:login   # ครั้งแรก: เปิดเบราว์เซอร์ให้ล็อกอิน Supabase
+pnpm --filter @nightlist/backend db:link    # ครั้งแรก: link กับ pxueavqyykdipcjqbxyd (ถามรหัส DB)
 pnpm --filter @nightlist/backend db:push    # apply apps/backend/supabase/migrations/*
 ```
 
-migration ที่มี:
-- `20260929000000_init.sql` — users / preferences / consents + trigger สมัครสมาชิก (Age Gate 20+)
-- `20260930000000_bars_bookings_deposits.sql` — bars (รวม PR ชาย/หญิง, บัญชีรับเงิน), โปรโมชัน, โซน/โต๊ะ, เมนูราคา, การจอง (เฉพาะโต๊ะ + โปร), **มัดจำเข้าแพลตฟอร์ม** (`deposits.settlement`: HELD → PAYOUT_PENDING → PAID_OUT / CREDIT / REFUNDED), `platform_settings.deposit_promptpay`, Storage bucket `slips`
+migration ที่มี (แยกตามโดเมน — รายละเอียด `docs/DATABASE.md` หัวข้อ 2):
+- เฟส 1 `20261002000100` … `000800` — extensions/enums, ผู้ใช้/แจ้งเตือน, master, ร้าน (+ตาราง 1:1, PR), เมนู/ราคา, โต๊ะ/การจอง, รีวิว/ร้านโปรด, **view + RPC + RLS + Storage + Realtime**
+- เฟส 2 `000900` … `001400` — มัดจำ (DRAFT), แชร์/ความปลอดภัย/ความแน่น, ranking, โปรโมท, billing, PDPA retention
+- `001500` — index บน FK ทุกตัว + เปิด RLS
+- `001600` — Backoffice: view `admin_*` (อ่านได้เฉพาะ ADMIN ที่ผ่าน MFA) + ฟังก์ชันการกระทำของแอดมิน (เรียกผ่าน NestJS เท่านั้น)
+- migration รุ่นแรก 0001–0003 อยู่ที่ `docs/legacy-migrations/`
+
+หลังแก้ migration ทุกครั้ง: `pnpm --filter @nightlist/backend db:types` (สร้าง `packages/types/src/database.generated.ts` ใหม่)
+
+ข้อมูลร้านเดโม: `supabase/seed.sql` (สร้างจาก `@nightlist/mock` → `pnpm --filter @nightlist/backend db:seed:gen`)
+
+### เปลี่ยน schema ทั้งชุด / ใส่ร้านเดโมใหม่ (⚠️ ลบข้อมูลทั้งหมดใน DB)
+```bash
+pnpm --filter @nightlist/backend db:reset:remote   # = supabase db reset --linked → รัน migration ใหม่ทั้งหมด + seed.sql
+```
 
 หลัง push ให้แก้ PromptPay ของแพลตฟอร์มใน Table Editor → `platform_settings` → key `deposit_promptpay`
+
+## สร้างบัญชีแอดมิน / ร้าน
+
+ลูกค้าสมัครเองที่ `/register` ได้ · บัญชีแอดมิน/ร้านสร้างด้วยคำสั่งนี้ (ใช้ Secret key ใน `.env` — รันในเครื่องทีมเท่านั้น)
+
+```bash
+# แอดมิน
+pnpm --filter @nightlist/backend user:create --email admin@nightlist.co --name "แอดมิน" --role ADMIN
+# เจ้าของร้าน (ผูกกับร้านด้วย slug — ดูได้ใน Table Editor → bars)
+pnpm --filter @nightlist/backend user:create --email owner@bar.com --name "เจ้าของร้าน" --role MERCHANT --bar moonlit-cellar
+# ผู้จัดการร้าน
+pnpm --filter @nightlist/backend user:create --email mgr@bar.com --name "ผู้จัดการ" --role MANAGER --bar moonlit-cellar
+# พนักงานร้าน
+pnpm --filter @nightlist/backend user:create --email staff@bar.com --name "พนักงาน" --role STAFF --bar moonlit-cellar
+```
+
+- ไม่ใส่ `--password` = สุ่มให้และแสดงครั้งเดียว · บัญชีใช้ได้ทันที (ไม่ต้องยืนยันอีเมล)
+- อีเมลที่มีบัญชีอยู่แล้ว = อัปเดต role / ร้าน ให้ (ไม่สร้างซ้ำ ไม่เปลี่ยนรหัส)
+- `MERCHANT` = เจ้าของร้าน · ร้านยังไม่มีเจ้าของ → เจ้าของหลัก (`bars.owner_id`) · มีอยู่แล้ว → **เจ้าของร่วม** (OWNER ใน `bar_staff` เจ้าของเดิมไม่ถูกเปลี่ยน)
+- `MANAGER` = ผู้จัดการร้าน (`users.role` = MERCHANT เพื่อเข้าเมนูร้านค้าได้ครบ · `bar_staff.role` = MANAGER)
+- `STAFF` = พนักงาน (`users.role` = STAFF · `bar_staff.role` = STAFF)
+- บันทึกทุกครั้งใน `audit_logs`
+- เข้า Backoffice (`/admin/login`): อีเมล + รหัสผ่าน → ต้องเป็น `ADMIN` ในตาราง `users` → MFA แบบ TOTP (ครั้งแรกสแกน QR ผูกแอป Authenticator) · ต้องเปิด TOTP ที่ Authentication → Multi-Factor (เปิดอยู่แล้วเป็นค่าเริ่มต้น)
+  - แอดมินทำมือถือหาย: ลบ factor ของบัญชีนั้นที่ Authentication → Users → เลือกบัญชี → MFA factors แล้วให้ล็อกอินใหม่เพื่อผูกแอปอีกครั้ง
+- Backoffice อ่านข้อมูลจาก view `admin_*` ตรง · **ปุ่มทุกปุ่ม (อนุมัติร้าน, ตรวจสลิป, ซ่อนรีวิว, เปลี่ยนสิทธิ์ ฯลฯ) ยิงไปที่ NestJS** `VITE_API_URL` (ค่าเริ่มต้น `http://localhost:3000/api`) → ต้องเปิด backend ด้วย (`pnpm dev` ที่ root เปิดให้ครบ) และมี `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` ใน `.env` · `CORS_ORIGINS` ต้องมี `http://localhost:5174`
+- ⚠️ ปุ่ม **Add user** ใน Supabase Dashboard ใช้ไม่ได้ (ไม่มีช่องวันเกิด → trigger ตรวจอายุ 20+ ปฏิเสธ)
 
 ## 4. Vercel
 

@@ -5,8 +5,9 @@ import {
   type ExecutionContext,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose';
+import { createRemoteJWKSet, decodeJwt, jwtVerify, type JWTPayload } from 'jose';
 import type { Request } from 'express';
+import { SupabaseService } from '../supabase/supabase.service';
 
 export interface AuthUser {
   id: string;
@@ -15,33 +16,48 @@ export interface AuthUser {
   aal?: string;
 }
 
-/** ตรวจ Supabase access token (Bearer) ด้วย JWKS ของโปรเจกต์ */
+export type AuthedRequest = Request & { user?: AuthUser };
+
+/**
+ * ตรวจ Supabase access token (Bearer)
+ * 1) verify ด้วย JWKS ของโปรเจกต์ (โปรเจกต์ที่ใช้ JWT signing keys)
+ * 2) ถ้าไม่ได้ (เช่นโปรเจกต์ยังใช้ HS256) → ถาม Supabase Auth ตรง (/auth/v1/user)
+ */
 @Injectable()
 export class SupabaseJwtGuard implements CanActivate {
   private readonly jwks: ReturnType<typeof createRemoteJWKSet>;
   private readonly issuer: string;
 
-  constructor(config: ConfigService) {
-    const url = config.getOrThrow<string>('SUPABASE_URL');
+  constructor(
+    config: ConfigService,
+    private readonly supabase: SupabaseService,
+  ) {
+    const url = config.getOrThrow<string>('SUPABASE_URL').replace(/\/$/, '');
     this.issuer = `${url}/auth/v1`;
     this.jwks = createRemoteJWKSet(new URL(`${this.issuer}/.well-known/jwks.json`));
   }
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
-    const req = ctx.switchToHttp().getRequest<Request & { user?: AuthUser }>();
+    const req = ctx.switchToHttp().getRequest<AuthedRequest>();
     const token = req.headers.authorization?.replace(/^Bearer\s+/i, '');
     if (!token) throw new UnauthorizedException('Missing bearer token');
+
     try {
-      const { payload } = await jwtVerify<JWTPayload & { email?: string; aal?: string }>(
-        token,
-        this.jwks,
-        { issuer: this.issuer, audience: 'authenticated' },
-      );
+      const { payload } = await jwtVerify<JWTPayload & { email?: string; aal?: string }>(token, this.jwks, {
+        issuer: this.issuer,
+        audience: 'authenticated',
+      });
       req.user = { id: payload.sub!, email: payload.email, aal: payload.aal };
-      // TODO: โหลด role จาก public.users แล้วตรวจด้วย RolesGuard
       return true;
     } catch {
-      throw new UnauthorizedException('Invalid token');
+      // ไปถาม Supabase Auth แทน
     }
+
+    const user = await this.supabase.getUser(token);
+    if (!user) throw new UnauthorizedException('Invalid token');
+    // token ผ่านการตรวจจาก Supabase แล้ว → อ่าน aal จาก payload ได้
+    const claims = decodeJwt(token) as JWTPayload & { aal?: string };
+    req.user = { id: user.id, email: user.email, aal: claims.aal };
+    return true;
   }
 }

@@ -19,3 +19,7 @@ backend/database/supabase/.branches/
 backend/database/supabase/.temp/
 # deploy key (never commit)
 nightlist_deploy_key*
+
+# Supabase CLI (สร้างตอน supabase link)
+apps/backend/supabase/.temp/
+apps/backend/supabase/.branches/

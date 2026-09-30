@@ -6,16 +6,20 @@ import { ZodValidationPipe } from 'nestjs-zod';
 import { validateEnv } from './config/env';
 import { HealthController } from './health/health.controller';
 import { JobsController } from './jobs/jobs.controller';
+import { AdminModule } from './modules/admin/admin.module';
 import { BookingModule } from './modules/booking/booking.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { PricingController } from './modules/pricing/pricing.controller';
 import { PricingModule } from './modules/pricing/pricing.module';
 import { RankingModule } from './modules/ranking/ranking.module';
+import { SupabaseModule } from './supabase/supabase.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
+    SupabaseModule,
+    AdminModule,
     BookingModule,
     PricingModule,
     RankingModule,

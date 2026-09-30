@@ -50,6 +50,11 @@
 - ธีมมืดเป็นค่าเริ่มต้น · หน้า Auth ไม่มีปุ่มเปลี่ยนธีม/ปุ่มเข้าสู่ระบบบน navbar (`<Navbar minimal />`)
 - ไม่มีแถบ "โหมดเดโม" บนหน้าเว็บ (ยังมีปุ่มเข้าเร็วเดโมในหน้า login และปุ่มรีเซ็ตในตั้งค่า)
 
-## โหมดเดโม
-- ถ้าไม่มี `VITE_SUPABASE_URL` แอปใช้ `@nightlist/mock` (ข้อมูลสมมติใน localStorage) — ห้ามใส่ชื่อร้านจริงใน seed
-- ตอนต่อ API จริง ให้แทน service ของ mock ทีละหน้าด้วย TanStack Query + `src/services/api.ts`
+## ข้อมูลร้าน (Supabase เท่านั้น) / โหมดเดโม
+- `apps/frontend`: **ข้อมูลร้านมาจาก Supabase เท่านั้น** — ต้องมี `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` ใน `.env` ที่ root (ไม่มี → หน้าแจ้งให้ตั้งค่า, ต่อไม่ได้ → หน้า error + ปุ่มลองใหม่) ห้ามใช้ร้านเดโมเป็น fallback
+  - `main.tsx` รอ `loadBarsFromSupabase()` (`src/services/barsRepo.ts` อ่าน view `bar_detail`) ก่อน render แล้วเอาร้านจาก DB ไปใส่ store ของ `@nightlist/mock` → หน้าเว็บยังเรียก `listBars()` / `getBarBySlug()` ได้เหมือนเดิม
+  - ร้านเดโมอยู่ใน DB แล้ว (`apps/backend/supabase/seed.sql` สร้างจาก `@nightlist/mock` ด้วย `db:seed:gen`) — ห้ามใส่ชื่อร้านจริงใน seed
+- ยังเป็นเดโม (localStorage): การจอง, มัดจำ, รีวิว, แจ้งเตือน และแอป `apps/admin` — ตอนต่อ API จริง ให้แทน service ของ mock ทีละหน้าด้วย TanStack Query + `src/services/api.ts`
+- โครงสร้างตาราง: `docs/DATABASE.md` (spec: `docs/DATABASE_CHANGES.md`) · types: `import { Db } from '@nightlist/types'` (`Db.BarCard`, `Db.BarDetail` …)
+- หน้าบ้านอ่านผ่าน view/RPC เท่านั้น (`bar_cards`, `bar_detail`, `public_reviews`, `my_bars`, `my_bookings`, `booking_detail`, `my_favorites`, `search_bars`, `nearby_bars`) — หนึ่งหน้า = หนึ่งการเรียก · **เขียนผ่าน NestJS เท่านั้น** (RLS ไม่เปิดให้หน้าบ้านเขียน)
+- แก้ migration แล้วต้องรัน `pnpm --filter @nightlist/backend db:types` · migration ใหม่ต้องมี index บน FK + enable RLS + revoke write (ดูไฟล์ `…001500`)

@@ -1,48 +1,75 @@
 import { PageContainer } from '@ant-design/pro-components';
-import { getState, setBarStatus, updateBar, withTier } from '@nightlist/mock';
+import type { Db } from '@nightlist/types';
 import { TierStars } from '@nightlist/ui';
-import { Button, Input, Popconfirm, Switch, Table, Tag } from 'antd';
-import { useState } from 'react';
-import { useDemo } from '@/hooks/useDemo';
-import { ADMIN, BAR_STATUS_COLOR } from '@/configs/constants';
+import { Button, Input, Switch, Table, Tag } from 'antd';
+import { useMemo, useState } from 'react';
+import { PAGE_SIZE } from '@/configs/constants';
+import { useAdminAction, useAdminView } from '@/services/adminData';
+import { LoadError } from '@/ui/components/LoadError';
+import { RejectButton } from '@/ui/components/RejectButton';
+import { StatusTag } from '@/ui/components/StatusTag';
+import { BAR_STATUS } from '@/ui/utils/labels';
 
+/** ร้านทั้งหมด — ระงับ/เปิดใช้งาน และเลือก Editor's Pick */
 export function BarsPage() {
-  useDemo();
   const [q, setQ] = useState('');
-  const rows = getState()
-    .bars.filter((b) => b.name.toLowerCase().includes(q.toLowerCase()))
-    .map(withTier);
+  const { data, isLoading, error, refetch } = useAdminView('admin_bars', { order: { column: 'name', ascending: true } });
+  const act = useAdminAction();
+  const rows = useMemo(() => {
+    const k = q.trim().toLowerCase();
+    return (data ?? []).filter((b) => !k || b.name.toLowerCase().includes(k) || b.slug.includes(k));
+  }, [data, q]);
+
   return (
     <PageContainer
       title="จัดการร้าน"
-      extra={<Input.Search placeholder="ค้นหาชื่อร้าน" allowClear onSearch={setQ} />}
+      extra={<Input.Search placeholder="ค้นหาชื่อร้าน" allowClear onSearch={setQ} className="w-64" />}
     >
-      <Table
+      <LoadError error={error} onRetry={() => void refetch()} />
+      <Table<Db.AdminBar>
         rowKey="id"
+        loading={isLoading}
         dataSource={rows}
-        scroll={{ x: 900 }}
+        pagination={{ pageSize: PAGE_SIZE }}
+        scroll={{ x: 1000 }}
         columns={[
           { title: 'ร้าน', dataIndex: 'name' },
-          { title: 'ย่าน', dataIndex: 'district' },
+          { title: 'ย่าน', key: 'district', render: (_, b) => b.district?.name_th ?? '-' },
           {
             title: 'ดาว',
-            key: 't',
-            render: (_, b) => (b.stars ? <TierStars stars={b.stars} /> : <Tag>ร้านใหม่</Tag>),
+            key: 'stars',
+            render: (_, b) => (b.is_new || !b.current_stars ? <Tag>ร้านใหม่</Tag> : <TierStars stars={b.current_stars} />),
           },
-          { title: 'คะแนน', dataIndex: 'score', sorter: (a, b) => a.score - b.score },
+          {
+            title: 'คะแนน',
+            dataIndex: 'score',
+            sorter: (a, b) => (a.score ?? 0) - (b.score ?? 0),
+            render: (v: number | null) => v ?? '-',
+          },
           {
             title: 'สถานะ',
             dataIndex: 'status',
-            render: (s: string) => <Tag color={BAR_STATUS_COLOR[s]}>{s}</Tag>,
+            filters: Object.entries(BAR_STATUS).map(([value, l]) => ({ text: l.text, value })),
+            onFilter: (v, b) => b.status === v,
+            render: (s: string) => <StatusTag map={BAR_STATUS} value={s} />,
           },
           {
             title: "Editor's Pick",
-            dataIndex: 'editorsPick',
+            dataIndex: 'is_editor_pick',
             render: (v: boolean, b) => (
               <Switch
                 size="small"
                 checked={v}
-                onChange={(editorsPick) => updateBar(b.id, { editorsPick }, ADMIN)}
+                aria-label={`Editor's Pick ${b.name}`}
+                loading={act.isPending && act.variables?.path === `bars/${b.id}/editor-pick`}
+                onChange={(value) =>
+                  act.mutate({
+                    method: 'PATCH',
+                    path: `bars/${b.id}/editor-pick`,
+                    body: { value },
+                    success: value ? `เลือก ${b.name} เป็น Editor's Pick` : `เอา ${b.name} ออกจาก Editor's Pick`,
+                  })
+                }
               />
             ),
           },
@@ -51,21 +78,35 @@ export function BarsPage() {
             key: 'a',
             render: (_, b) =>
               b.status === 'SUSPENDED' ? (
-                <Button size="small" onClick={() => setBarStatus(b.id, 'APPROVED', ADMIN)}>
+                <Button
+                  size="small"
+                  loading={act.isPending}
+                  onClick={() =>
+                    act.mutate({
+                      method: 'PATCH',
+                      path: `bars/${b.id}/status`,
+                      body: { status: 'APPROVED' },
+                      success: `เปิดใช้งาน ${b.name} แล้ว`,
+                    })
+                  }
+                >
                   เปิดใช้งาน
                 </Button>
-              ) : (
-                <Popconfirm
-                  title={`ระงับ ${b.name}?`}
-                  okText="ระงับ"
-                  cancelText="ยกเลิก"
-                  onConfirm={() => setBarStatus(b.id, 'SUSPENDED', ADMIN)}
-                >
-                  <Button size="small" danger>
-                    ระงับ
-                  </Button>
-                </Popconfirm>
-              ),
+              ) : b.status === 'APPROVED' ? (
+                <RejectButton
+                  label="ระงับ"
+                  title={`ระงับ ${b.name}? ร้านจะหายจากเว็บทันที`}
+                  loading={act.isPending}
+                  onReject={(reason) =>
+                    act.mutate({
+                      method: 'PATCH',
+                      path: `bars/${b.id}/status`,
+                      body: { status: 'SUSPENDED', reason },
+                      success: `ระงับ ${b.name} แล้ว`,
+                    })
+                  }
+                />
+              ) : null,
           },
         ]}
       />

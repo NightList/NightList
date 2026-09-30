@@ -33,7 +33,7 @@ export function RegisterPage() {
         message.success('สร้างบัญชีแล้ว (เดโม)');
         navigate('/onboarding');
       } else {
-        const { error } = await supabase!.auth.signUp({
+        const { data, error } = await supabase!.auth.signUp({
           email: v.email,
           password: v.password,
           options: {
@@ -47,7 +47,9 @@ export function RegisterPage() {
           },
         });
         if (error) throw error;
-        navigate(`/verify-email?email=${encodeURIComponent(v.email)}`);
+        // ถ้าปิด "Confirm email" ใน Supabase จะได้ session ทันที → ไปต่อได้เลย ไม่ต้องรออีเมล
+        if (data.session) navigate('/onboarding');
+        else navigate(`/verify-email?email=${encodeURIComponent(v.email)}`);
       }
     } catch (e) {
       message.error((e as Error).message || 'สมัครไม่สำเร็จ');
