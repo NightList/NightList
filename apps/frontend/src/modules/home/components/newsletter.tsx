@@ -14,7 +14,7 @@ export function Newsletter() {
       </h2>
       <p className="mt-3 text-muted md:text-lg">เพื่อไม่พลาดข่าวดีๆจากพวกเราาาาาาาาา</p>
       <form
-        className="mx-auto mt-7 flex max-w-md flex-col gap-3 sm:flex-row"
+        className="mx-auto mt-15 flex max-w-md flex-col gap-3 sm:flex-row"
         onSubmit={(e) => {
           e.preventDefault();
           if (!/^\S+@\S+\.\S+$/.test(email)) return void message.warning('กรอกอีเมลให้ถูกต้องก่อนนะ');
