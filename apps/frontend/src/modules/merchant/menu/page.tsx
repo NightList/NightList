@@ -1,4 +1,4 @@
-import { Plus, Trash } from '@phosphor-icons/react';
+import { Plus, TrashIcon } from '@phosphor-icons/react';
 import { updateBar, type MenuItem } from '@nightlist/mock';
 import {
   App,
@@ -56,7 +56,6 @@ export function MerchantMenuPage() {
               dataIndex: 'price',
               render: (v: number, r) => (
                 <InputNumber
-                  size="small"
                   min={0}
                   defaultValue={v}
                   formatter={(x) => `${x}`}
@@ -74,7 +73,6 @@ export function MerchantMenuPage() {
               dataIndex: 'available',
               render: (v: boolean, r) => (
                 <Switch
-                  size="small"
                   checked={v}
                   onChange={(available) =>
                     save(bar.menu.map((m) => (m.id === r.id ? { ...m, available } : m)))
@@ -92,7 +90,7 @@ export function MerchantMenuPage() {
                   cancelText="ยกเลิก"
                   onConfirm={() => save(bar.menu.filter((m) => m.id !== r.id))}
                 >
-                  <Button size="small" type="text" danger icon={<Trash />} aria-label="ลบ" />
+                  <Button type="default" danger icon={<TrashIcon />} aria-label="ลบ" />
                 </Popconfirm>
               ),
             },

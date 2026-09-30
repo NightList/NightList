@@ -32,7 +32,7 @@ export function SafetyPage() {
             render: (_, r) => (
               <Button
                 type="primary"
-                size="small"
+
                 onClick={() => verifySafety(r.barId, r.key, ADMIN)}
               >
                 ยืนยันแล้ว

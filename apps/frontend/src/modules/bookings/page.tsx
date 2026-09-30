@@ -30,7 +30,7 @@ export function BookingsPage() {
           const bar = getBar(b.barId);
           return (
             <Link key={b.id} to={`/bookings/${b.id}`} className="!text-text">
-              <Card hoverable size="small">
+              <Card hoverable>
                 <div className="flex flex-wrap items-center gap-3">
                   <div
                     className="h-12 w-12 shrink-0 rounded-xl"

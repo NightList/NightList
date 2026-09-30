@@ -21,7 +21,7 @@ export function MyReviewsPage() {
             return (
               <Card
                 key={r.id}
-                size="small"
+
                 title={<Link to={`/bars/${bar?.slug}`}>{bar?.name}</Link>}
                 extra={<span className="text-xs text-muted">{timeAgo(r.createdAt)}</span>}
               >

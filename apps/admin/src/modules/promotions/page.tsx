@@ -33,7 +33,7 @@ export function PromotionsPage() {
                 <Space>
                   <Button
                     type="primary"
-                    size="small"
+
                     onClick={() => {
                       reviewPromotion(p.id, true, ADMIN);
                       message.success('เปิดโปรโมทแล้ว');
@@ -41,7 +41,7 @@ export function PromotionsPage() {
                   >
                     สลิปผ่าน
                   </Button>
-                  <Button danger size="small" onClick={() => reviewPromotion(p.id, false, ADMIN)}>
+                  <Button danger onClick={() => reviewPromotion(p.id, false, ADMIN)}>
                     ไม่ผ่าน
                   </Button>
                 </Space>

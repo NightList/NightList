@@ -23,18 +23,14 @@ export function ReviewsPage() {
             key: 'a',
             render: (_, r) => (
               <Space>
-                <Button size="small" onClick={() => setReviewReported(r.id, false)}>
-                  เก็บไว้
-                </Button>
+                <Button onClick={() => setReviewReported(r.id, false)}>เก็บไว้</Button>
                 <Popconfirm
                   title="ลบรีวิวนี้?"
                   okText="ลบ"
                   cancelText="ยกเลิก"
                   onConfirm={() => deleteReview(r.id, ADMIN)}
                 >
-                  <Button size="small" danger>
-                    ลบ
-                  </Button>
+                  <Button danger>ลบ</Button>
                 </Popconfirm>
               </Space>
             ),

@@ -51,7 +51,7 @@ export function MerchantDepositsPage() {
       ) : (
         <Table
           rowKey="id"
-          size="small"
+
           pagination={{ pageSize: 20 }}
           dataSource={ledger.rows}
           columns={[
@@ -73,7 +73,8 @@ export function MerchantDepositsPage() {
             },
             {
               title: 'อัปเดต',
-              render: (_, b) => dateTime(b.deposit!.settledAt ?? b.deposit!.verifiedAt ?? b.deposit!.submittedAt),
+              render: (_, b) =>
+                dateTime(b.deposit!.settledAt ?? b.deposit!.verifiedAt ?? b.deposit!.submittedAt),
             },
           ]}
         />

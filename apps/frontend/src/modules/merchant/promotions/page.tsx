@@ -1,6 +1,18 @@
 import { Plus, Trash } from '@phosphor-icons/react';
 import { updateBar, type BarPromotion } from '@nightlist/mock';
-import { App, Button, Card, Checkbox, Form, Input, InputNumber, Modal, Switch, Table, TimePicker } from 'antd';
+import {
+  App,
+  Button,
+  Card,
+  Checkbox,
+  Form,
+  Input,
+  InputNumber,
+  Modal,
+  Switch,
+  Table,
+  TimePicker,
+} from 'antd';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { PageHeader } from '@/ui/components/pageHeader';
@@ -45,7 +57,7 @@ export function MerchantPromotionsPage() {
       <Card>
         <Table
           rowKey="id"
-          size="small"
+
           pagination={false}
           dataSource={bar.promotions}
           locale={{ emptyText: 'ยังไม่มีโปรโมชัน' }}
@@ -165,10 +177,18 @@ export function MerchantPromotionsPage() {
             <Input placeholder="เช่น โปรเบียร์ก่อน 2 ทุ่ม" />
           </Form.Item>
           <Form.Item name="description" label="รายละเอียด" rules={[{ max: 160 }]}>
-            <Input.TextArea rows={2} placeholder="เช่น เบียร์สดราคาพิเศษ เมื่อเช็กอินก่อน 20:00 น." />
+            <Input.TextArea
+              rows={2}
+              placeholder="เช่น เบียร์สดราคาพิเศษ เมื่อเช็กอินก่อน 20:00 น."
+            />
           </Form.Item>
           <Form.Item name="cutoff" label="ต้องเช็กอินก่อนเวลา (เว้นว่าง = ทั้งคืน)">
-            <TimePicker format="HH:mm" minuteStep={30} className="w-full" placeholder="เช่น 20:00" />
+            <TimePicker
+              format="HH:mm"
+              minuteStep={30}
+              className="w-full"
+              placeholder="เช่น 20:00"
+            />
           </Form.Item>
           <Form.Item name="days" label="วันที่ใช้ได้ (ไม่เลือก = ทุกวัน)">
             <Checkbox.Group options={DAYS.map((d, i) => ({ label: d, value: i }))} />

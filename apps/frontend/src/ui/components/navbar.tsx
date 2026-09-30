@@ -111,7 +111,7 @@ export function Navbar({
         {!minimal && <ThemeToggle />}
         {user && (
           <Link to="/notifications">
-            <Badge count={unread} size="small" offset={[-4, 4]}>
+            <Badge count={unread} offset={[-4, 4]}>
               <Button
                 type="text"
                 shape="circle"
@@ -148,30 +148,32 @@ export function BottomIsland({ items }: { items: NavItem[] }) {
       <div
         className={`flex w-full max-w-md items-center justify-between rounded-full border p-1.5 ${ISLAND.page}`}
       >
-        {items.filter((n) => !n.desktopOnly).map((n) => (
-          <NavLink
-            key={n.to}
-            to={n.to}
-            end={n.end}
-            className={({ isActive }) =>
-              `relative isolate flex flex-1 flex-col items-center gap-0.5 rounded-full py-1.5 text-[11px] ${isActive ? 'text-on-gold' : 'text-muted'}`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                {isActive && (
-                  <motion.span
-                    layoutId="bottom-island-active"
-                    transition={reduce ? { duration: 0 } : spring}
-                    className="absolute inset-0 -z-10 rounded-full bg-gold"
-                  />
-                )}
-                {n.icon && <n.icon size={20} weight={isActive ? 'fill' : 'regular'} />}
-                {n.label}
-              </>
-            )}
-          </NavLink>
-        ))}
+        {items
+          .filter((n) => !n.desktopOnly)
+          .map((n) => (
+            <NavLink
+              key={n.to}
+              to={n.to}
+              end={n.end}
+              className={({ isActive }) =>
+                `relative isolate flex flex-1 flex-col items-center gap-0.5 rounded-full py-1.5 text-[11px] ${isActive ? 'text-on-gold' : 'text-muted'}`
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <motion.span
+                      layoutId="bottom-island-active"
+                      transition={reduce ? { duration: 0 } : spring}
+                      className="absolute inset-0 -z-10 rounded-full bg-gold"
+                    />
+                  )}
+                  {n.icon && <n.icon size={20} weight={isActive ? 'fill' : 'regular'} />}
+                  {n.label}
+                </>
+              )}
+            </NavLink>
+          ))}
       </div>
     </nav>
   );
