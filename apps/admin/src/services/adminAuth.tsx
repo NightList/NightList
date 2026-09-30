@@ -28,11 +28,13 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<UserRole | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [aal, setAal] = useState<'aal1' | 'aal2' | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(supabase !== null);
 
+  // โหลด session + role + ระดับ MFA ให้เสร็จก่อน แล้วค่อยตั้ง state พร้อมกันทีเดียว
+  // (ถ้าตั้ง session ก่อน หน้าอื่นจะเห็น "มี session แต่ยังไม่มี role" ชั่วขณะ)
   const load = useCallback(async (s: Session | null) => {
-    setSession(s);
     if (!supabase || !s) {
+      setSession(null);
       setRole(null);
       setDisplayName(null);
       setAal(null);
@@ -43,6 +45,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       supabase.from('users').select('role, display_name').eq('id', s.user.id).maybeSingle(),
       supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
     ]);
+    setSession(s);
     setRole((profile?.role as UserRole | undefined) ?? null);
     setDisplayName((profile?.display_name as string | undefined) ?? null);
     setAal((level?.currentLevel as 'aal1' | 'aal2' | null | undefined) ?? null);
@@ -50,10 +53,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!supabase) {
-      setLoading(false);
-      return;
-    }
+    if (!supabase) return;
     void supabase.auth.getSession().then(({ data }) => load(data.session));
     const { data } = supabase.auth.onAuthStateChange((_event, s) => {
       // เรียก supabase ต่อใน callback ตรง ๆ ไม่ได้ (deadlock) — เลื่อนไป tick ถัดไป

@@ -1,6 +1,6 @@
 import { ShieldStar } from '@phosphor-icons/react';
 import { Alert, Button, Card, Form, Input, Spin, Typography } from 'antd';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router';
 import { useAdminAuth } from '@/services/adminAuth';
 import { supabase } from '@/services/supabase';
@@ -36,10 +36,13 @@ export function LoginPage() {
   const [factorId, setFactorId] = useState<string | null>(null);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [code, setCode] = useState('');
+  /** กันเริ่มขั้น MFA ซ้ำ (จากปุ่มเข้าสู่ระบบ + จาก session ที่มีอยู่แล้ว พร้อมกัน) */
+  const mfaStarted = useRef(false);
 
   /** ไปขั้น MFA: มีแอปผูกไว้แล้ว → ใส่รหัส · ยังไม่มี → สร้าง QR ให้สแกน */
   const startMfa = async () => {
-    if (!supabase) return;
+    if (!supabase || mfaStarted.current) return;
+    mfaStarted.current = true;
     const { data, error: listError } = await supabase.auth.mfa.listFactors();
     if (listError) throw listError;
     const verified = data.totp[0];
@@ -63,13 +66,17 @@ export function LoginPage() {
     setStep('enroll');
   };
 
-  // เปิดหน้ามาแล้วยังมี session ของแอดมินที่ยังไม่ผ่าน MFA → ไปขั้น MFA ต่อเลย
+  // เปิดหน้ามาแล้วยังมี session ของแอดมินที่ยังไม่ผ่าน MFA (เช่นรีเฟรชหน้า) → ไปขั้น MFA ต่อเลย
   useEffect(() => {
-    if (auth.loading || !auth.session || step !== 'password') return;
-    if (auth.isAdmin && auth.aal === 'aal1') {
-      void startMfa().catch((e: unknown) => setError(toThai((e as Error).message)));
-    } else if (!auth.isAdmin) {
-      void auth.signOut();
+    if (auth.loading || busy || step !== 'password') return;
+    if (auth.session && auth.isAdmin && auth.aal === 'aal1') {
+      // เริ่มใน microtask ถัดไป (ไม่ setState ระหว่าง effect)
+      void Promise.resolve()
+        .then(startMfa)
+        .catch((e: unknown) => {
+          mfaStarted.current = false;
+          setError(toThai((e as Error).message));
+        });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth.loading, auth.session, auth.isAdmin, auth.aal]);
@@ -95,6 +102,7 @@ export function LoginPage() {
       }
       await startMfa();
     } catch (e) {
+      mfaStarted.current = false;
       setError(toThai((e as Error).message));
     } finally {
       setBusy(false);
@@ -120,6 +128,7 @@ export function LoginPage() {
 
   const switchAccount = async () => {
     await auth.signOut();
+    mfaStarted.current = false;
     setStep('password');
     setEnrollment(null);
     setFactorId(null);

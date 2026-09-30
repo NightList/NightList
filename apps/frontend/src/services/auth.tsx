@@ -71,10 +71,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // role / ชื่อ / ร้าน มาจาก DB (ไม่ใช้ user_metadata — ผู้ใช้แก้เองได้)
   useEffect(() => {
-    if (!userId) {
-      setProfile(null);
-      return;
-    }
+    // ออกจากระบบแล้วไม่ต้องล้าง profile — realUser ใช้ profile เฉพาะเมื่อ id ตรงกับ session
+    if (!userId) return;
     let cancelled = false;
     void loadProfile(userId)
       .then((p) => !cancelled && setProfile(p))
