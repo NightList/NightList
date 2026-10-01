@@ -11,3 +11,6 @@ export const queryConfig = {
 
 /** เดโม: จำลอง pg_cron — ตรวจ NO_SHOW / EXPIRED ทุกกี่ ms */
 export const DEMO_TIMEOUT_INTERVAL = 60_000;
+
+/** จำนวนแจ้งเตือนล่าสุดใน navbar */
+export const NOTIFICATION_PREVIEW_LIMIT = 3;
