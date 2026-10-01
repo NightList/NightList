@@ -66,6 +66,12 @@ export class AdminController {
     return this.db.rpc('admin_review_promotion', { p_actor: me.id, p_listing: id, p_approve: b.approve, p_reason: b.reason ?? null });
   }
 
+  @Post('bar-promotions/:id/moderate')
+  @HttpCode(200)
+  moderateBarPromotion(@CurrentUser() me: AuthUser, @Id() id: string, @Body() b: ReviewDto) {
+    return this.db.rpc('admin_moderate_bar_promotion', { p_actor: me.id, p_promotion: id, p_approve: b.approve, p_reason: b.reason ?? null });
+  }
+
   @Patch('users/:id/role')
   setUserRole(@CurrentUser() me: AuthUser, @Id() id: string, @Body() b: SetUserRoleDto) {
     return this.db.rpc('admin_set_user_role', { p_actor: me.id, p_user: id, p_role: b.role });

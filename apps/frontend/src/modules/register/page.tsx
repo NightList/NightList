@@ -1,11 +1,9 @@
 import { EnvelopeSimple, LockSimple, UserCircle } from '@phosphor-icons/react';
-import { demoRegister } from '@nightlist/mock';
 import { App, Button, Checkbox, DatePicker, Form, Input } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { AuthCard } from '@/ui/components/authCard';
-import { useAuth } from '@/services/auth';
 import { supabase } from '@/services/supabase';
 
 interface RegisterForm {
@@ -19,7 +17,6 @@ interface RegisterForm {
 
 /** /register — สมัครด้วยอีเมล + รหัสผ่าน (Supabase signUp → trigger สร้าง public.users) */
 export function RegisterPage() {
-  const { isDemo } = useAuth();
   const { message } = App.useApp();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -28,29 +25,23 @@ export function RegisterPage() {
   const onFinish = async (v: RegisterForm) => {
     setLoading(true);
     try {
-      if (isDemo) {
-        demoRegister({ email: v.email, displayName: v.displayName });
-        message.success('สร้างบัญชีแล้ว (เดโม)');
-        navigate('/onboarding');
-      } else {
-        const { data, error } = await supabase!.auth.signUp({
-          email: v.email,
-          password: v.password,
-          options: {
-            emailRedirectTo: `${location.origin}/onboarding`,
-            data: {
-              display_name: v.displayName,
-              birthdate: v.birthdate.format('YYYY-MM-DD'),
-              terms_version: 'v1',
-              privacy_version: 'v1',
-            },
+      const { data, error } = await supabase!.auth.signUp({
+        email: v.email,
+        password: v.password,
+        options: {
+          emailRedirectTo: `${location.origin}/onboarding`,
+          data: {
+            display_name: v.displayName,
+            birthdate: v.birthdate.format('YYYY-MM-DD'),
+            terms_version: 'v1',
+            privacy_version: 'v1',
           },
-        });
-        if (error) throw error;
-        // ถ้าปิด "Confirm email" ใน Supabase จะได้ session ทันที → ไปต่อได้เลย ไม่ต้องรออีเมล
-        if (data.session) navigate('/onboarding');
-        else navigate(`/verify-email?email=${encodeURIComponent(v.email)}`);
-      }
+        },
+      });
+      if (error) throw error;
+      // ถ้าปิด "Confirm email" ใน Supabase จะได้ session ทันที → ไปต่อได้เลย ไม่ต้องรออีเมล
+      if (data.session) navigate('/onboarding');
+      else navigate(`/verify-email?email=${encodeURIComponent(v.email)}`);
     } catch (e) {
       message.error((e as Error).message || 'สมัครไม่สำเร็จ');
     } finally {

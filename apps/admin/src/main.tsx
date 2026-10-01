@@ -4,6 +4,8 @@ import { Result } from 'antd';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import { checkApi } from './services/api';
+import { log } from './services/log';
 import { isSupabaseConfigured } from './services/supabase';
 import './styles/index.css';
 
@@ -20,6 +22,13 @@ function ConfigMissing() {
       </main>
     </ThemeProvider>
   );
+}
+
+if (isSupabaseConfigured) {
+  log.info(`Supabase: ${new URL(import.meta.env.VITE_SUPABASE_URL as string).host} · เข้าสู่ระบบ + MFA แล้วจะเห็นสถานะการโหลดแต่ละหน้า`);
+  void checkApi();
+} else {
+  log.error('ยังไม่ได้ตั้ง VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY ใน .env');
 }
 
 createRoot(document.getElementById('root')!).render(

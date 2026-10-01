@@ -1,15 +1,11 @@
-import { runTimeouts } from '@nightlist/mock';
 import { createBrowserRouter, type RouteObject } from 'react-router';
-import { DEMO_TIMEOUT_INTERVAL } from '@/configs/app';
 import { AuthLayout } from '@/layouts/auth';
 import { MainLayout } from '@/layouts/main';
 import { MerchantLayout } from '@/layouts/merchant';
 import { HomePage } from '@/modules/home/page';
 import { RequireAuth, RequireRole } from './middleware';
 
-// เดโม: จำลอง pg_cron — ตรวจ NO_SHOW / EXPIRED ตอนเปิดแอปและทุก 1 นาที
-runTimeouts();
-setInterval(runTimeouts, DEMO_TIMEOUT_INTERVAL);
+// หมดเวลา / ไม่มาตามนัด: ฐานข้อมูลจัดการเอง (pg_cron → /api/jobs/booking-timeouts · dev: NestJS รันทุก 1 นาที)
 
 /**
  * route ทั้งหมดตาม docs/SITEMAP.md

@@ -1,5 +1,5 @@
 import { Minus, Plus } from '@phosphor-icons/react';
-import type { BarWithTier } from '@nightlist/mock';
+import type { BarWithTier } from '@/services/data';
 import { estimatePrice } from '@nightlist/utils';
 import { Button, InputNumber, Radio, Space } from 'antd';
 import { useMemo } from 'react';

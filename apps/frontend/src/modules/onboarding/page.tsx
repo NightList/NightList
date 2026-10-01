@@ -1,12 +1,14 @@
-import { currentUser, DISTRICTS, STYLES, updateProfile } from '@nightlist/mock';
-import { Button, Card, Form, InputNumber, Select } from 'antd';
+import { App, Button, Card, Form, InputNumber, Select } from 'antd';
+import { useState } from 'react';
+import { MASTER, myPrefs, updateProfile } from '@/services/data';
 import { useNavigate } from 'react-router';
 import { PageHeader } from '@/ui/components/pageHeader';
 
 /** /onboarding — ความชอบ ใช้กับ rule-based recommendation */
 export function OnboardingPage() {
   const navigate = useNavigate();
-  const u = currentUser();
+  const { message } = App.useApp();
+  const [saving, setSaving] = useState(false);
   return (
     <div className="mx-auto max-w-xl">
       <PageHeader
@@ -17,22 +19,27 @@ export function OnboardingPage() {
         <Form
           layout="vertical"
           size="large"
-          initialValues={u?.preferences}
-          onFinish={(v) => {
-            if (u)
-              updateProfile(u.id, {
-                preferences: {
-                  styles: v.styles ?? [],
-                  budget: v.budget,
-                  pax: v.pax,
-                  districts: v.districts ?? [],
-                },
+          initialValues={{ styles: myPrefs.styleIds, districts: myPrefs.districtIds, budget: myPrefs.budget, pax: myPrefs.pax }}
+          onFinish={async (v) => {
+            setSaving(true);
+            try {
+              await updateProfile({
+                style_ids: v.styles ?? [],
+                district_ids: v.districts ?? [],
+                budget_per_person: v.budget ?? null,
+                usual_pax: v.pax ?? null,
+                onboarded: true,
               });
-            navigate('/');
+              navigate('/');
+            } catch (e) {
+              message.error((e as Error).message);
+            } finally {
+              setSaving(false);
+            }
           }}
         >
           <Form.Item name="styles" label="สไตล์ร้าน">
-            <Select mode="multiple" options={STYLES.map((s) => ({ label: s, value: s }))} />
+            <Select mode="multiple" options={MASTER.styles.map((st) => ({ label: st.label, value: st.id }))} />
           </Form.Item>
           <div className="grid gap-4 sm:grid-cols-2">
             <Form.Item name="budget" label="งบต่อหัว">
@@ -43,13 +50,13 @@ export function OnboardingPage() {
             </Form.Item>
           </div>
           <Form.Item name="districts" label="ย่าน">
-            <Select mode="multiple" options={DISTRICTS.map((d) => ({ label: d, value: d }))} />
+            <Select mode="multiple" options={MASTER.districts.map((d) => ({ label: d.name, value: d.id }))} />
           </Form.Item>
           <div className="flex gap-3">
             <Button block onClick={() => navigate('/')}>
               ข้าม
             </Button>
-            <Button block type="primary" htmlType="submit">
+            <Button block type="primary" htmlType="submit" loading={saving}>
               เริ่มเลย
             </Button>
           </div>

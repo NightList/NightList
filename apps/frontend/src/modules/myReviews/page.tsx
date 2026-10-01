@@ -1,4 +1,4 @@
-import { getBar, myReviews } from '@nightlist/mock';
+import { getBar, myReviews } from '@/services/data';
 import { StarRating } from '@nightlist/ui';
 import { Card, Empty } from 'antd';
 import { Link } from 'react-router';

@@ -348,6 +348,44 @@ export type AdminAuditLog = Override<
 
 export type AdminDashboard = PublicSchema['Functions']['admin_dashboard']['Returns'][number];
 
+/** โปรโมชันของร้านที่รอแอดมินตรวจถ้อยคำ */
+export type AdminBarPromotion = Override<
+  ViewRow<'admin_bar_promotions'>,
+  'id' | 'title' | 'active' | 'moderation_status' | 'created_at',
+  { bar: IdName; days_of_week: number[] }
+>;
+
+// ---------------------------------------------------------------------
+// ร้านค้า / ลูกค้า (migration …001700)
+// ---------------------------------------------------------------------
+/** my_bar_detail — ร้านของฉัน (ทุกสถานะ) รูปแบบเดียวกับ BarDetail + สถานะ/บทบาท/บัญชีรับเงิน · promotions มี active + moderation_status */
+export type MyBarDetail = Override<
+  ViewRow<'my_bar_detail'>,
+  BarCardNonNull | 'address' | 'perks' | 'status' | 'staff_role' | 'created_at' | 'updated_at',
+  BarCardJson & {
+    hours: OpeningHour[];
+    links: BarLinkItem[];
+    booking_settings: BookingSettings | null;
+    fees: FeeItem[];
+    menu: MenuEntry[];
+    packages: PackageEntry[];
+    promotions: (PromotionEntry & { active: boolean; moderation_status: Enums<'moderation_status'> })[];
+    zones: ZoneEntry[];
+    safety: SafetyEntry[];
+    payout_account: { bank_code: string; account_name: string; account_no_last4: string; verified_at: ISODateTime | null } | null;
+  }
+>;
+
+/** my_reviews — รีวิวของฉัน (ทุกสถานะ) */
+export type MyReview = Override<
+  ViewRow<'my_reviews'>,
+  'id' | 'booking_id' | 'bar_id' | 'rating' | 'status' | 'created_at',
+  { bar: { id: UUID; slug: string; name: string }; media: MediaItem[] }
+>;
+
+/** rpc('zone_availability', {p_bar, p_datetime}) */
+export type ZoneAvailability = PublicSchema['Functions']['zone_availability']['Returns'][number];
+
 // ---------------------------------------------------------------------
 // กฎธุรกิจที่ต้องตรงกับ DB
 // ---------------------------------------------------------------------

@@ -1,5 +1,5 @@
 import { Camera, Play, VideoCamera, X } from '@phosphor-icons/react';
-import type { ReviewMedia } from '@nightlist/mock';
+import type { ReviewMedia } from '@/services/data';
 import { App, Upload } from 'antd';
 import { useState } from 'react';
 import { putBlob } from '@/services/mediaStore';

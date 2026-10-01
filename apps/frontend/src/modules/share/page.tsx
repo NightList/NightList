@@ -1,38 +1,36 @@
 import { CalendarCheck, MapPin, UsersThree } from '@phosphor-icons/react';
-import { getBar, getBookingByShareToken } from '@nightlist/mock';
-import { Button, Card, Result } from 'antd';
+import { getBarBySlug, useShareCard } from '@/services/data';
+import { Button, Card, Result, Spin } from 'antd';
 import { Link, useParams } from 'react-router';
 import { BarCover } from '@/ui/components/barCard';
-import { useDemo } from '@/hooks/useDemo';
 import { dateTime } from '@/ui/utils/format';
 
-/** /share/:token — บัตรจองสาธารณะ (ไม่มีข้อมูลส่วนตัว / QR เช็กอิน) */
+/** /share/:token — บัตรจองสาธารณะ (rpc get_share_card · ไม่มีข้อมูลส่วนตัว / QR เช็กอิน) */
 export function SharePage() {
-  useDemo();
   const { token = '' } = useParams();
-  const b = getBookingByShareToken(token);
-  const bar = b ? getBar(b.barId) : null;
-  if (!b || !bar) return <Result status="404" title="ลิงก์นี้หมดอายุหรือไม่ถูกต้อง" />;
-  const zone = bar.zones.find((z) => z.id === b.zoneId);
+  const { data: card, isLoading } = useShareCard(token);
+  if (isLoading) return <Spin fullscreen />;
+  if (!card) return <Result status="404" title="ลิงก์นี้หมดอายุหรือไม่ถูกต้อง" />;
+  const bar = getBarBySlug(card.bar_slug);
   return (
     <div className="mx-auto max-w-md">
-      <Card cover={<BarCover bar={bar} className="h-40" />}>
-        <p className="text-sm text-muted">เพื่อนชวนคุณไป</p>
-        <h1 className="font-display text-3xl font-bold">{bar.name}</h1>
+      <Card cover={bar ? <BarCover bar={bar} className="h-40" /> : undefined}>
+        <p className="text-sm text-muted">{card.host_first_name} ชวนคุณไป</p>
+        <h1 className="font-display text-3xl font-bold">{card.bar_name}</h1>
         <ul className="mt-4 space-y-2">
           <li className="flex items-center gap-2">
-            <CalendarCheck className="text-gold-text" /> {dateTime(b.datetime)}
+            <CalendarCheck className="text-gold-text" /> {dateTime(card.booking_datetime)}
           </li>
           <li className="flex items-center gap-2">
-            <UsersThree className="text-gold-text" /> {b.pax} คน · {zone?.name}
+            <UsersThree className="text-gold-text" /> {card.pax} คน · {card.zone_name}
           </li>
           <li className="flex items-center gap-2">
-            <MapPin className="text-gold-text" /> {bar.address}
+            <MapPin className="text-gold-text" /> {card.address}
           </li>
         </ul>
         <div className="mt-6 grid gap-3">
           <a
-            href={`https://www.google.com/maps/search/?api=1&query=${bar.lat},${bar.lng}`}
+            href={`https://www.google.com/maps/search/?api=1&query=${card.lat},${card.lng}`}
             target="_blank"
             rel="noreferrer"
           >
@@ -40,7 +38,7 @@ export function SharePage() {
               เปิดแผนที่
             </Button>
           </a>
-          <Link to={`/bars/${bar.slug}`}>
+          <Link to={`/bars/${card.bar_slug}`}>
             <Button block size="large">
               ดูหน้าร้าน
             </Button>

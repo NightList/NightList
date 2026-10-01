@@ -1,17 +1,13 @@
-import { mutate, type Bar, type DemoState } from '@nightlist/mock';
-import { supabase } from '@/services/supabase';
+import type { Bar } from '@nightlist/mock';
 
 /**
- * ร้านจาก Supabase → รูปแบบ Bar ที่หน้าเว็บใช้
- *
- * ข้อมูลร้านมาจาก view `bar_detail` ใน Supabase เท่านั้น — ร้านเดโมใน @nightlist/mock ถูกแทนทั้งหมด
- * (main.tsx รอโหลดเสร็จก่อน render · โหลดไม่ได้ → หน้าแจ้ง error ไม่ใช้ร้านเดโมแทน)
- * หน้าเว็บยังเรียก listBars() / getBarBySlug() เหมือนเดิม เพราะไฟล์นี้เอาร้านจาก DB ไปใส่ store
- * ส่วนการจอง / รีวิว / ผู้ใช้ ยังเป็นเดโม (localStorage) จนกว่าจะย้ายทีละหน้าผ่าน NestJS
+ * แปลงแถวจาก view `bar_detail` (ร้านสาธารณะ) / `my_bar_detail` (ร้านของฉัน ทุกสถานะ) → รูปแบบ Bar ที่หน้าเว็บใช้
+ * ข้อมูลร้านมาจาก Supabase เท่านั้น — services/sync.ts เอาไปใส่ store ของ @nightlist/mock (ใช้เป็น cache)
+ * หน้าเว็บจึงยังเรียก listBars() / getBarBySlug() ได้เหมือนเดิม
  */
 
-/** รูปแบบ key ตาม view bar_detail (snake_case ตามหลังบ้าน — ดู Db.BarDetail ใน @nightlist/types) */
-interface BarDetailRow {
+/** รูปแบบ key ตาม view (snake_case ตามหลังบ้าน — ดู Db.BarDetail ใน @nightlist/types) */
+export interface BarDetailRow {
   id: string;
   slug: string;
   name: string;
@@ -53,7 +49,16 @@ interface BarDetailRow {
     total_price: number;
     items: { menu_item_id: string | null; quantity: number }[];
   }[];
-  promotions: { id: string; title: string; description: string | null; cutoff_time: string | null; days_of_week: number[] }[];
+  promotions: {
+    id: string;
+    title: string;
+    description: string | null;
+    cutoff_time: string | null;
+    days_of_week: number[];
+    /** เฉพาะ my_bar_detail */
+    active?: boolean;
+    moderation_status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  }[];
   zones: {
     id: string;
     name: string;
@@ -62,12 +67,18 @@ interface BarDetailRow {
     tables: { id: string; name: string; seats: number }[];
   }[];
   safety: { key: string; value: 'YES' | 'NO' | 'UNKNOWN'; source: 'SELF_DECLARED' | 'ADMIN_VERIFIED' | null }[];
+  /** เฉพาะ my_bar_detail */
+  status?: Bar['status'];
+  status_reason?: string | null;
+  staff_role?: 'OWNER' | 'MANAGER' | 'STAFF';
+  payout_account?: { bank_code: string; account_name: string; account_no_last4: string } | null;
 }
 
 const DEFAULT_COVER = 'linear-gradient(135deg,#2E1065 0%,#A738F5 55%,#E8B64C 100%)';
 const LINK_TYPES = ['INSTAGRAM', 'TIKTOK', 'FACEBOOK', 'WEBSITE'] as const;
-/** view ส่ง key ของสไตล์ (ตัวใหญ่) → ชื่อที่หน้าเว็บแสดง */
-const STYLE_LABELS: Record<string, string> = {
+
+/** view ส่ง key ของสไตล์ (ตัวใหญ่) → ชื่อที่หน้าเว็บแสดง (เติมจากตาราง styles ตอนโหลด master) */
+export const STYLE_LABELS: Record<string, string> = {
   LIVE_MUSIC: 'Live Music',
   CHILL: 'Chill',
   PUB_DANCE: 'Pub/Dance',
@@ -79,7 +90,7 @@ const STYLE_LABELS: Record<string, string> = {
   BUFFET: 'Buffet',
 };
 
-function toBar(r: BarDetailRow, previous?: Bar): Bar {
+export function toBar(r: BarDetailRow): Bar {
   const pct = (type: string) => r.fees.find((f) => f.fee_type === type && f.calc === 'PERCENTAGE')?.value ?? 0;
   const settings = r.booking_settings;
   return {
@@ -88,6 +99,7 @@ function toBar(r: BarDetailRow, previous?: Bar): Bar {
     name: r.name,
     category: r.category,
     district: r.district?.name_th ?? '',
+    districtId: r.district?.id,
     address: r.address,
     lat: Number(r.lat),
     lng: Number(r.lng),
@@ -97,8 +109,8 @@ function toBar(r: BarDetailRow, previous?: Bar): Bar {
     coverUrl: r.cover_image_url ?? undefined,
     hours: r.hours.map((h) => ({
       day: h.day_of_week,
-      open: h.open_time ?? '00:00',
-      close: h.close_time ?? '00:00',
+      open: h.open_time ?? '18:00',
+      close: h.close_time ?? '02:00',
       closed: h.is_closed,
     })),
     menu: r.menu.map((m) => ({
@@ -124,10 +136,11 @@ function toBar(r: BarDetailRow, previous?: Bar): Bar {
       description: p.description ?? '',
       cutoffTime: p.cutoff_time ?? undefined,
       days: p.days_of_week.length >= 7 ? undefined : p.days_of_week,
-      active: true, // view ส่งมาเฉพาะโปรที่ active + ผ่านการตรวจแล้ว
+      // bar_detail ส่งเฉพาะโปรที่ active + ผ่านการตรวจแล้ว · my_bar_detail ส่งทุกโปรพร้อมสถานะ
+      active: p.active ?? true,
+      moderationStatus: p.moderation_status,
     })),
-    // TODO(ui): pr_counts.lgbtq ยังไม่มีที่แสดงในหน้าเว็บ
-    pr: { male: r.pr_counts.male, female: r.pr_counts.female },
+    pr: { male: r.pr_counts.male, female: r.pr_counts.female, lgbtq: r.pr_counts.lgbtq },
     zones: r.zones.map((z) => ({
       id: z.id,
       name: z.name,
@@ -157,7 +170,9 @@ function toBar(r: BarDetailRow, previous?: Bar): Bar {
     rating: Number(r.rating_avg ?? 0),
     reviewCount: r.rating_count,
     avgPerPerson: Number(r.avg_price_per_person ?? 0),
-    status: 'APPROVED', // bar_detail มีเฉพาะร้าน APPROVED
+    status: r.status ?? 'APPROVED', // bar_detail มีเฉพาะร้าน APPROVED
+    statusReason: r.status_reason ?? undefined,
+    staffRole: r.staff_role,
     promoted: r.is_promoted,
     editorsPick: r.is_editor_pick,
     deposit: {
@@ -165,66 +180,15 @@ function toBar(r: BarDetailRow, previous?: Bar): Bar {
       unit: settings?.deposit_unit ?? 'PER_TABLE',
       policy: settings?.deposit_policy ?? '',
     },
-    // เลขบัญชีร้านไม่ส่งมาหน้าเว็บ (เข้ารหัสใน DB) — หน้า merchant เดโมใช้ค่าเดิมไปก่อน
-    payout: previous?.payout ?? { bankName: '', accountNo: '', accountName: '' },
+    // เลขบัญชีเต็มไม่ออกจาก DB (เข้ารหัส) — แสดงแค่ 4 ตัวท้าย
+    payout: r.payout_account
+      ? {
+          bankName: r.payout_account.bank_code,
+          accountNo: `••••${r.payout_account.account_no_last4}`,
+          accountName: r.payout_account.account_name,
+        }
+      : { bankName: '', accountNo: '', accountName: '' },
     gracePeriodMinutes: settings?.grace_minutes ?? 30,
     perks: r.perks,
   };
-}
-
-/** แทนร้านทั้งหมดใน store ด้วยร้านจาก DB แล้วแก้/ล้าง id ที่ข้อมูลเดโมอื่นอ้างถึง */
-function applyToDemoState(s: DemoState, rows: BarDetailRow[]): void {
-  const idMap = new Map<string, string>();
-  const oldBySlug = new Map(s.bars.map((b) => [b.slug, b]));
-  const match = <T extends { id: string }>(olds: T[], news: T[], key: (x: T) => string) => {
-    for (const o of olds) {
-      const found = news.find((n) => key(n) === key(o));
-      if (found && found.id !== o.id) idMap.set(o.id, found.id);
-    }
-  };
-
-  // ร้านใน store = ร้านจาก DB เท่านั้น (ร้านเดโมที่ไม่มีใน DB ถูกตัดทิ้ง)
-  s.bars = rows.map((row) => {
-    const old = oldBySlug.get(row.slug);
-    const bar = toBar(row, old);
-    if (old) {
-      if (bar.id !== old.id) idMap.set(old.id, bar.id);
-      match(old.zones, bar.zones, (z) => z.name);
-      for (const oz of old.zones) {
-        const nz = bar.zones.find((z) => z.name === oz.name);
-        if (nz) match(oz.tables, nz.tables, (t) => t.name);
-      }
-      match(old.menu, bar.menu, (m) => m.name);
-      match(old.packages, bar.packages, (p) => p.name);
-      match(old.promotions, bar.promotions, (p) => p.title);
-    }
-    return bar;
-  });
-
-  // การจอง/รีวิวเดโม: ชี้ไปร้านใน DB · ของร้านที่ไม่มีใน DB แล้วลบทิ้ง (กันหน้าเว็บหาร้านไม่เจอ)
-  const m = <T extends string | undefined>(id: T): T => ((id && idMap.get(id)) ?? id) as T;
-  const barIds = new Set(s.bars.map((b) => b.id));
-  s.bookings = s.bookings
-    .map((b) => ({ ...b, barId: m(b.barId), zoneId: m(b.zoneId), tableId: m(b.tableId), promotionId: m(b.promotionId) }))
-    .filter((b) => barIds.has(b.barId));
-  s.reviews = s.reviews.map((r) => ({ ...r, barId: m(r.barId) })).filter((r) => barIds.has(r.barId));
-  s.promotions = s.promotions.map((p) => ({ ...p, barId: m(p.barId) })).filter((p) => barIds.has(p.barId));
-  s.users.forEach((u) => {
-    const id = m(u.barId);
-    u.barId = id && barIds.has(id) ? id : undefined;
-  });
-  for (const uid of Object.keys(s.favorites))
-    s.favorites[uid] = (s.favorites[uid] ?? []).map((id) => m(id)).filter((id) => barIds.has(id));
-}
-
-/** เรียกตอนเปิดแอป (main.tsx รอให้เสร็จก่อน render) — ดึงไม่ได้จะ throw ให้หน้า error จัดการ */
-export async function loadBarsFromSupabase(): Promise<number> {
-  if (!supabase) throw new Error('ยังไม่ได้ตั้งค่า Supabase (.env)');
-  // view bar_detail = ร้าน APPROVED พร้อมทุกอย่างที่หน้าร้านใช้ (หนึ่งการเรียก)
-  const { data, error } = await supabase.from('bar_detail').select('*').order('name');
-  if (error) throw error;
-  const rows = (data ?? []) as unknown as BarDetailRow[];
-  mutate((s) => applyToDemoState(s, rows));
-  console.info(`[NightList] โหลดร้านจาก Supabase ${rows.length} ร้าน`);
-  return rows.length;
 }

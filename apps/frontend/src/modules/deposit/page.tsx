@@ -1,5 +1,5 @@
 import { UploadSimple } from '@phosphor-icons/react';
-import { depositFor, getBar, getBooking, PLATFORM, promptPayPayload, submitDeposit } from '@nightlist/mock';
+import { getBar, getBooking, MASTER, promptPayPayload, submitDeposit } from '@/services/data';
 import { Alert, App, Button, Card, Result, Upload } from 'antd';
 import { QRCodeSVG } from 'qrcode.react';
 import { useState } from 'react';
@@ -8,17 +8,17 @@ import { PageHeader } from '@/ui/components/pageHeader';
 import { useDemo } from '@/hooks/useDemo';
 import { baht } from '@/ui/utils/format';
 
-/** ย่อรูปสลิปก่อนเก็บ (เดโมเก็บใน localStorage) */
+/** ย่อรูปสลิปก่อนอัปโหลด (ยังอ่าน QR ในสลิปได้) — ใช้แสดงตัวอย่าง + อัปโหลดเข้า deposit-slips */
 function toSmallDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      const scale = Math.min(1, 480 / img.width);
+      const scale = Math.min(1, 1080 / img.width);
       const c = document.createElement('canvas');
       c.width = img.width * scale;
       c.height = img.height * scale;
       c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height);
-      resolve(c.toDataURL('image/jpeg', 0.7));
+      resolve(c.toDataURL('image/jpeg', 0.82));
       URL.revokeObjectURL(img.src);
     };
     img.onerror = reject;
@@ -33,10 +33,13 @@ export function DepositPage() {
   const navigate = useNavigate();
   const { message } = App.useApp();
   const [slip, setSlip] = useState<string>();
+  const [sending, setSending] = useState(false);
   const b = getBooking(id);
   const bar = b ? getBar(b.barId) : null;
   if (!b || !bar) return <Result status="404" title="ไม่พบการจอง" />;
-  const amount = depositFor(bar, b.pax);
+  // ยอดมัดจำ snapshot ตอนจอง (ร้านเปลี่ยนนโยบายภายหลังไม่กระทบการจองนี้)
+  const amount = b.depositRequired ?? 0;
+  const promptpay = MASTER.depositPromptPay;
   if (b.status !== 'AWAITING_DEPOSIT') {
     return (
       <Result
@@ -50,16 +53,25 @@ export function DepositPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <PageHeader title="จ่ายมัดจำ" subtitle={`${bar.name} · รหัสจอง ${b.code}`} />
+      {b.depositRejectReason && (
+        <Alert
+          className="!mb-4"
+          type="warning"
+          showIcon
+          title="สลิปก่อนหน้าไม่ผ่านการตรวจ"
+          description={`${b.depositRejectReason} — โอนใหม่แล้วส่งสลิปอีกครั้ง`}
+        />
+      )}
       <Card>
         <div className="grid gap-6 sm:grid-cols-[220px_1fr]">
           <div className="text-center">
             <div className="inline-block rounded-2xl bg-white p-3">
               <QRCodeSVG
-                value={promptPayPayload(PLATFORM.promptpayId, amount)}
+                value={promptPayPayload(promptpay.promptpayId, amount)}
                 size={190}
               />
             </div>
-            <p className="mt-2 text-sm text-muted">PromptPay: {PLATFORM.name}</p>
+            <p className="mt-2 text-sm text-muted">PromptPay: {promptpay.name}</p>
           </div>
           <div>
             <p className="text-muted">ยอดมัดจำ</p>
@@ -107,10 +119,18 @@ export function DepositPage() {
           size="large"
           className="mt-6"
           disabled={!slip}
-          onClick={() => {
-            submitDeposit(b.id, slip!);
-            message.success('ส่งสลิปแล้ว NightList จะตรวจและยืนยันโต๊ะให้');
-            navigate(`/bookings/${b.id}`);
+          loading={sending}
+          onClick={async () => {
+            setSending(true);
+            try {
+              await submitDeposit(b.id, await (await fetch(slip!)).blob());
+              message.success('ส่งสลิปแล้ว NightList จะตรวจและยืนยันโต๊ะให้');
+              navigate(`/bookings/${b.id}`);
+            } catch (e) {
+              message.error((e as Error).message);
+            } finally {
+              setSending(false);
+            }
           }}
         >
           ส่งสลิป

@@ -1,6 +1,6 @@
 /**
- * เก็บไฟล์วิดีโอรีวิวในโหมดเดโม (IndexedDB — localStorage จุไม่พอ)
- * ของจริง: อัปโหลดเข้า Supabase Storage bucket `review-media/<user_id>/<review_id>/<file>`
+ * พักไฟล์วิดีโอรีวิวที่เลือกไว้ใน IndexedDB ระหว่างกรอกฟอร์ม (state ของ React เก็บไฟล์ใหญ่ไม่สะดวก)
+ * กดส่งรีวิว → services/storage.ts อัปโหลดเข้า Supabase Storage `review-media/<user_id>/<review_id>/<file>`
  */
 const DB = 'nightlist-media';
 const STORE = 'files';

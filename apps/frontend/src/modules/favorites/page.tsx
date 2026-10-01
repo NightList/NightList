@@ -1,4 +1,4 @@
-import { favorites, getBar } from '@nightlist/mock';
+import { favorites, getBar } from '@/services/data';
 import { Empty } from 'antd';
 import { Link } from 'react-router';
 import { BarCard } from '@/ui/components/barCard';

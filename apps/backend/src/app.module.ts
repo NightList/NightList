@@ -6,8 +6,11 @@ import { ZodValidationPipe } from 'nestjs-zod';
 import { validateEnv } from './config/env';
 import { HealthController } from './health/health.controller';
 import { JobsController } from './jobs/jobs.controller';
+import { LocalJobsScheduler } from './jobs/local-jobs.scheduler';
 import { AdminModule } from './modules/admin/admin.module';
 import { BookingModule } from './modules/booking/booking.module';
+import { CustomerModule } from './modules/customer/customer.module';
+import { MerchantModule } from './modules/merchant/merchant.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { PricingController } from './modules/pricing/pricing.controller';
 import { PricingModule } from './modules/pricing/pricing.module';
@@ -20,6 +23,8 @@ import { SupabaseModule } from './supabase/supabase.module';
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
     SupabaseModule,
     AdminModule,
+    CustomerModule,
+    MerchantModule,
     BookingModule,
     PricingModule,
     RankingModule,
@@ -27,6 +32,7 @@ import { SupabaseModule } from './supabase/supabase.module';
   ],
   controllers: [HealthController, PricingController, JobsController],
   providers: [
+    LocalJobsScheduler,
     { provide: APP_PIPE, useClass: ZodValidationPipe },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],

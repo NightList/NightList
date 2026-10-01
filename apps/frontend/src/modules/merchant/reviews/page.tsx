@@ -1,4 +1,4 @@
-import { barReviews, setReviewReported } from '@nightlist/mock';
+import { barReviews, reportReview } from '@/services/data';
 import { StarRating } from '@nightlist/ui';
 import { App, Button, Card, Listy, Tag } from 'antd';
 import { ListRow } from '@/ui/components/listRow';
@@ -29,9 +29,13 @@ export function MerchantReviewsPage() {
                   <Button
                     key="r"
 
-                    onClick={() => {
-                      setReviewReported(r.id, true);
-                      message.success('ส่งให้ทีมตรวจแล้ว');
+                    onClick={async () => {
+                      try {
+                        await reportReview(r.id, 'OTHER', 'ร้านรายงานรีวิว');
+                        message.success('ส่งให้ทีม NightList ตรวจแล้ว');
+                      } catch (e) {
+                        message.error((e as Error).message);
+                      }
                     }}
                   >
                     รายงานรีวิว

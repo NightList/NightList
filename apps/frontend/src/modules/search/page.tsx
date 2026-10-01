@@ -1,5 +1,5 @@
 import { MagnifyingGlass, MapTrifold, SquaresFour } from '@phosphor-icons/react';
-import { CATEGORY_LABELS, DISTRICTS, listBars, STYLES, type BarFilter } from '@nightlist/mock';
+import { CATEGORY_LABELS, DISTRICTS, listBars, STYLES, type BarFilter } from '@/services/data';
 import type { BarCategory, CrowdStatus } from '@nightlist/types';
 import { Checkbox, Empty, Input, Segmented, Select, Slider } from 'antd';
 import { useState } from 'react';

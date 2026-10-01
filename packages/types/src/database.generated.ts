@@ -141,6 +141,13 @@ export type Database = {
             foreignKeyName: "bar_booking_settings_bar_id_fkey";
             columns: ["bar_id"];
             isOneToOne: true;
+            referencedRelation: "my_bar_detail";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bar_booking_settings_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: true;
             referencedRelation: "my_bars";
             referencedColumns: ["id"];
           },
@@ -214,6 +221,13 @@ export type Database = {
             columns: ["bar_id"];
             isOneToOne: false;
             referencedRelation: "bars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bar_credit_ledger_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "my_bar_detail";
             referencedColumns: ["id"];
           },
           {
@@ -330,6 +344,13 @@ export type Database = {
             foreignKeyName: "bar_fees_bar_id_fkey";
             columns: ["bar_id"];
             isOneToOne: false;
+            referencedRelation: "my_bar_detail";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bar_fees_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
             referencedRelation: "my_bars";
             referencedColumns: ["id"];
           },
@@ -400,6 +421,13 @@ export type Database = {
             columns: ["bar_id"];
             isOneToOne: false;
             referencedRelation: "bars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bar_hours_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "my_bar_detail";
             referencedColumns: ["id"];
           },
           {
@@ -479,6 +507,13 @@ export type Database = {
             foreignKeyName: "bar_links_bar_id_fkey";
             columns: ["bar_id"];
             isOneToOne: false;
+            referencedRelation: "my_bar_detail";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bar_links_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
             referencedRelation: "my_bars";
             referencedColumns: ["id"];
           },
@@ -540,6 +575,13 @@ export type Database = {
             columns: ["bar_id"];
             isOneToOne: true;
             referencedRelation: "bars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bar_live_status_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: true;
+            referencedRelation: "my_bar_detail";
             referencedColumns: ["id"];
           },
           {
@@ -631,6 +673,13 @@ export type Database = {
             foreignKeyName: "bar_media_bar_id_fkey";
             columns: ["bar_id"];
             isOneToOne: false;
+            referencedRelation: "my_bar_detail";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bar_media_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
             referencedRelation: "my_bars";
             referencedColumns: ["id"];
           },
@@ -710,6 +759,13 @@ export type Database = {
             columns: ["bar_id"];
             isOneToOne: false;
             referencedRelation: "bars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bar_payout_accounts_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "my_bar_detail";
             referencedColumns: ["id"];
           },
           {
@@ -818,6 +874,13 @@ export type Database = {
             foreignKeyName: "bar_payouts_bar_id_fkey";
             columns: ["bar_id"];
             isOneToOne: false;
+            referencedRelation: "my_bar_detail";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bar_payouts_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
             referencedRelation: "my_bars";
             referencedColumns: ["id"];
           },
@@ -900,6 +963,13 @@ export type Database = {
             columns: ["bar_id"];
             isOneToOne: false;
             referencedRelation: "bars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bar_pr_counts_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "my_bar_detail";
             referencedColumns: ["id"];
           },
           {
@@ -1012,6 +1082,13 @@ export type Database = {
             foreignKeyName: "bar_promotions_bar_id_fkey";
             columns: ["bar_id"];
             isOneToOne: false;
+            referencedRelation: "my_bar_detail";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bar_promotions_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
             referencedRelation: "my_bars";
             referencedColumns: ["id"];
           },
@@ -1105,6 +1182,13 @@ export type Database = {
             columns: ["bar_id"];
             isOneToOne: false;
             referencedRelation: "bars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bar_safety_features_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "my_bar_detail";
             referencedColumns: ["id"];
           },
           {
@@ -1211,6 +1295,13 @@ export type Database = {
             foreignKeyName: "bar_special_hours_bar_id_fkey";
             columns: ["bar_id"];
             isOneToOne: false;
+            referencedRelation: "my_bar_detail";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bar_special_hours_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
             referencedRelation: "my_bars";
             referencedColumns: ["id"];
           },
@@ -1284,6 +1375,13 @@ export type Database = {
             columns: ["bar_id"];
             isOneToOne: false;
             referencedRelation: "bars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bar_staff_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "my_bar_detail";
             referencedColumns: ["id"];
           },
           {
@@ -1409,6 +1507,13 @@ export type Database = {
             foreignKeyName: "bar_stats_bar_id_fkey";
             columns: ["bar_id"];
             isOneToOne: true;
+            referencedRelation: "my_bar_detail";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bar_stats_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: true;
             referencedRelation: "my_bars";
             referencedColumns: ["id"];
           },
@@ -1464,6 +1569,13 @@ export type Database = {
             columns: ["bar_id"];
             isOneToOne: false;
             referencedRelation: "bars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bar_styles_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "my_bar_detail";
             referencedColumns: ["id"];
           },
           {
@@ -1553,6 +1665,13 @@ export type Database = {
             columns: ["bar_id"];
             isOneToOne: false;
             referencedRelation: "bars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bar_verifications_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "my_bar_detail";
             referencedColumns: ["id"];
           },
           {
@@ -1749,6 +1868,13 @@ export type Database = {
             columns: ["bar_id"];
             isOneToOne: false;
             referencedRelation: "bars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "billing_events_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "my_bar_detail";
             referencedColumns: ["id"];
           },
           {
@@ -2017,6 +2143,13 @@ export type Database = {
             columns: ["booking_id"];
             isOneToOne: true;
             referencedRelation: "my_bookings";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "booking_promotions_promotion_id_fkey";
+            columns: ["promotion_id"];
+            isOneToOne: false;
+            referencedRelation: "admin_bar_promotions";
             referencedColumns: ["id"];
           },
           {
@@ -2389,6 +2522,13 @@ export type Database = {
             foreignKeyName: "bookings_bar_id_fkey";
             columns: ["bar_id"];
             isOneToOne: false;
+            referencedRelation: "my_bar_detail";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bookings_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
             referencedRelation: "my_bars";
             referencedColumns: ["id"];
           },
@@ -2604,6 +2744,13 @@ export type Database = {
             foreignKeyName: "commission_rules_bar_id_fkey";
             columns: ["bar_id"];
             isOneToOne: false;
+            referencedRelation: "my_bar_detail";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "commission_rules_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
             referencedRelation: "my_bars";
             referencedColumns: ["id"];
           },
@@ -2679,6 +2826,13 @@ export type Database = {
             columns: ["bar_id"];
             isOneToOne: false;
             referencedRelation: "bars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "crowd_status_logs_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "my_bar_detail";
             referencedColumns: ["id"];
           },
           {
@@ -2805,6 +2959,13 @@ export type Database = {
             columns: ["bar_id"];
             isOneToOne: false;
             referencedRelation: "bars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "deposits_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "my_bar_detail";
             referencedColumns: ["id"];
           },
           {
@@ -2976,6 +3137,13 @@ export type Database = {
             foreignKeyName: "editor_picks_bar_id_fkey";
             columns: ["bar_id"];
             isOneToOne: false;
+            referencedRelation: "my_bar_detail";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "editor_picks_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
             referencedRelation: "my_bars";
             referencedColumns: ["id"];
           },
@@ -3045,6 +3213,13 @@ export type Database = {
             columns: ["bar_id"];
             isOneToOne: false;
             referencedRelation: "bars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "favorites_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "my_bar_detail";
             referencedColumns: ["id"];
           },
           {
@@ -3150,6 +3325,13 @@ export type Database = {
             columns: ["bar_id"];
             isOneToOne: false;
             referencedRelation: "bars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invoices_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "my_bar_detail";
             referencedColumns: ["id"];
           },
           {
@@ -3286,6 +3468,13 @@ export type Database = {
             foreignKeyName: "menu_categories_bar_id_fkey";
             columns: ["bar_id"];
             isOneToOne: false;
+            referencedRelation: "my_bar_detail";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "menu_categories_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
             referencedRelation: "my_bars";
             referencedColumns: ["id"];
           },
@@ -3368,6 +3557,13 @@ export type Database = {
             columns: ["bar_id"];
             isOneToOne: false;
             referencedRelation: "bars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "menu_items_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "my_bar_detail";
             referencedColumns: ["id"];
           },
           {
@@ -3564,6 +3760,13 @@ export type Database = {
             columns: ["bar_id"];
             isOneToOne: false;
             referencedRelation: "bars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notifications_bar_fk";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "my_bar_detail";
             referencedColumns: ["id"];
           },
           {
@@ -3784,6 +3987,13 @@ export type Database = {
             columns: ["bar_id"];
             isOneToOne: false;
             referencedRelation: "bars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "price_packages_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "my_bar_detail";
             referencedColumns: ["id"];
           },
           {
@@ -4017,6 +4227,13 @@ export type Database = {
             foreignKeyName: "promoted_listings_bar_id_fkey";
             columns: ["bar_id"];
             isOneToOne: false;
+            referencedRelation: "my_bar_detail";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "promoted_listings_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
             referencedRelation: "my_bars";
             referencedColumns: ["id"];
           },
@@ -4134,6 +4351,13 @@ export type Database = {
             foreignKeyName: "review_media_review_id_fkey";
             columns: ["review_id"];
             isOneToOne: false;
+            referencedRelation: "my_reviews";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "review_media_review_id_fkey";
+            columns: ["review_id"];
+            isOneToOne: false;
             referencedRelation: "public_reviews";
             referencedColumns: ["id"];
           },
@@ -4203,6 +4427,13 @@ export type Database = {
             foreignKeyName: "review_moderation_logs_review_id_fkey";
             columns: ["review_id"];
             isOneToOne: false;
+            referencedRelation: "my_reviews";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "review_moderation_logs_review_id_fkey";
+            columns: ["review_id"];
+            isOneToOne: false;
             referencedRelation: "public_reviews";
             referencedColumns: ["id"];
           },
@@ -4266,6 +4497,13 @@ export type Database = {
             columns: ["review_id"];
             isOneToOne: false;
             referencedRelation: "admin_reviews";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "review_reports_review_id_fkey";
+            columns: ["review_id"];
+            isOneToOne: false;
+            referencedRelation: "my_reviews";
             referencedColumns: ["id"];
           },
           {
@@ -4348,6 +4586,13 @@ export type Database = {
             columns: ["bar_id"];
             isOneToOne: false;
             referencedRelation: "bars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reviews_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "my_bar_detail";
             referencedColumns: ["id"];
           },
           {
@@ -4490,6 +4735,13 @@ export type Database = {
             columns: ["bar_id"];
             isOneToOne: false;
             referencedRelation: "bars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "safety_reports_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "my_bar_detail";
             referencedColumns: ["id"];
           },
           {
@@ -4674,6 +4926,13 @@ export type Database = {
             foreignKeyName: "table_zones_bar_id_fkey";
             columns: ["bar_id"];
             isOneToOne: false;
+            referencedRelation: "my_bar_detail";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "table_zones_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
             referencedRelation: "my_bars";
             referencedColumns: ["id"];
           },
@@ -4824,6 +5083,13 @@ export type Database = {
             columns: ["bar_id"];
             isOneToOne: false;
             referencedRelation: "bars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tier_scores_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "my_bar_detail";
             referencedColumns: ["id"];
           },
           {
@@ -5024,6 +5290,21 @@ export type Database = {
           entity_id: string | null;
           entity_type: string | null;
           id: number | null;
+        };
+        Relationships: [];
+      };
+      admin_bar_promotions: {
+        Row: {
+          active: boolean | null;
+          bar: Json | null;
+          created_at: string | null;
+          cutoff_time: string | null;
+          days_of_week: number[] | null;
+          description: string | null;
+          id: string | null;
+          moderation_status: Database["public"]["Enums"]["moderation_status"] | null;
+          title: string | null;
+          updated_at: string | null;
         };
         Relationships: [];
       };
@@ -5255,6 +5536,13 @@ export type Database = {
             foreignKeyName: "bar_credit_ledger_bar_id_fkey";
             columns: ["bar_id"];
             isOneToOne: false;
+            referencedRelation: "my_bar_detail";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bar_credit_ledger_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
             referencedRelation: "my_bars";
             referencedColumns: ["id"];
           },
@@ -5325,12 +5613,14 @@ export type Database = {
           completed_at: string | null;
           confirmed_at: string | null;
           created_at: string | null;
+          customer_name: string | null;
           customer_note: string | null;
           deposit: Json | null;
           deposit_policy_snapshot: string | null;
           deposit_required: number | null;
           expires_at: string | null;
           grace_minutes: number | null;
+          has_review: boolean | null;
           id: string | null;
           is_mine: boolean | null;
           package: Json | null;
@@ -5340,6 +5630,7 @@ export type Database = {
           request_pr: Database["public"]["Enums"]["pr_gender"] | null;
           reserved_from: string | null;
           reserved_until: string | null;
+          share_token: string | null;
           status: Database["public"]["Enums"]["booking_status"] | null;
           status_history: Json | null;
           table: Json | null;
@@ -5363,6 +5654,55 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      my_bar_detail: {
+        Row: {
+          address: string | null;
+          avg_price_per_person: number | null;
+          booking_settings: Json | null;
+          category: Database["public"]["Enums"]["bar_category"] | null;
+          checkin_count: number | null;
+          cover_image_url: string | null;
+          cover_style: string | null;
+          created_at: string | null;
+          crowd_updated_at: string | null;
+          current_crowd: Database["public"]["Enums"]["crowd_status"] | null;
+          current_stars: number | null;
+          current_tier: Database["public"]["Enums"]["tier_letter"] | null;
+          description: string | null;
+          district: Json | null;
+          fees: Json | null;
+          has_pr: boolean | null;
+          hours: Json | null;
+          id: string | null;
+          is_editor_pick: boolean | null;
+          is_new: boolean | null;
+          is_promoted: boolean | null;
+          lat: number | null;
+          links: Json | null;
+          lng: number | null;
+          menu: Json | null;
+          name: string | null;
+          packages: Json | null;
+          payout_account: Json | null;
+          perks: string[] | null;
+          phone: string | null;
+          pr_counts: Json | null;
+          promotions: Json | null;
+          rating_avg: number | null;
+          rating_count: number | null;
+          safety: Json | null;
+          safety_score: number | null;
+          score: number | null;
+          slug: string | null;
+          staff_role: Database["public"]["Enums"]["bar_staff_role"] | null;
+          status: Database["public"]["Enums"]["bar_status"] | null;
+          status_reason: string | null;
+          styles: Json | null;
+          updated_at: string | null;
+          zones: Json | null;
+        };
+        Relationships: [];
       };
       my_bars: {
         Row: {
@@ -5439,6 +5779,77 @@ export type Database = {
         };
         Relationships: [];
       };
+      my_reviews: {
+        Row: {
+          bar: Json | null;
+          bar_id: string | null;
+          booking_id: string | null;
+          comment: string | null;
+          created_at: string | null;
+          id: string | null;
+          media: Json | null;
+          rating: number | null;
+          status: Database["public"]["Enums"]["review_status"] | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "reviews_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "admin_bars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reviews_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "bar_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reviews_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "bar_detail";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reviews_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "bars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reviews_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "my_bar_detail";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reviews_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "my_bars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reviews_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
+            referencedRelation: "my_favorites";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reviews_booking_same_bar";
+            columns: ["booking_id", "bar_id"];
+            isOneToOne: false;
+            referencedRelation: "bookings";
+            referencedColumns: ["id", "bar_id"];
+          },
+        ];
+      };
       public_reviews: {
         Row: {
           bar_id: string | null;
@@ -5482,6 +5893,13 @@ export type Database = {
             foreignKeyName: "reviews_bar_id_fkey";
             columns: ["bar_id"];
             isOneToOne: false;
+            referencedRelation: "my_bar_detail";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reviews_bar_id_fkey";
+            columns: ["bar_id"];
+            isOneToOne: false;
             referencedRelation: "my_bars";
             referencedColumns: ["id"];
           },
@@ -5518,6 +5936,10 @@ export type Database = {
           promo_slips_pending: number;
           reviews_reported: number;
         }[];
+      };
+      admin_moderate_bar_promotion: {
+        Args: { p_actor: string; p_approve: boolean; p_promotion: string; p_reason?: string };
+        Returns: Json;
       };
       admin_moderate_review: {
         Args: { p_action: string; p_actor: string; p_reason?: string; p_review: string };
@@ -5557,12 +5979,236 @@ export type Database = {
         Returns: Json;
       };
       admin_verify_safety: { Args: { p_actor: string; p_feature: string }; Returns: Json };
+      app_add_review: {
+        Args: {
+          p_actor: string;
+          p_booking: string;
+          p_comment: string;
+          p_media?: Json;
+          p_rating: number;
+          p_review_id: string;
+        };
+        Returns: Json;
+      };
+      app_assert_manager: {
+        Args: { p_actor: string; p_bar: string };
+        Returns: Database["public"]["Enums"]["bar_staff_role"];
+      };
+      app_assert_user: {
+        Args: { p_actor: string };
+        Returns: {
+          age_verification_method: Database["public"]["Enums"]["age_verification_method"] | null;
+          age_verified: boolean;
+          age_verified_at: string | null;
+          anonymized_at: string | null;
+          avatar_url: string | null;
+          birthdate: string;
+          created_at: string;
+          deleted_at: string | null;
+          display_name: string;
+          email: string;
+          id: string;
+          onboarded_at: string | null;
+          phone_e164: string | null;
+          phone_verified_at: string | null;
+          role: Database["public"]["Enums"]["user_role"];
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "users";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      app_audit: {
+        Args: { p_action: string; p_actor: string; p_after: Json; p_entity: string; p_id: string };
+        Returns: undefined;
+      };
+      app_cancel_booking: {
+        Args: { p_actor: string; p_booking: string; p_reason?: string };
+        Returns: Json;
+      };
+      app_check_in: { Args: { p_actor: string; p_bar: string; p_code: string }; Returns: Json };
+      app_create_booking: {
+        Args: {
+          p_actor: string;
+          p_bar: string;
+          p_datetime: string;
+          p_note?: string;
+          p_pax: number;
+          p_promotion?: string;
+          p_zone: string;
+        };
+        Returns: Json;
+      };
+      app_delete_account: { Args: { p_actor: string }; Returns: Json };
+      app_fmt: { Args: { p_at: string }; Returns: string };
+      app_invite_staff: {
+        Args: {
+          p_actor: string;
+          p_bar: string;
+          p_email: string;
+          p_role: Database["public"]["Enums"]["bar_staff_role"];
+        };
+        Returns: Json;
+      };
+      app_mark_notifications_read: { Args: { p_actor: string; p_ids?: string[] }; Returns: Json };
+      app_merchant_join: { Args: { p: Json; p_actor: string }; Returns: Json };
+      app_notify: {
+        Args: {
+          p_bar?: string;
+          p_body: string;
+          p_booking?: string;
+          p_dedupe?: string;
+          p_event: string;
+          p_link: string;
+          p_title: string;
+          p_user: string;
+        };
+        Returns: undefined;
+      };
+      app_notify_admins: {
+        Args: {
+          p_bar?: string;
+          p_body: string;
+          p_booking?: string;
+          p_event: string;
+          p_link: string;
+          p_title: string;
+        };
+        Returns: undefined;
+      };
+      app_notify_team: {
+        Args: {
+          p_bar: string;
+          p_body: string;
+          p_booking?: string;
+          p_event: string;
+          p_link: string;
+          p_title: string;
+        };
+        Returns: undefined;
+      };
+      app_order_promotion: {
+        Args: { p_actor: string; p_bar: string; p_package: string; p_slip_path: string };
+        Returns: Json;
+      };
+      app_remove_staff: { Args: { p_actor: string; p_bar: string; p_user: string }; Returns: Json };
+      app_report_review: {
+        Args: { p_actor: string; p_detail?: string; p_reason: string; p_review: string };
+        Returns: Json;
+      };
+      app_respond_invite: {
+        Args: { p_accept: boolean; p_actor: string; p_bar: string };
+        Returns: Json;
+      };
+      app_set_bar_promotions: {
+        Args: { p_actor: string; p_bar: string; p_items: Json };
+        Returns: Json;
+      };
+      app_set_crowd: {
+        Args: {
+          p_actor: string;
+          p_bar: string;
+          p_status: Database["public"]["Enums"]["crowd_status"];
+        };
+        Returns: Json;
+      };
+      app_set_fees: {
+        Args: {
+          p_actor: string;
+          p_bar: string;
+          p_other: number;
+          p_service_charge: number;
+          p_vat: number;
+        };
+        Returns: Json;
+      };
+      app_set_menu: { Args: { p_actor: string; p_bar: string; p_items: Json }; Returns: Json };
+      app_set_payout_account: {
+        Args: {
+          p_account_name: string;
+          p_account_no_enc: string;
+          p_actor: string;
+          p_bank_code: string;
+          p_bar: string;
+          p_last4: string;
+        };
+        Returns: Json;
+      };
+      app_set_safety: {
+        Args: {
+          p_actor: string;
+          p_bar: string;
+          p_key: string;
+          p_value: Database["public"]["Enums"]["safety_value"];
+        };
+        Returns: Json;
+      };
+      app_set_safety_evidence: {
+        Args: { p_actor: string; p_bar: string; p_key: string; p_path: string };
+        Returns: Json;
+      };
+      app_set_zones: { Args: { p_actor: string; p_bar: string; p_zones: Json }; Returns: Json };
+      app_submit_deposit: {
+        Args: { p_actor: string; p_booking: string; p_slip_path: string; p_slip_ref?: string };
+        Returns: Json;
+      };
+      app_team_role: {
+        Args: { p_actor: string; p_bar: string };
+        Returns: Database["public"]["Enums"]["bar_staff_role"];
+      };
+      app_team_set_booking_status: {
+        Args: {
+          p_actor: string;
+          p_booking: string;
+          p_reason?: string;
+          p_to: Database["public"]["Enums"]["booking_status"];
+        };
+        Returns: Json;
+      };
+      app_toggle_favorite: { Args: { p_actor: string; p_bar: string }; Returns: Json };
+      app_update_bar_info: { Args: { p: Json; p_actor: string; p_bar: string }; Returns: Json };
+      app_update_booking_settings: {
+        Args: { p: Json; p_actor: string; p_bar: string };
+        Returns: Json;
+      };
+      app_update_profile: { Args: { p: Json; p_actor: string }; Returns: Json };
       auth_role: {
         Args: Record<PropertyKey, never>;
         Returns: Database["public"]["Enums"]["user_role"];
       };
+      bar_deposit_ledger: {
+        Args: { p_bar: string };
+        Returns: {
+          amount: number;
+          booking_code: string;
+          booking_datetime: string;
+          booking_id: string;
+          created_at: string;
+          customer_name: string;
+          deposit_id: string;
+          settled_at: string;
+          settlement: Database["public"]["Enums"]["deposit_settlement"];
+          status: Database["public"]["Enums"]["deposit_status"];
+          verified_at: string;
+        }[];
+      };
       bar_is_promoted: { Args: { p_bar: string }; Returns: boolean };
       bar_is_public: { Args: { p_bar: string }; Returns: boolean };
+      bar_team: {
+        Args: { p_bar: string };
+        Returns: {
+          accepted_at: string;
+          display_name: string;
+          email: string;
+          invited_at: string;
+          role: Database["public"]["Enums"]["bar_staff_role"];
+          user_id: string;
+        }[];
+      };
+      booking_customer_name: { Args: { p_bar: string; p_user: string }; Returns: string };
       booking_deposit_summary: { Args: { p_booking: string }; Returns: Json };
       booking_transition_allowed: {
         Args: {
@@ -5590,6 +6236,16 @@ export type Database = {
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       is_bar_member: { Args: { p_bar: string }; Returns: boolean };
       is_bar_member_path: { Args: { p_folder: string }; Returns: boolean };
+      my_invites: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          bar_id: string;
+          bar_name: string;
+          invited_at: string;
+          invited_by: string;
+          role: Database["public"]["Enums"]["bar_staff_role"];
+        }[];
+      };
       nearby_bars: {
         Args: { p_lat: number; p_lng: number; p_radius_m?: number };
         Returns: {
@@ -5624,6 +6280,7 @@ export type Database = {
       recompute_safety_score: { Args: { p_bar: string }; Returns: undefined };
       review_author_name: { Args: { p_user: string }; Returns: string };
       review_media_path_is_public: { Args: { p_name: string }; Returns: boolean };
+      run_booking_timeouts: { Args: Record<PropertyKey, never>; Returns: Json };
       run_retention_jobs: { Args: Record<PropertyKey, never>; Returns: Json };
       search_bars: {
         Args: {
@@ -5668,6 +6325,18 @@ export type Database = {
           isOneToOne: false;
           isSetofReturn: true;
         };
+      };
+      zone_availability: {
+        Args: { p_bar: string; p_datetime: string };
+        Returns: {
+          capacity_pax: number;
+          free_tables: number;
+          full: boolean;
+          remaining_pax: number;
+          total_tables: number;
+          zone_id: string;
+          zone_name: string;
+        }[];
       };
       zone_remaining_pax: {
         Args: { p_exclude?: string; p_from: string; p_until: string; p_zone: string };

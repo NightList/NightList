@@ -1,4 +1,4 @@
-import type { BarWithTier } from '@nightlist/mock';
+import type { BarWithTier } from '@/services/data';
 import { useRef } from 'react';
 import { barImage } from '@/ui/utils/barImage';
 import { EASE_OUT, MOTION_OK, gsap, useGSAP } from '../utils/gsap';

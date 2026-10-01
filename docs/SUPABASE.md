@@ -45,6 +45,7 @@ migration ที่มี (แยกตามโดเมน — รายละ
 - เฟส 2 `000900` … `001400` — มัดจำ (DRAFT), แชร์/ความปลอดภัย/ความแน่น, ranking, โปรโมท, billing, PDPA retention
 - `001500` — index บน FK ทุกตัว + เปิด RLS
 - `001600` — Backoffice: view `admin_*` (อ่านได้เฉพาะ ADMIN ที่ผ่าน MFA) + ฟังก์ชันการกระทำของแอดมิน (เรียกผ่าน NestJS เท่านั้น)
+- `001700` — การกระทำของลูกค้า/ร้าน `app_*` (จอง, มัดจำ, รีวิว, ร้านโปรด, จัดการร้าน ฯลฯ — เรียกผ่าน NestJS เท่านั้น) + job หมดเวลาการจอง
 - migration รุ่นแรก 0001–0003 อยู่ที่ `docs/legacy-migrations/`
 
 หลังแก้ migration ทุกครั้ง: `pnpm --filter @nightlist/backend db:types` (สร้าง `packages/types/src/database.generated.ts` ใหม่)
@@ -95,17 +96,24 @@ SUPABASE_URL
 SUPABASE_SERVICE_ROLE_KEY   (Sensitive)
 CORS_ORIGINS=https://<โดเมน>
 JOB_SECRET, QR_SIGNING_KEY  (สุ่มยาวๆ)
+PAYOUT_ENCRYPTION_KEY       (สุ่มยาวๆ ≥ 16 ตัว · ใช้เข้ารหัสเลขบัญชีร้าน · ห้ามเปลี่ยนหลังมีข้อมูลแล้ว · Sensitive)
 ```
 
 Supabase → Authentication → URL Configuration: ใส่ Site URL = โดเมนเว็บ และ Redirect URLs = `https://<โดเมน>/**`
 ถ้าใช้ปุ่ม Google/Facebook ในหน้า Login: Authentication → Providers → เปิด Google / Facebook แล้วใส่ Client ID/Secret จาก Google Cloud / Meta for Developers
 
-## 5. ลำดับย้ายจากเดโมไปข้อมูลจริง
+## 5. เช็กว่าเชื่อม Supabase แล้ว
 
-1. **Auth** — ได้ทันทีเมื่อใส่ key (สมัคร/ล็อกอิน/ลืมรหัส/OAuth)
-2. **ร้าน + ค้นหา + แผนที่** — อ่านจาก `bars` ผ่าน supabase-js (RLS เปิดให้อ่านร้านที่ APPROVED)
-3. **การจอง + มัดจำ** — เขียนผ่าน NestJS (`POST /api/bookings`, `POST /api/bookings/:id/deposit`) เพื่อคุม state machine และ exclusion constraint · สลิปอัปโหลดเข้า bucket `slips/<user_id>/<booking_id>.jpg`
-4. **แอดมินตรวจสลิป / โอนให้ร้าน** — `PATCH /api/deposits/:id/verify`, `PATCH /api/deposits/:id/settle` (service role)
-5. **pg_cron** — NO_SHOW / EXPIRED เรียก `/api/jobs/*` ด้วย `JOB_SECRET`
+เปิดเว็บ → F12 → แท็บ Console → พิมพ์ `NightList` ในช่อง filter
 
-แต่ละหน้าแทน service ของ `@nightlist/mock` ด้วย TanStack Query + `src/services/api.ts` ตาม `CLAUDE.md`
+- `✅ เชื่อมต่อ Supabase สำเร็จ (<host>) · ร้าน N · รีวิว N · ย่าน N` — อ่านข้อมูลสาธารณะได้
+- `✅ เชื่อมต่อ NestJS API สำเร็จ (<url>)` — หลังบ้านตอบ
+- `✅ โหลดข้อมูลผู้ใช้จาก Supabase (<อีเมล> · <role>) · การจอง N · แจ้งเตือน N …` — หลังล็อกอิน
+- `API POST /bookings → 201` / `อัปโหลดไฟล์ deposit-slips/…` — ทุกครั้งที่เขียนข้อมูล
+- พิมพ์ `__nightlist()` ใน Console เพื่อดูสรุปจำนวนข้อมูลที่โหลดอยู่
+- แอดมิน (`/admin`) ใช้ป้าย `NightList Admin`
+- ❌ สีแดง = ต่อไม่ได้ พร้อมสาเหตุ (เช่น migration ยังไม่ได้ push → `Could not find the function …`)
+
+## 6. สถานะ
+
+ทุกหน้า (ลูกค้า · ร้าน · แอดมิน) อ่าน/เขียนข้อมูลจริงแล้ว — ไม่มีข้อมูลเดโมใน localStorage (`@nightlist/mock` เหลือเป็นแค่ cache/type ของหน้าเว็บ) · การโอนเงินมัดจำให้ร้าน/คืนลูกค้าจริงยังเป็น DRAFT รอข้อ 10.3

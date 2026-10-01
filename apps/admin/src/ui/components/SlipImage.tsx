@@ -1,8 +1,8 @@
 import { Image, Spin } from 'antd';
 import { useSignedUrl } from '@/services/adminData';
 
-/** รูปสลิปจากบักเก็ตส่วนตัว (ขอ URL ชั่วคราวด้วยสิทธิ์แอดมิน) · กดเพื่อขยาย */
-export function SlipImage({ bucket, path }: { bucket: 'deposit-slips' | 'promo-slips'; path: string | null | undefined }) {
+/** รูปสลิป/หลักฐานจากบักเก็ตส่วนตัว (ขอ URL ชั่วคราวด้วยสิทธิ์แอดมิน) · กดเพื่อขยาย */
+export function SlipImage({ bucket, path }: { bucket: 'deposit-slips' | 'promo-slips' | 'bar-verifications'; path: string | null | undefined }) {
   const { data: url, isLoading } = useSignedUrl(bucket, path);
   if (!path) return <span className="text-xs text-muted">ไม่มีไฟล์</span>;
   if (isLoading) return <Spin size="small" />;
@@ -14,5 +14,5 @@ export function SlipImage({ bucket, path }: { bucket: 'deposit-slips' | 'promo-s
       </a>
     );
   }
-  return <Image src={url} alt="สลิปโอนเงิน" height={64} width={48} className="object-cover" />;
+  return <Image src={url} alt="ไฟล์แนบ" height={64} width={48} className="object-cover" />;
 }

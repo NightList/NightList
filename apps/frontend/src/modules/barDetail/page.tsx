@@ -9,7 +9,7 @@ import {
   Tag as PromoIcon,
   TiktokLogo,
 } from '@phosphor-icons/react';
-import { barReviews, CATEGORY_LABELS, getBarBySlug } from '@nightlist/mock';
+import { barReviews, CATEGORY_LABELS, getBarBySlug } from '@/services/data';
 import { Button, Card, Descriptions, Drawer, Empty, Result, Table, Tabs, Tag } from 'antd';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';

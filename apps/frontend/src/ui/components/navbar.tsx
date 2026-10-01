@@ -1,5 +1,5 @@
 import { Bell, SignOut, User, type Icon } from '@phosphor-icons/react';
-import { myNotifications } from '@nightlist/mock';
+import { myNotifications } from '@/services/data';
 import { ThemeToggle } from '@nightlist/ui';
 import { App, Badge, Button, Dropdown, Empty, Tag } from 'antd';
 import { motion, useReducedMotion } from 'motion/react';
@@ -50,7 +50,7 @@ export function Navbar({
   minimal?: boolean;
 }) {
   useDemo();
-  const { user, isDemo, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { message } = App.useApp();
   const navigate = useNavigate();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -58,7 +58,8 @@ export function Navbar({
   const [signingOut, setSigningOut] = useState(false);
   const scrolled = useScrolled();
   const reduce = useReducedMotion();
-  const notifications = user && isDemo ? myNotifications() : [];
+  // แจ้งเตือนจาก Supabase (services/sync.ts โหลดใหม่ทุก 60 วินาที)
+  const notifications = user ? myNotifications() : [];
   const latestNotifications = notifications
     .toSorted((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
     .slice(0, NOTIFICATION_PREVIEW_LIMIT);

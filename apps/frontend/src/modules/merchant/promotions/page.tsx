@@ -1,5 +1,5 @@
 import { Plus, Trash } from '@phosphor-icons/react';
-import { updateBar, type BarPromotion } from '@nightlist/mock';
+import { setBarPromotions, setFees, type BarPromotion } from '@/services/data';
 import {
   App,
   Button,
@@ -11,6 +11,7 @@ import {
   Modal,
   Switch,
   Table,
+  Tag,
   TimePicker,
 } from 'antd';
 import dayjs from 'dayjs';
@@ -38,16 +39,26 @@ export function MerchantPromotionsPage() {
   const [open, setOpen] = useState(false);
   const [form] = Form.useForm<PromoForm>();
 
-  const save = (list: BarPromotion[]) => {
-    updateBar(bar.id, { promotions: list });
-    message.success('บันทึกแล้ว');
+  const [saving, setSaving] = useState(false);
+  const save = async (list: BarPromotion[]) => {
+    setSaving(true);
+    try {
+      const pending = await setBarPromotions(bar.id, list);
+      message.success(pending ? 'บันทึกแล้ว — โปรที่เพิ่ม/แก้ข้อความ รอทีม NightList ตรวจถ้อยคำก่อนแสดง' : 'บันทึกแล้ว');
+      return true;
+    } catch (e) {
+      message.error((e as Error).message);
+      return false;
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="โปรโมชัน"
-        subtitle="ลูกค้าเลือกได้ 1 โปรตอนจองโต๊ะ — ระบบเช็กเวลา/วันให้อัตโนมัติ"
+        subtitle="ลูกค้าเลือกได้ 1 โปรตอนจองโต๊ะ — ระบบเช็กเวลา/วันให้อัตโนมัติ · โปรใหม่หรือที่แก้ข้อความ ทีม NightList ตรวจถ้อยคำก่อนแสดง"
         extra={
           <Button type="primary" icon={<Plus />} onClick={() => setOpen(true)}>
             เพิ่มโปร
@@ -57,7 +68,7 @@ export function MerchantPromotionsPage() {
       <Card>
         <Table
           rowKey="id"
-
+          loading={saving}
           pagination={false}
           dataSource={bar.promotions}
           locale={{ emptyText: 'ยังไม่มีโปรโมชัน' }}
@@ -66,7 +77,11 @@ export function MerchantPromotionsPage() {
               title: 'โปร',
               render: (_, p) => (
                 <div>
-                  <p className="font-semibold">{p.title}</p>
+                  <p className="font-semibold">
+                    {p.title}{' '}
+                    {p.moderationStatus === 'PENDING' && <Tag color="gold">รอตรวจถ้อยคำ</Tag>}
+                    {p.moderationStatus === 'REJECTED' && <Tag color="red">ไม่ผ่านการตรวจ</Tag>}
+                  </p>
                   <p className="text-xs text-muted">{p.description}</p>
                 </div>
               ),
@@ -88,7 +103,7 @@ export function MerchantPromotionsPage() {
                 <Switch
                   checked={p.active}
                   onChange={(v) =>
-                    save(bar.promotions.map((x) => (x.id === p.id ? { ...x, active: v } : x)))
+                    void save(bar.promotions.map((x) => (x.id === p.id ? { ...x, active: v } : x)))
                   }
                 />
               ),
@@ -125,9 +140,13 @@ export function MerchantPromotionsPage() {
         <Form
           layout="inline"
           initialValues={bar.fees}
-          onFinish={(fees) => {
-            updateBar(bar.id, { fees });
-            message.success('บันทึกแล้ว');
+          onFinish={async (fees) => {
+            try {
+              await setFees(bar.id, fees);
+              message.success('บันทึกค่าธรรมเนียมแล้ว');
+            } catch (e) {
+              message.error((e as Error).message);
+            }
           }}
           className="gap-y-3"
         >
@@ -153,24 +172,26 @@ export function MerchantPromotionsPage() {
         cancelText="ยกเลิก"
         onCancel={() => setOpen(false)}
         onOk={() => form.submit()}
+        confirmLoading={saving}
         destroyOnHidden
       >
         <Form<PromoForm>
           form={form}
           layout="vertical"
           initialValues={{ days: [] }}
-          onFinish={(v) => {
+          onFinish={async (v) => {
             const p: BarPromotion = {
-              id: `${bar.id}-pr-${Date.now().toString(36)}`,
+              id: `new-${Date.now().toString(36)}`,
               title: v.title.trim(),
               description: v.description?.trim() ?? '',
               cutoffTime: v.cutoff ? v.cutoff.format('HH:mm') : undefined,
               days: v.days?.length ? v.days : undefined,
               active: true,
             };
-            save([...bar.promotions, p]);
-            form.resetFields();
-            setOpen(false);
+            if (await save([...bar.promotions, p])) {
+              form.resetFields();
+              setOpen(false);
+            }
           }}
         >
           <Form.Item name="title" label="ชื่อโปร" rules={[{ required: true, max: 60 }]}>

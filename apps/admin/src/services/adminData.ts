@@ -2,6 +2,7 @@ import type { Db } from '@nightlist/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
 import { adminApi } from '@/services/api';
+import { log, since } from '@/services/log';
 import { supabase } from '@/services/supabase';
 
 type AdminView =
@@ -13,7 +14,8 @@ type AdminView =
   | 'admin_safety_queue'
   | 'admin_promoted_listings'
   | 'admin_billing_events'
-  | 'admin_audit_logs';
+  | 'admin_audit_logs'
+  | 'admin_bar_promotions';
 
 export interface AdminViewRows {
   admin_users: Db.AdminUser;
@@ -25,6 +27,7 @@ export interface AdminViewRows {
   admin_promoted_listings: Db.AdminPromotedListing;
   admin_billing_events: Db.AdminBillingEvent;
   admin_audit_logs: Db.AdminAuditLog;
+  admin_bar_promotions: Db.AdminBarPromotion;
 }
 
 /** ตัวกรองแบบง่าย: [คอลัมน์, ค่า] = eq · [คอลัมน์, ค่า[]] = in */
@@ -45,12 +48,17 @@ export function useAdminView<V extends AdminView>(view: V, opts: ListOptions = {
     queryKey: ['admin', view, opts],
     queryFn: async (): Promise<AdminViewRows[V][]> => {
       if (!supabase) throw new Error('ยังไม่ได้ตั้งค่า Supabase');
+      const t0 = performance.now();
       let q = supabase.from(view).select('*');
       for (const [col, val] of opts.filters ?? []) q = Array.isArray(val) ? q.in(col, val) : q.eq(col, val);
       if (opts.order) q = q.order(opts.order.column, { ascending: opts.order.ascending ?? false });
       q = q.limit(opts.limit ?? 1000);
       const { data, error } = await q;
-      if (error) throw error;
+      if (error) {
+        log.error(`Supabase ${view}`, error.message);
+        throw error;
+      }
+      log.info(`Supabase ${view} → ${data.length} แถว · ${since(t0)}`);
       return data as unknown as AdminViewRows[V][];
     },
   });
@@ -62,8 +70,13 @@ export function useAdminDashboard() {
     queryKey: ['admin', 'dashboard'],
     queryFn: async (): Promise<Db.AdminDashboard | null> => {
       if (!supabase) throw new Error('ยังไม่ได้ตั้งค่า Supabase');
+      const t0 = performance.now();
       const { data, error } = await supabase.rpc('admin_dashboard');
-      if (error) throw error;
+      if (error) {
+        log.error('Supabase rpc admin_dashboard', error.message);
+        throw error;
+      }
+      log.ok(`เชื่อมต่อ Supabase สำเร็จ · แดชบอร์ด ${since(t0)}`, data);
       return ((data as Db.AdminDashboard[] | null) ?? [])[0] ?? null;
     },
   });
@@ -107,7 +120,7 @@ export function useAdminAction() {
 }
 
 /** URL ชั่วคราว (10 นาที) ของไฟล์ในบักเก็ตส่วนตัว เช่นสลิป */
-export function useSignedUrl(bucket: 'deposit-slips' | 'promo-slips', path: string | null | undefined) {
+export function useSignedUrl(bucket: 'deposit-slips' | 'promo-slips' | 'bar-verifications', path: string | null | undefined) {
   return useQuery({
     queryKey: ['signed', bucket, path],
     enabled: !!path,

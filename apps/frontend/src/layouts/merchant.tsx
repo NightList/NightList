@@ -15,8 +15,8 @@ import {
   UsersThree,
   Wallet,
 } from '@phosphor-icons/react';
-import { getBar } from '@nightlist/mock';
-import { Menu, Result } from 'antd';
+import { getBar } from '@/services/data';
+import { Alert, Menu, Result } from 'antd';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '@/services/auth';
 import { useDemo } from '@/hooks/useDemo';
@@ -55,7 +55,8 @@ export function MerchantLayout() {
         subTitle="สมัครเป็นร้านค้าเพื่อเริ่มใช้งาน"
       />
     );
-  const items = ITEMS.filter((i) => user?.role === 'MERCHANT' || i.staff).map(
+  // สิทธิ์ตามบทบาทในทีมร้านนี้ (bar_staff) — พนักงานเห็นแค่ คืนนี้ + การจอง
+  const items = ITEMS.filter((i) => bar.staffRole !== 'STAFF' || i.staff).map(
     ({ key, icon, label }) => ({ key, icon, label }),
   );
   const selected = [...items]
@@ -71,7 +72,9 @@ export function MerchantLayout() {
             backgroundImage: `linear-gradient(to top, rgba(0,0,0,.65), rgba(0,0,0,.15)), url(${barImage(bar)})`,
           }}
         >
-          <p className="text-xs text-white/80">{user?.role === 'STAFF' ? 'Staff' : 'ร้านของฉัน'}</p>
+          <p className="text-xs text-white/80">
+            {bar.staffRole === 'STAFF' ? 'พนักงาน' : bar.staffRole === 'MANAGER' ? 'ผู้จัดการร้าน' : 'ร้านของฉัน'}
+          </p>
           <p className="font-display text-xl font-bold text-white">{bar.name}</p>
         </div>
         <Menu
@@ -95,6 +98,21 @@ export function MerchantLayout() {
         </div>
       </aside>
       <section className="min-w-0">
+        {bar.status !== 'APPROVED' && (
+          <Alert
+            className="!mb-4"
+            showIcon
+            type={bar.status === 'PENDING_REVIEW' || bar.status === 'DRAFT' ? 'info' : 'warning'}
+            title={
+              bar.status === 'PENDING_REVIEW' || bar.status === 'DRAFT'
+                ? 'ร้านกำลังรอทีม NightList ตรวจ — ลูกค้ายังไม่เห็นร้าน ระหว่างนี้เตรียมข้อมูลร้าน เมนู โต๊ะ และตั้งค่าการจองได้'
+                : bar.status === 'REJECTED'
+                  ? 'ร้านยังไม่ผ่านการตรวจ — ลูกค้ายังไม่เห็นร้าน'
+                  : 'ร้านถูกระงับชั่วคราว — ลูกค้าไม่เห็นร้านและจองไม่ได้'
+            }
+            description={bar.statusReason}
+          />
+        )}
         <Outlet context={bar} />
       </section>
     </div>

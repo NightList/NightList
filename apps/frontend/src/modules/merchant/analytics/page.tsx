@@ -1,4 +1,4 @@
-import { barBookings } from '@nightlist/mock';
+import { barBookings } from '@/services/data';
 import { Card, Col, Progress, Row, Statistic } from 'antd';
 import { PageHeader } from '@/ui/components/pageHeader';
 import { useMerchantBar } from '@/hooks/useMerchantBar';
@@ -17,7 +17,7 @@ export function MerchantAnalyticsPage() {
   const noShow = all.filter((b) => b.status === 'NO_SHOW').length;
   return (
     <div>
-      <PageHeader title="สถิติ" subtitle="ข้อมูลเดโม — จะคำนวณจาก bookings จริงเมื่อต่อ API" />
+      <PageHeader title="สถิติ" subtitle="คำนวณจากการจองของร้านใน NightList" />
       <Row gutter={[16, 16]}>
         <Col xs={12} md={6}>
           <Card>

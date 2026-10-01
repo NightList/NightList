@@ -1,3 +1,4 @@
+import { log, since } from '@/services/log';
 import { supabase } from '@/services/supabase';
 
 /** NestJS API (งานเขียนทั้งหมดของแอดมินต้องผ่านที่นี่ — ตรวจสิทธิ์ซ้ำ + บันทึก audit log) */
@@ -34,6 +35,7 @@ export async function adminApi<T = unknown>(method: 'POST' | 'PATCH', path: stri
   const token = data.session?.access_token;
   if (!token) throw new ApiError(401, 'MFA_REQUIRED');
   let res: Response;
+  const t0 = performance.now();
   try {
     res = await fetch(`${API_URL}/admin/${path}`, {
       method,
@@ -41,13 +43,27 @@ export async function adminApi<T = unknown>(method: 'POST' | 'PATCH', path: stri
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
+    log.error(`ติดต่อ API ไม่ได้ ${method} ${API_URL}/admin/${path}`);
     throw new ApiError(0, `ติดต่อ API ไม่ได้ (${API_URL}) — เปิดหลังบ้านด้วย pnpm dev แล้วลองใหม่`);
   }
   const text = await res.text();
   const json = text ? (JSON.parse(text) as { message?: string | string[] }) : null;
   if (!res.ok) {
     const msg = Array.isArray(json?.message) ? json.message.join(', ') : (json?.message ?? `HTTP ${res.status}`);
+    log.warn(`API ${method} /admin/${path} → ${res.status} ${msg} · ${since(t0)}`);
     throw new ApiError(res.status, msg);
   }
+  log.info(`API ${method} /admin/${path} → ${res.status} · ${since(t0)}`);
   return json as T;
+}
+
+/** ตรวจว่า NestJS เปิดอยู่ไหม (log ใน Console ตอนเปิด Backoffice) */
+export async function checkApi(): Promise<void> {
+  try {
+    const r = await fetch(`${API_URL}/health`);
+    if (r.ok) log.ok(`เชื่อมต่อ NestJS API สำเร็จ (${API_URL})`);
+    else log.warn(`NestJS API ตอบ ${r.status} (${API_URL}) — ปุ่มจัดการจะใช้ไม่ได้`);
+  } catch {
+    log.warn(`ติดต่อ NestJS API ไม่ได้ (${API_URL}) — เปิดด้วย pnpm dev · ปุ่มจัดการจะใช้ไม่ได้`);
+  }
 }

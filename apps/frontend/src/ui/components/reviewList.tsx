@@ -1,4 +1,4 @@
-import type { Review } from '@nightlist/mock';
+import type { Review } from '@/services/data';
 import { StarRating } from '@nightlist/ui';
 import { Avatar, Button, Listy } from 'antd';
 import { ListRow } from '@/ui/components/listRow';

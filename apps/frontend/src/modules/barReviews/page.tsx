@@ -1,5 +1,5 @@
 import { Images, PencilSimpleLine } from '@phosphor-icons/react';
-import { barReviews, getBarBySlug, reviewableBooking } from '@nightlist/mock';
+import { barReviews, getBarBySlug, reviewableBooking } from '@/services/data';
 import { Button, Empty, Result, Segmented } from 'antd';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';

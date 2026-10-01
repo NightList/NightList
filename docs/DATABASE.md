@@ -46,10 +46,11 @@
 | `…001400_retention_jobs` | 2 | `run_retention_jobs()` (PDPA) + วิธีตั้ง pg_cron |
 | `…001500_fk_indexes_final` | — | index บน FK ทุกตัว (63 ตัว สร้างจาก catalog) · เปิด RLS · revoke write |
 | `…001600_admin` | Backoffice | `is_admin()` (ADMIN + MFA aal2) · policy `admin_read` ทุกตาราง · view `admin_*` 9 ตัว · `rpc('admin_dashboard')` · ฟังก์ชันการกระทำ `admin_*` 8 ตัว (service_role เท่านั้น + audit log) |
+| `…001700_app_actions` | แอปจริง | ฟังก์ชันการกระทำของลูกค้า/ร้าน `app_*` 26 ตัว (service_role เท่านั้น เรียกผ่าน NestJS) · trigger ผลของสถานะการจอง (มัดจำ → รอโอน/รอคืน, เช็กอิน, ค่าคอม, แจ้งเตือน) · `run_booking_timeouts()` · view `my_bar_detail` / `my_reviews` / `admin_bar_promotions` · RPC `zone_availability`, `bar_deposit_ledger`, `bar_team`, `my_invites` · `booking_detail` เพิ่ม `customer_name, share_token, has_review` |
 
 view ในเฟส 1 เรียกฟังก์ชัน stub (`bar_is_promoted`, `booking_deposit_summary`) ที่เฟส 2 แทนที่ → เฟส 1 ใช้งานได้เองโดยไม่พึ่งตารางเฟส 2
 
-**รวม:** 63 ตาราง · 17 view (7 หน้าบ้าน + `bar_credit_balance` + 9 Backoffice) · RLS เปิดครบ · FK ทุกตัวมี index
+**รวม:** 63 ตาราง · 20 view (7 หน้าบ้าน + `my_bar_detail` + `my_reviews` + `bar_credit_balance` + 10 Backoffice) · RLS เปิดครบ · FK ทุกตัวมี index
 
 ---
 
@@ -163,6 +164,37 @@ stateDiagram-v2
 
 error เป็นรหัส (`NOT_ADMIN`, `MFA_REQUIRED`, `*_NOT_FOUND` → 404, `DEPOSIT_ALREADY_REVIEWED` / `CANNOT_DEMOTE_SELF` ฯลฯ → 409) · หน้าแอดมินแปลเป็นภาษาไทยใน `apps/admin/src/services/api.ts`
 
+### 5.2 แอปลูกค้า / ร้าน (`…001700_app_actions`)
+
+**อ่าน** — หน้าบ้านอ่านตรงด้วย supabase-js (RLS คุม) ใน `apps/frontend/src/services/sync.ts` แล้วใส่ store ของ `@nightlist/mock` (ใช้เป็น cache) → หน้าเว็บเรียก `listBars()`, `myBookings()`, `barReviews()` … ได้เหมือนเดิม
+
+| ตอนไหน | อ่านอะไร |
+|---|---|
+| เปิดเว็บ (ก่อน render) | `bar_detail`, `public_reviews` (+ signed URL ของรูปรีวิว), `districts`, `styles`, `platform_settings` (PromptPay), `promotion_packages` |
+| หลังล็อกอิน + ทุก 60 วินาที | `booking_detail` (ของฉัน + ของร้านที่อยู่ในทีม), `notifications`, `my_favorites`, `my_reviews`, `user_preferences`, `my_bar_detail` (ร้านของฉันทุกสถานะ), `review_reports`, `promoted_listings` |
+| ตามหน้า (TanStack Query) | `rpc('zone_availability')` หน้าจอง · `rpc('bar_team')` / `rpc('my_invites')` พนักงาน · `rpc('bar_deposit_ledger')` มัดจำของร้าน (ไม่มี path สลิป) · `billing_events` ค่าคอม · `rpc('get_share_card')` |
+
+**เขียน** — `apps/frontend/src/services/actions.ts` → NestJS (ตรวจ JWT ได้ `user.id`) → `rpc('app_*', { p_actor: user.id, … })` ด้วย service_role → ฟังก์ชันตรวจสิทธิ์ซ้ำใน DB (`app_assert_user`, `app_assert_manager`, `app_team_role`) → หน้าเว็บโหลดข้อมูลใหม่
+
+| endpoint | ฟังก์ชัน |
+|---|---|
+| `POST bookings` | `app_create_booking` (ตรวจจำนวนคน/ล่วงหน้า/ที่ว่างโซน/โปร · มีมัดจำ → `AWAITING_DEPOSIT`) |
+| `POST bookings/:id/deposit` `{slip_path}` | `app_submit_deposit` (สลิปอยู่ `deposit-slips/<uid>/…`) |
+| `POST bookings/:id/cancel` · `POST bookings/:id/review` · `POST reviews/:id/report` | `app_cancel_booking` · `app_add_review` (รูป/วิดีโอใน `review-media/<uid>/<review_id>/…`) · `app_report_review` |
+| `POST me/favorites/:barId/toggle` · `POST me/notifications/read` · `PATCH me/profile` · `POST me/delete` | `app_toggle_favorite` · `app_mark_notifications_read` · `app_update_profile` · `app_delete_account` (+ ban ใน Auth) |
+| `POST invites/:barId/respond` · `POST merchant/join` | `app_respond_invite` · `app_merchant_join` (ร้าน `PENDING_REVIEW`) |
+| `POST merchant/bookings/:id/status` · `POST merchant/bars/:id/check-in` · `…/crowd` | `app_team_set_booking_status` · `app_check_in` (รหัสจองหรือ QR) · `app_set_crowd` |
+| `PATCH …/info` · `PUT …/menu` · `PUT …/promotions` · `PUT …/fees` · `PUT …/zones` | `app_update_bar_info` · `app_set_menu` · `app_set_bar_promotions` (โปรใหม่/แก้ข้อความ → รอแอดมินตรวจ) · `app_set_fees` · `app_set_zones` |
+| `PUT …/safety/:key` · `PUT …/safety/:key/evidence` | `app_set_safety` · `app_set_safety_evidence` (ไฟล์ `bar-verifications/<bar_id>/…`) |
+| `PATCH …/booking-settings` · `PUT …/payout-account` | `app_update_booking_settings` (มัดจำ, grace, PR ชาย/หญิง/LGBTQ+) · `app_set_payout_account` (NestJS เข้ารหัส AES-256-GCM ด้วย `PAYOUT_ENCRYPTION_KEY`) |
+| `POST …/promotion-orders` · `POST …/staff` · `DELETE …/staff/:userId` | `app_order_promotion` (สลิป `promo-slips/<bar_id>/…`) · `app_invite_staff` · `app_remove_staff` |
+| แอดมิน `POST bar-promotions/:id/moderate` | `admin_moderate_bar_promotion` |
+| `POST jobs/booking-timeouts` (pg_cron) | `run_booking_timeouts()` — เครื่อง dev รันเองทุก 60 วิ (`LocalJobsScheduler`) |
+
+error เป็นรหัสตัวใหญ่ (`ZONE_FULL`, `NOT_BAR_MANAGER`, `HAS_ACTIVE_BOOKINGS` …) → NestJS แปลง HTTP (P0002→404, P0001/23505/23P01→409, 42501→403, 22023→400) · หน้าเว็บแปลไทยใน `apps/frontend/src/services/api.ts` (`ERROR_TH`)
+
+**ผลของสถานะการจอง** (trigger `handle_booking_status_effects`): เช็กอิน/ไม่มา → มัดจำ `HELD → PAYOUT_PENDING` · ร้านยกเลิก/ปฏิเสธ → `REFUND_PENDING` · ลูกค้ายกเลิกก่อนเวลาคืนเงิน → `REFUND_PENDING` ไม่งั้น `PAYOUT_PENDING` · เช็กอิน → `checkin_count` + ค่าคอม (`billing_events`, ค่าเริ่มต้น 10% ของ avg_price × คน, ไม่มา = WAIVED) · แจ้งเตือนลูกค้าทุกครั้ง · **การโอนเงินจริงยังเป็น DRAFT (ข้อ 10.3)**
+
 ---
 
 ## 6. ความปลอดภัย
@@ -207,6 +239,7 @@ error เป็นรหัส (`NOT_ADMIN`, `MFA_REQUIRED`, `*_NOT_FOUND` → 4
 | 9.4 PR เพศเดียว | ✅ `{male:0, female:5, lgbtq:0}` |
 | 9.5 กฎเดิม | ✅ จองโต๊ะซ้อน · โซน/โต๊ะไม่ตรงร้าน (composite FK) · ข้ามขั้นสถานะ · สลิปซ้ำ · settlement ก่อนตรวจสลิป · รีวิวก่อนเช็กอิน · รีวิวผิดร้าน · ค่าคอมทับกัน · ดาว/tier ไม่ตรง · อายุ < 20 → ถูกปฏิเสธทั้งหมด · ยกเลิกระหว่างรอตรวจ → REFUND_PENDING |
 | 9.6 จองโซนพร้อมกัน | ✅ 2 request (6 + 6 คน, ความจุ 10) → request ที่สองรอ lock แล้วได้ FULL (เหลือ 4) |
+| แอปลูกค้า/ร้าน (`001700`) | ✅ 84 เคสที่ DB + 36 เคส e2e ของ NestJS + 38 เคสในเบราว์เซอร์จริง (สมัคร→จอง→ส่งสลิป→แอดมินอนุมัติ→ร้านเช็กอิน→รีวิวพร้อมรูป, ทุกหน้าร้าน) |
 | Backoffice | ✅ 38 เคสที่ DB (อ่านได้เฉพาะ ADMIN+aal2 · aal1/ลูกค้า/anon ได้แถวว่าง · ฟังก์ชันการกระทำเรียกได้เฉพาะ service_role · ทุกการกระทำมี audit) + 16 เคส e2e ของ NestJS `/api/admin/*` (401 ไม่มี token · 403 MFA_REQUIRED / NOT_ADMIN · 400 body/uuid ผิด · 404 · 409) |
 | 9.7 types | ✅ `database.generated.ts` จาก `supabase gen types` + override view ใน `database.ts` (ผ่าน `tsc --strict`) |
 | กฎตาราง | ✅ ทุกตารางหลักมี created_at/updated_at + trigger · view ทุกตัว security_invoker · SECURITY DEFINER ทุกตัว search_path '' · enum ตัวใหญ่ทั้งหมด · FK ทุกตัวมี index |
@@ -220,8 +253,8 @@ error เป็นรหัส (`NOT_ADMIN`, `MFA_REQUIRED`, `*_NOT_FOUND` → 4
 | safety_features **10 ข้อ** (spec 8) | ใช้ **9 ข้อ** ตามที่หน้าเว็บมี label (`SECURITY, CCTV, FIRE_EXIT, FIRST_AID, ID_CHECK, PARKING_RIDE, FEMALE_STAFF, LIGHTING, EMERGENCY_CONTACT`) · เพิ่มข้อที่ 10 = insert แถวใน seed + label ในหน้าเว็บ |
 | `bar_detail` มี key มากกว่าตัวอย่าง 5.4 | เพิ่ม special_hours, booking_settings, fees, menu, packages, promotions, zones, safety, perks, cover_style, score, is_promoted เพื่อให้หน้าร้าน/หน้าจองเรียกครั้งเดียว |
 | ตาราง 1:1 ไม่มี `id` แยก | ใช้ `bar_id` / `user_id` เป็น PK |
-| PR เพศ LGBTQ | DB/view พร้อมแล้ว · หน้าเว็บยังไม่มีที่แสดง `pr_counts.lgbtq` |
-| การเขียนจากหน้าบ้าน | ปิดทั้งหมด (รวม favorites, อ่านแจ้งเตือนแล้ว, แก้โปรไฟล์) → ต้องทำ endpoint ใน NestJS |
+| PR เพศ LGBTQ | แสดงในป้าย PR + ร้านกรอกได้ใน `/merchant/settings` |
+| การเขียนจากหน้าบ้าน | RLS ปิดทั้งหมด · เขียนผ่าน NestJS → `app_*` (หัวข้อ 5.2) |
 | 10.3 ถือเงินมัดจำแทนร้าน | ตาราง deposits/payouts เป็น DRAFT — **ห้ามเปิดรับเงินจริงก่อนได้คำตอบจากที่ปรึกษากฎหมาย** |
 | 10.8 โปรแอลกอฮอล์ | ร้านเดโมยังมี "โปรเบียร์ก่อน 2 ทุ่ม" (มาจาก `@nightlist/mock`) — รอตัดสินใจ |
 | 10.1, 10.2, 10.4–10.7, 10.9 | ยังเลื่อน/รอตัดสินใจตาม spec |

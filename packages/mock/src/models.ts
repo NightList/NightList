@@ -54,12 +54,15 @@ export interface BarPromotion {
   /** วันที่ใช้ได้ (0 = อาทิตย์) — ว่าง = ทุกวัน */
   days?: number[];
   active: boolean;
+  /** ถ้อยคำโปรรอแอดมินตรวจ (เฉพาะหน้าร้านค้า — ลูกค้าเห็นแค่ APPROVED) */
+  moderationStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
 }
 
 /** PR ประจำร้าน (ร้านกรอกเอง) */
 export interface BarPR {
   male: number;
   female: number;
+  lgbtq?: number;
 }
 
 /** บัญชีรับเงินของร้าน — แพลตฟอร์มโอนมัดจำให้ตามนี้ */
@@ -118,6 +121,12 @@ export interface Bar {
   payout: BarPayout;
   gracePeriodMinutes: number;
   perks: string[];
+  /** บทบาทของผู้ใช้ปัจจุบันในทีมร้าน (เฉพาะร้านของฉัน) */
+  staffRole?: 'OWNER' | 'MANAGER' | 'STAFF';
+  /** เหตุผลจากแอดมิน (ไม่อนุมัติ / ระงับ) */
+  statusReason?: string;
+  /** id ย่านใน DB (ใช้ตอนแก้ข้อมูลร้าน) */
+  districtId?: string;
 }
 
 /** รูป/วิดีโอแนบรีวิว — ของจริงอยู่ Supabase Storage bucket `review-media` */
@@ -145,6 +154,7 @@ export interface Review {
   reported?: boolean;
   userId?: string;
   media?: ReviewMedia[];
+  status?: 'PUBLISHED' | 'HIDDEN' | 'REMOVED';
 }
 
 export type DepositSettlement = 'HELD' | 'PAYOUT_PENDING' | 'PAID_OUT' | 'CREDIT' | 'REFUNDED';
@@ -160,6 +170,12 @@ export interface Booking {
   datetime: string;
   pax: number;
   status: BookingStatus;
+  /** มัดจำที่ต้องโอน (snapshot ตอนจอง) */
+  depositRequired?: number;
+  /** เหตุผลที่ยกเลิก/ปฏิเสธ */
+  cancelReason?: string;
+  /** เหตุผลที่สลิปไม่ผ่าน */
+  depositRejectReason?: string;
   promotionId?: string;
   promotionTitle?: string;
   /** มัดจำที่ลูกค้าโอนเข้าแพลตฟอร์ม */

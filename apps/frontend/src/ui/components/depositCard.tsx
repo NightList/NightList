@@ -1,4 +1,4 @@
-import type { Booking } from '@nightlist/mock';
+import type { Booking } from '@/services/data';
 import { Tag } from 'antd';
 import { baht, dateTime } from '@/ui/utils/format';
 

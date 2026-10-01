@@ -1,5 +1,5 @@
 import { ArrowRight } from '@phosphor-icons/react';
-import { listBars } from '@nightlist/mock';
+import { listBars } from '@/services/data';
 import { Link } from 'react-router';
 import { useDemo } from '@/hooks/useDemo';
 import { CategoryRow } from './components/categoryRow';

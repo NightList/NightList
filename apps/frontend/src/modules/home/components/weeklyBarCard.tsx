@@ -1,5 +1,5 @@
 import { ArrowRight, BellRinging, MapPin, Star } from '@phosphor-icons/react';
-import { safetyScore, type BarWithTier } from '@nightlist/mock';
+import { safetyScore, type BarWithTier } from '@/services/data';
 import { Link } from 'react-router';
 import { useNow } from '@/hooks/useNow';
 import { barImage } from '@/ui/utils/barImage';

@@ -1,0 +1,488 @@
+import {
+  getState,
+  mutate,
+  setSessionUserId,
+  type AppNotification,
+  type Bar,
+  type Booking,
+  type DemoUser,
+  type PromotionOrder,
+  type Review,
+  type ReviewMedia,
+} from '@nightlist/mock';
+import type { BookingStatus, UserRole } from '@nightlist/types';
+import { STYLE_LABELS, toBar, type BarDetailRow } from '@/services/barsRepo';
+import { log, since } from '@/services/log';
+import { supabase } from '@/services/supabase';
+
+/**
+ * ดึงข้อมูลจาก Supabase มาใส่ store ของ @nightlist/mock (ใช้เป็น cache ฝั่งหน้าเว็บ)
+ * - สาธารณะ (ตอนเปิดเว็บ): ร้าน (bar_detail) · รีวิว (public_reviews) · ย่าน/สไตล์/แพ็กเกจโปรโมท/PromptPay
+ * - ผู้ใช้ (หลังล็อกอิน): การจอง · มัดจำ · แจ้งเตือน · ร้านโปรด · รีวิวของฉัน · ร้านของฉัน (ทุกสถานะ) + การจองของร้าน
+ * หน้าเว็บอ่านจาก store แบบเดิม (listBars, myBookings, ...) · การเขียนทั้งหมดไป NestJS (services/actions.ts) แล้วโหลดใหม่
+ * ไม่มีข้อมูลเดโม: store ถูกล้างแล้วแทนด้วยข้อมูลจาก DB ทุกครั้ง
+ */
+
+// ---------------------------------------------------------------------
+// master data (ใช้ใน dropdown) — เติมค่าตอนเปิดเว็บก่อน render (main.tsx รอโหลดเสร็จ)
+// ---------------------------------------------------------------------
+export interface DistrictOpt {
+  id: string;
+  name: string;
+}
+export interface StyleOpt {
+  id: string;
+  key: string;
+  label: string;
+}
+export interface PromotionPackage {
+  id: string;
+  name: string;
+  placement: 'HOME_BANNER' | 'HOME_RECOMMENDED' | 'SEARCH_TOP';
+  days: number;
+  price: number;
+}
+export const MASTER = {
+  districts: [] as DistrictOpt[],
+  styles: [] as StyleOpt[],
+  packages: [] as PromotionPackage[],
+  depositPromptPay: { name: '', promptpayId: '' },
+  promotionPromptPay: { name: '', promptpayId: '' },
+};
+/** ชื่อย่าน (เหมือน DISTRICTS เดิม) — array เดิมถูกเติมค่าในที่ */
+export const DISTRICTS: string[] = [];
+/** ชื่อสไตล์ (เหมือน STYLES เดิม) */
+export const STYLES: string[] = [];
+
+const must = <T>(r: { data: T | null; error: { message: string } | null }, what: string): T => {
+  if (r.error) throw new Error(`${what}: ${r.error.message}`);
+  return r.data as T;
+};
+
+// ---------------------------------------------------------------------
+// แปลงแถวจาก DB → รูปแบบที่หน้าเว็บใช้
+// ---------------------------------------------------------------------
+interface MediaRow {
+  id: string;
+  kind: 'IMAGE' | 'VIDEO';
+  storage_path: string;
+  thumb_path?: string | null;
+  duration_sec?: number | null;
+}
+interface PublicReviewRow {
+  id: string;
+  bar_id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  display_name: string | null;
+  media: MediaRow[];
+}
+interface MyReviewRow extends Omit<PublicReviewRow, 'display_name'> {
+  booking_id: string;
+  status: Review['status'];
+}
+interface BookingDetailRow {
+  id: string;
+  code: string;
+  status: BookingStatus;
+  user_id: string;
+  booking_datetime: string;
+  pax: number;
+  customer_note: string | null;
+  cancel_reason: string | null;
+  deposit_required: number;
+  checked_in_at: string | null;
+  created_at: string;
+  bar: { id: string } | null;
+  zone: { id: string; name: string } | null;
+  table: { id: string; name: string } | null;
+  promotion: { id: string | null; title: string } | null;
+  deposit: {
+    id: string;
+    amount: number;
+    status: 'SUBMITTED' | 'VERIFIED' | 'REJECTED';
+    reject_reason: string | null;
+    settlement: string;
+    verified_at: string | null;
+    created_at: string;
+  } | null;
+  status_history: { from_status: BookingStatus | null; to_status: BookingStatus; reason: string | null; created_at: string }[];
+  customer_name: string | null;
+  share_token: string | null;
+  has_review: boolean;
+}
+interface NotificationRow {
+  id: string;
+  user_id: string;
+  title: string;
+  body: string;
+  payload: { link?: string } | null;
+  read_at: string | null;
+  created_at: string;
+}
+interface ListingRow {
+  id: string;
+  bar_id: string;
+  placement: PromotionOrder['placement'];
+  price_paid: number;
+  status: string;
+  created_at: string;
+  promotion_packages: { name: string; duration_days: number } | null;
+}
+
+/** URL ชั่วคราวของไฟล์รีวิว (bucket review-media เป็น private) — ขอทีละชุด */
+async function signReviewPaths(paths: string[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  if (!supabase || paths.length === 0) return out;
+  for (let i = 0; i < paths.length; i += 100) {
+    const chunk = paths.slice(i, i + 100);
+    const { data, error } = await supabase.storage.from('review-media').createSignedUrls(chunk, 6 * 3600);
+    if (error) {
+      log.warn('ขอ URL รูปรีวิวไม่สำเร็จ', error.message);
+      continue;
+    }
+    for (const d of data ?? []) if (d.path && d.signedUrl) out.set(d.path, d.signedUrl);
+  }
+  return out;
+}
+
+const mediaPaths = (rows: { media: MediaRow[] }[]) =>
+  rows.flatMap((r) => r.media.flatMap((m) => [m.storage_path, m.thumb_path].filter((p): p is string => !!p)));
+
+function toMedia(m: MediaRow, urls: Map<string, string>): ReviewMedia {
+  return m.kind === 'VIDEO'
+    ? {
+        id: m.id,
+        type: 'video',
+        src: urls.get(m.storage_path),
+        poster: m.thumb_path ? urls.get(m.thumb_path) : undefined,
+        duration: m.duration_sec ?? undefined,
+      }
+    : { id: m.id, type: 'image', src: urls.get(m.storage_path) };
+}
+
+/** ใครเปลี่ยนสถานะ (DB เก็บเหตุผล ไม่ได้เก็บชื่อให้ลูกค้าเห็น) */
+function historyBy(reason: string | null, customer: string): string {
+  switch (reason) {
+    case 'created':
+    case 'deposit submitted':
+    case 'customer cancelled':
+      return customer;
+    case 'deposit verified':
+    case 'slip rejected':
+      return 'NightList';
+    case 'timeout':
+      return 'ระบบ';
+    case null:
+      return 'ร้าน';
+    default:
+      return reason === 'merchant' || reason === 'staff' || reason === 'check-in' ? 'ร้าน' : reason;
+  }
+}
+
+function toBooking(r: BookingDetailRow): Booking {
+  const userName = r.customer_name ?? 'ลูกค้า';
+  const settlement = r.deposit?.settlement;
+  return {
+    id: r.id,
+    code: r.code,
+    barId: r.bar?.id ?? '',
+    userId: r.user_id,
+    userName,
+    zoneId: r.zone?.id ?? '',
+    tableId: r.table?.id,
+    datetime: r.booking_datetime,
+    pax: r.pax,
+    status: r.status,
+    depositRequired: Number(r.deposit_required),
+    cancelReason: r.cancel_reason ?? undefined,
+    depositRejectReason: r.deposit?.status === 'REJECTED' ? (r.deposit.reject_reason ?? undefined) : undefined,
+    promotionId: r.promotion?.id ?? undefined,
+    promotionTitle: r.promotion?.title,
+    deposit: r.deposit
+      ? {
+          amount: Number(r.deposit.amount),
+          status: r.deposit.status,
+          submittedAt: r.deposit.created_at,
+          verifiedAt: r.deposit.verified_at ?? undefined,
+          settlement:
+            settlement && settlement !== 'NONE' && settlement !== 'REFUND_PENDING'
+              ? (settlement as NonNullable<Booking['deposit']>['settlement'])
+              : undefined,
+        }
+      : undefined,
+    note: r.customer_note ?? undefined,
+    createdAt: r.created_at,
+    history: r.status_history.map((h) => ({
+      from: h.from_status,
+      to: h.to_status,
+      by: historyBy(h.reason, userName),
+      at: h.created_at,
+    })),
+    checkedInAt: r.checked_in_at ?? undefined,
+    shareToken: r.share_token ?? '',
+    reviewed: r.has_review,
+  };
+}
+
+const toNotification = (n: NotificationRow): AppNotification => ({
+  id: n.id,
+  userId: n.user_id,
+  title: n.title,
+  body: n.body,
+  link: n.payload?.link,
+  createdAt: n.created_at,
+  readAt: n.read_at ?? undefined,
+});
+
+// ---------------------------------------------------------------------
+// cache ภายใน (แยกสาธารณะ / ผู้ใช้ แล้วรวมใส่ store)
+// ---------------------------------------------------------------------
+let publicBars: Bar[] = [];
+let publicReviews: Review[] = [];
+interface UserData {
+  user: DemoUser;
+  myBars: Bar[];
+  bookings: Booking[];
+  myReviews: Review[];
+  reportedReviewIds: Set<string>;
+  favorites: string[];
+  notifications: AppNotification[];
+  promotions: PromotionOrder[];
+}
+let userData: UserData | null = null;
+
+function commit() {
+  mutate((s) => {
+    const mine = new Map((userData?.myBars ?? []).map((b) => [b.id, b]));
+    s.bars = [...publicBars.filter((b) => !mine.has(b.id)), ...mine.values()];
+    const reviews = new Map(publicReviews.map((r) => [r.id, r]));
+    for (const r of userData?.myReviews ?? []) reviews.set(r.id, { ...reviews.get(r.id), ...r });
+    s.reviews = [...reviews.values()].map((r) =>
+      userData?.reportedReviewIds.has(r.id) ? { ...r, reported: true } : r,
+    );
+    s.bookings = userData?.bookings ?? [];
+    s.notifications = userData?.notifications ?? [];
+    s.favorites = userData ? { [userData.user.id]: userData.favorites } : {};
+    s.promotions = userData?.promotions ?? [];
+    s.users = userData ? [userData.user] : [];
+    s.audit = [];
+  });
+}
+
+// ---------------------------------------------------------------------
+// โหลดข้อมูลสาธารณะ (ตอนเปิดเว็บ)
+// ---------------------------------------------------------------------
+export async function loadPublic(): Promise<void> {
+  if (!supabase) throw new Error('ยังไม่ได้ตั้งค่า Supabase (.env)');
+  const t0 = performance.now();
+  const [bars, reviews, districts, styles, settings, packages] = await Promise.all([
+    supabase.from('bar_detail').select('*').order('name'),
+    supabase.from('public_reviews').select('*').order('created_at', { ascending: false }).limit(2000),
+    supabase.from('districts').select('id, name_th').order('sort_order'),
+    supabase.from('styles').select('id, key, name_th').order('sort_order'),
+    supabase.from('platform_settings').select('key, value'),
+    supabase.from('promotion_packages').select('id, name, placement, duration_days, price').order('price'),
+  ]);
+  const barRows = must(bars, 'bar_detail') as unknown as BarDetailRow[];
+  const reviewRows = must(reviews, 'public_reviews') as unknown as PublicReviewRow[];
+
+  MASTER.districts = must(districts, 'districts').map((d: { id: string; name_th: string }) => ({ id: d.id, name: d.name_th }));
+  MASTER.styles = must(styles, 'styles').map((s: { id: string; key: string; name_th: string }) => ({ id: s.id, key: s.key, label: s.name_th }));
+  for (const s of MASTER.styles) STYLE_LABELS[s.key] = s.label;
+  DISTRICTS.splice(0, DISTRICTS.length, ...MASTER.districts.map((d) => d.name));
+  STYLES.splice(0, STYLES.length, ...MASTER.styles.map((s) => s.label));
+  for (const row of must(settings, 'platform_settings') as { key: string; value: { name?: string; promptpay_id?: string } }[]) {
+    const v = { name: row.value?.name ?? '', promptpayId: row.value?.promptpay_id ?? '' };
+    if (row.key === 'deposit_promptpay') MASTER.depositPromptPay = v;
+    if (row.key === 'promotion_promptpay') MASTER.promotionPromptPay = v;
+  }
+  MASTER.packages = (must(packages, 'promotion_packages') as { id: string; name: string; placement: PromotionPackage['placement']; duration_days: number; price: number }[]).map(
+    (p) => ({ id: p.id, name: p.name, placement: p.placement, days: p.duration_days, price: Number(p.price) }),
+  );
+
+  const urls = await signReviewPaths(mediaPaths(reviewRows));
+  publicBars = barRows.map(toBar);
+  publicReviews = reviewRows.map((r) => ({
+    id: r.id,
+    barId: r.bar_id,
+    userName: r.display_name ?? 'ผู้ใช้ NightList',
+    rating: r.rating,
+    comment: r.comment ?? '',
+    createdAt: r.created_at,
+    media: r.media.length ? r.media.map((m) => toMedia(m, urls)) : undefined,
+    status: 'PUBLISHED',
+  }));
+  commit();
+  const host = new URL(import.meta.env.VITE_SUPABASE_URL as string).host;
+  log.ok(
+    `เชื่อมต่อ Supabase สำเร็จ (${host}) · ร้าน ${publicBars.length} · รีวิว ${publicReviews.length} · ย่าน ${MASTER.districts.length} · ${since(t0)}`,
+  );
+}
+
+// ---------------------------------------------------------------------
+// โหลดข้อมูลของผู้ใช้ที่ล็อกอิน
+// ---------------------------------------------------------------------
+export interface SessionProfile {
+  id: string;
+  email: string;
+  displayName: string;
+  role: UserRole;
+}
+export interface UserPrefs {
+  styleIds: string[];
+  districtIds: string[];
+  budget?: number;
+  pax?: number;
+}
+export let myPrefs: UserPrefs = { styleIds: [], districtIds: [] };
+
+/** คืน id ร้านหลักของผู้ใช้ (ร้านแรกที่เป็นเจ้าของ/อยู่ในทีม) */
+export async function loadUser(p: SessionProfile): Promise<{ barId?: string }> {
+  if (!supabase) return {};
+  const t0 = performance.now();
+  const [bookings, notifications, favorites, reviews, prefs, myBars, reports] = await Promise.all([
+    supabase.from('booking_detail').select('*').eq('user_id', p.id).order('booking_datetime', { ascending: false }),
+    supabase.from('notifications').select('id, user_id, title, body, payload, read_at, created_at').order('created_at', { ascending: false }).limit(100),
+    supabase.from('my_favorites').select('id'),
+    supabase.from('my_reviews').select('*').order('created_at', { ascending: false }),
+    supabase.from('user_preferences').select('*').eq('user_id', p.id).maybeSingle(),
+    supabase.from('my_bar_detail').select('*').order('created_at'),
+    supabase.from('review_reports').select('review_id'),
+  ]);
+  const barRows = must(myBars, 'my_bar_detail') as unknown as BarDetailRow[];
+  const bars = barRows.map(toBar);
+  const barIds = bars.map((b) => b.id);
+
+  // ร้านของฉัน: การจองทั้งหมดของร้าน + ประวัติโปรโมท
+  let teamBookings: BookingDetailRow[] = [];
+  let listings: ListingRow[] = [];
+  if (barIds.length) {
+    const [tb, pl] = await Promise.all([
+      supabase.from('booking_detail').select('*').in('bar->>id', barIds).order('booking_datetime', { ascending: false }).limit(1000),
+      supabase.from('promoted_listings').select('id, bar_id, placement, price_paid, status, created_at, promotion_packages(name, duration_days)')
+        .in('bar_id', barIds).order('created_at', { ascending: false }),
+    ]);
+    teamBookings = must(tb, 'booking_detail (ร้าน)') as unknown as BookingDetailRow[];
+    listings = must(pl, 'promoted_listings') as unknown as ListingRow[];
+  }
+
+  const own = must(bookings, 'booking_detail') as unknown as BookingDetailRow[];
+  const allBookings = new Map<string, Booking>();
+  for (const r of [...own, ...teamBookings]) allBookings.set(r.id, toBooking(r));
+
+  const myReviewRows = must(reviews, 'my_reviews') as unknown as MyReviewRow[];
+  const urls = await signReviewPaths(mediaPaths(myReviewRows));
+  const pr = must(prefs, 'user_preferences') as {
+    preferred_style_ids: string[];
+    preferred_district_ids: string[];
+    budget_per_person: number | null;
+    usual_pax: number | null;
+  } | null;
+  myPrefs = {
+    styleIds: pr?.preferred_style_ids ?? [],
+    districtIds: pr?.preferred_district_ids ?? [],
+    budget: pr?.budget_per_person ? Number(pr.budget_per_person) : undefined,
+    pax: pr?.usual_pax ?? undefined,
+  };
+  const primary =
+    bars.find((b) => b.staffRole === 'OWNER' && b.status === 'APPROVED') ?? bars.find((b) => b.status === 'APPROVED') ?? bars[0];
+
+  userData = {
+    user: {
+      id: p.id,
+      email: p.email,
+      displayName: p.displayName,
+      role: p.role,
+      barId: primary?.id,
+      createdAt: new Date().toISOString(),
+      preferences: {
+        styles: MASTER.styles.filter((s) => myPrefs.styleIds.includes(s.id)).map((s) => s.label),
+        districts: MASTER.districts.filter((d) => myPrefs.districtIds.includes(d.id)).map((d) => d.name),
+        budget: myPrefs.budget,
+        pax: myPrefs.pax,
+      },
+    },
+    myBars: bars,
+    bookings: [...allBookings.values()],
+    myReviews: myReviewRows.map((r) => ({
+      id: r.id,
+      barId: r.bar_id,
+      bookingId: r.booking_id,
+      userId: p.id,
+      userName: p.displayName,
+      rating: r.rating,
+      comment: r.comment ?? '',
+      createdAt: r.created_at,
+      media: r.media.length ? r.media.map((m) => toMedia(m, urls)) : undefined,
+      status: r.status,
+    })),
+    reportedReviewIds: new Set((must(reports, 'review_reports') as { review_id: string }[]).map((x) => x.review_id)),
+    favorites: (must(favorites, 'my_favorites') as { id: string }[]).map((f) => f.id),
+    notifications: (must(notifications, 'notifications') as NotificationRow[]).map(toNotification),
+    promotions: listings.map((l) => ({
+      id: l.id,
+      barId: l.bar_id,
+      packageName: `${l.promotion_packages?.name ?? 'แพ็กเกจ'} ${l.promotion_packages?.duration_days ?? ''} วัน`.trim(),
+      placement: l.placement,
+      days: l.promotion_packages?.duration_days ?? 0,
+      price: Number(l.price_paid),
+      status: l.status as PromotionOrder['status'],
+      createdAt: l.created_at,
+    })),
+  };
+  setSessionUserId(p.id);
+  commit();
+  log.ok(
+    `โหลดข้อมูลผู้ใช้จาก Supabase (${p.email} · ${p.role}) · การจอง ${userData.bookings.length} · แจ้งเตือน ${userData.notifications.length} · ร้านโปรด ${userData.favorites.length}${bars.length ? ` · ร้านของฉัน ${bars.length}` : ''} · ${since(t0)}`,
+  );
+  return { barId: primary?.id };
+}
+
+let lastProfile: SessionProfile | null = null;
+let polling: ReturnType<typeof setInterval> | undefined;
+
+/** เริ่มใช้ข้อมูลของผู้ใช้ + โหลดใหม่ทุก 60 วินาทีขณะเปิดหน้าอยู่ (แจ้งเตือน/สถานะการจอง) */
+export async function startUser(p: SessionProfile) {
+  lastProfile = p;
+  const r = await loadUser(p);
+  clearInterval(polling);
+  polling = setInterval(() => {
+    if (document.visibilityState === 'visible' && lastProfile) void loadUser(lastProfile).catch((e: Error) => log.warn('โหลดข้อมูลผู้ใช้ใหม่ไม่สำเร็จ', e.message));
+  }, 60_000);
+  return r;
+}
+
+export function clearUser() {
+  lastProfile = null;
+  clearInterval(polling);
+  userData = null;
+  myPrefs = { styleIds: [], districtIds: [] };
+  setSessionUserId(null);
+  commit();
+}
+
+/** โหลดใหม่หลังบันทึก (เรียกจาก services/actions.ts) */
+export async function refresh(opts: { public?: boolean } = {}) {
+  await Promise.all([opts.public ? loadPublic() : Promise.resolve(), lastProfile ? loadUser(lastProfile) : Promise.resolve()]);
+}
+
+/** ชื่อผู้ใช้ใน store (ใช้หลังแก้โปรไฟล์) */
+export function currentProfile(): SessionProfile | null {
+  return lastProfile;
+}
+export function setProfileName(displayName: string) {
+  if (lastProfile) lastProfile = { ...lastProfile, displayName };
+}
+
+/** ใช้ใน dev tools: window.__nightlist() ดูข้อมูลใน cache */
+if (typeof window !== 'undefined') {
+  (window as unknown as { __nightlist: () => unknown }).__nightlist = () => ({
+    supabase: import.meta.env.VITE_SUPABASE_URL,
+    bars: getState().bars.length,
+    bookings: getState().bookings.length,
+    reviews: getState().reviews.length,
+    user: userData?.user ?? null,
+  });
+}

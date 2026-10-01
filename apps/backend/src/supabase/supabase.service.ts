@@ -31,6 +31,11 @@ export class SupabaseService {
     this.key = config.get<string>('SUPABASE_SERVICE_ROLE_KEY');
   }
 
+  /** มี Secret key แล้วหรือยัง */
+  get configured(): boolean {
+    return !!this.key;
+  }
+
   private headers(extra: Record<string, string> = {}): Record<string, string> {
     if (!this.key) throw new ServiceUnavailableException('SUPABASE_SERVICE_ROLE_KEY is not configured');
     return { apikey: this.key, Authorization: `Bearer ${this.key}`, 'Content-Type': 'application/json', ...extra };
@@ -50,6 +55,16 @@ export class SupabaseService {
   async select<T>(path: string): Promise<T> {
     const res = await fetch(`${this.url}/rest/v1/${path}`, { headers: this.headers() });
     return this.parse<T>(res);
+  }
+
+  /** ปิดการเข้าสู่ระบบของบัญชี (ลบบัญชี) — ห้ามลบจริงเพราะการจองยังอ้างถึง */
+  async banUser(id: string): Promise<void> {
+    const res = await fetch(`${this.url}/auth/v1/admin/users/${id}`, {
+      method: 'PUT',
+      headers: this.headers(),
+      body: JSON.stringify({ ban_duration: '876000h' }),
+    });
+    if (!res.ok) throw new InternalServerErrorException(`ban user failed: ${res.status}`);
   }
 
   /** ตรวจ access token กับ Supabase Auth (ใช้ตอน verify JWKS ไม่ได้ เช่นโปรเจกต์ที่ยังใช้ HS256) */
