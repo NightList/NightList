@@ -188,8 +188,8 @@
     text-shadow 300ms ease;
 }
 .team-card.is-active .team-card__name {
-  color: #33284a;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+  color: #fff;
+  text-shadow: 1px 1px 0 black;
 }
 @media (hover: hover) and (pointer: fine) {
   .team-card:not(.is-active):hover {

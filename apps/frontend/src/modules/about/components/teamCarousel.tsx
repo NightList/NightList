@@ -19,14 +19,14 @@ import { TEAM, type TeamMember } from '../utils/content';
  *
  * ขนาดทุกอย่างวัดจาก Figma กว้าง 1600 แล้วคูณ s (สเกลตามความกว้างจริง)
  */
-const AUTOPLAY_MS = 3500;
+const AUTOPLAY_MS = 3000;
 const SWIPE_PX = 40;
 const EASE_MOVE = 'cubic-bezier(0.77, 0, 0.175, 1)'; // skill animate: ease-in-out สำหรับของที่เคลื่อนบนจอ
 
 /** ขนาดจริงเทียบ Figma (Figma ใหญ่ไปเมื่อเปิดบนจอจริง) */
-const SCALE = 0.72;
-const CARD = { w: 410, h: 540, r: 72 };
-const FRAME = { w: 510, h: 633, r: 72 };
+const SCALE = 0.7;
+const CARD = { w: 350, h: 490, r: 60 };
+const FRAME = { w: 450, h: 583, r: 60 };
 
 interface Pose {
   x: number;
@@ -227,6 +227,10 @@ export function TeamCarousel({ team = TEAM }: { team?: TeamMember[] }) {
                 aria-label={isActive ? undefined : `ดู ${m.name}`}
               >
                 <Portrait member={m} index={i} />
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-[42%] bg-gradient-to-t from-black via-black/75 to-transparent"
+                />
                 <span
                   className="absolute inset-x-0 flex flex-col items-center px-[6%] text-center"
                   style={{ bottom: (40 + p.clipY) * s }}

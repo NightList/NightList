@@ -16,14 +16,13 @@ export const ABOUT_TEXT = [
 ];
 
 export const TEAM: TeamMember[] = [
-  { name: 'จารแสน', role: 'Founder | Fullstack Developer' },
-  { name: 'จารวิน', role: 'Fullstack Developer | DevOps' },
-  { name: 'จารมิ้นท์', role: 'UX/UI Designer' },
-  { name: 'จารโอ๊ต', role: 'Backend Developer' },
-  { name: 'จารปาล์ม', role: 'QA Engineer' },
-  { name: 'จารเบียร์', role: 'Marketing' },
-  { name: 'จารฟ้า', role: 'Community Manager' },
-  { name: 'จารเติ้ด', role: 'Co-Founder | Fullstack Developer' },
+  { name: 'แสน', role: 'Founder | Fullstack Developer', photo: '/images/teams/san.png' },
+  { name: 'วิน', role: 'Fullstack Developer | DevOps', photo: '/images/teams/wind.png' },
+  { name: 'เนวิน', role: 'Business Analyst', photo: '/images/teams/newin.png' },
+  { name: 'พี', role: 'UI/UX Designer | Frontend Developer', photo: '/images/teams/pee.png' },
+  { name: 'บิว', role: 'UI/UX Designer', photo: '/images/teams/biw.png' },
+  { name: 'ก็อต', role: 'Co-Founder | Fullstack Developer', photo: '/images/teams/got.png' },
+  { name: 'เติร์ด', role: 'Co-Founder | Fullstack Developer', photo: '/images/teams/third.png' },
 ];
 
 export const CONTACT = {
