@@ -34,7 +34,7 @@ function HoursIcon() {
 
 function Item({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
   return (
-    <div className="flex flex-col items-center px-3 text-center">
+    <div className="flex flex-col items-center px-3 py-[clamp(4px,0.6vw,10px)] text-center">
       <div className="mb-[clamp(10px,1.4vw,22px)] grid h-[clamp(44px,4.4vw,70px)] place-items-center">
         {icon}
       </div>
@@ -49,7 +49,7 @@ function Item({ icon, title, children }: { icon: ReactNode; title: string; child
 const icon = 'size-[clamp(44px,4.4vw,70px)]';
 
 /**
- * ติดต่อเรา (Figma: การ์ดกระจก 4 ช่อง + แถบ "ติดต่อเรา" + ตัวหนังสือ NIGHTLIST ยักษ์จม ๆ อยู่ด้านหลัง)
+ * ติดต่อเรา (Figma: การ์ดกระจก — หัวข้อกลางบน · 4 ช่องมีเส้นคั่น · โซเชียลมุมขวาล่าง · NIGHTLIST ยักษ์จม ๆ อยู่ด้านหลัง)
  * การ์ดเป็นกระจกเบลอ → ตัวหนังสือยักษ์ส่วนที่อยู่หลังการ์ดจะเบลอ ส่วนที่ล้นลงมาคมชัด
  */
 export function ContactSection() {
@@ -59,8 +59,22 @@ export function ContactSection() {
       aria-labelledby="contact-title"
       className="relative scroll-mt-24 pt-[clamp(80px,9vw,140px)]"
     >
-      <div className="relative z-10 mx-auto w-[calc(100%-2rem)] max-w-[1365px] overflow-hidden rounded-[20px] border border-white/10 border-t-white/25 bg-black/35 shadow-[0_40px_80px_-40px_rgba(0,0,0,0.9)] backdrop-blur-md">
-        <div className="grid grid-cols-2 gap-y-10 px-2 pt-[clamp(40px,6vw,95px)] text-white md:grid-cols-4 md:gap-y-0">
+      <div className="relative z-10 mx-auto w-[calc(100%-2rem)] max-w-[1365px] overflow-hidden rounded-[20px] border border-white/10 border-t-white/25 bg-black/35 px-[clamp(16px,2.4vw,38px)] pb-[clamp(18px,2vw,30px)] pt-[clamp(24px,2.6vw,40px)] text-white shadow-[0_40px_80px_-40px_rgba(0,0,0,0.9)] backdrop-blur-md">
+        {/* หัวข้อกลางการ์ด + "Contact us" ลอยมุมขวาบน */}
+        <h2 id="contact-title" className="text-center">
+          <span className="relative inline-block font-kanit text-[clamp(48px,5.8vw,92px)] font-semibold leading-[1.05]">
+            ติดต่อเรา
+            <span
+              lang="en"
+              className="font-poppins absolute right-[-3%] top-[-8%] text-[0.3em] font-bold leading-none text-[#9b3df5]"
+            >
+              Contact us
+            </span>
+          </span>
+        </h2>
+
+        {/* 4 ช่อง + เส้นคั่น (จอใหญ่) */}
+        <div className="mt-[clamp(20px,2.4vw,38px)] grid grid-cols-2 gap-y-10 md:grid-cols-4 md:gap-y-0 md:divide-x-[3px] md:divide-white/60">
           <Item icon={<Phone weight="fill" className={icon} />} title="โทรศัพท์">
             <a
               href={`tel:${CONTACT.phone.replace(/-/g, '')}`}
@@ -86,52 +100,26 @@ export function ContactSection() {
             ))}
           </Item>
         </div>
-        {/* เส้นคั่น 3 เส้น (เฉพาะจอใหญ่) */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-[clamp(40px,6vw,95px)] hidden md:block"
-        >
-          {[25, 50, 75].map((l) => (
-            <span
-              key={l}
-              className="absolute top-0 h-[clamp(150px,14.3vw,228px)] w-[3px] -translate-x-1/2 rounded-full bg-white/60"
-              style={{ left: `${l}%` }}
-            />
-          ))}
-        </div>
 
-        <div className="mt-[clamp(36px,5vw,80px)] flex flex-wrap items-end justify-between gap-6 px-[clamp(20px,3.3vw,52px)] pb-[clamp(20px,2.2vw,34px)]">
-          <h2
-            id="contact-title"
-            className="relative font-kanit text-[clamp(48px,5.6vw,90px)] font-semibold leading-[0.9] text-white"
-          >
-            ติดต่อเรา
-            <span
-              lang="en"
-              className="font-poppins absolute right-[-2%] top-[-26%] text-[0.31em] font-bold leading-none text-[#9b3df5]"
-            >
-              Contact us
-            </span>
-          </h2>
-          <ul className="mb-1 flex gap-[clamp(12px,1.3vw,22px)]">
-            {SOCIALS.map((so) => {
-              const I = SOCIAL_ICON[so.key];
-              return (
-                <li key={so.key}>
-                  <a
-                    href={so.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={so.label}
-                    className="grid size-10 place-items-center rounded-lg border border-white/70 !text-white transition-[background-color,border-color] duration-200 ease-out hover:border-white hover:bg-white/10"
-                  >
-                    <I size={18} />
-                  </a>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+        {/* โซเชียล มุมขวาล่าง */}
+        <ul className="mt-[clamp(20px,1.6vw,26px)] flex justify-center gap-[clamp(12px,1.3vw,22px)] md:justify-end">
+          {SOCIALS.map((so) => {
+            const I = SOCIAL_ICON[so.key];
+            return (
+              <li key={so.key}>
+                <a
+                  href={so.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={so.label}
+                  className="grid size-10 place-items-center rounded-lg border border-white/70 !text-white transition-[background-color,border-color] duration-200 ease-out hover:border-white hover:bg-white/10"
+                >
+                  <I size={18} />
+                </a>
+              </li>
+            );
+          })}
+        </ul>
       </div>
 
       {/* NIGHTLIST ยักษ์ — ครึ่งบนจมอยู่หลังการ์ด (เบลอ) ล้นลงมาแล้วถูกตัดที่ขอบล่างหน้า */}

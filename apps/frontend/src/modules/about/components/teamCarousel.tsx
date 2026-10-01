@@ -23,6 +23,8 @@ const AUTOPLAY_MS = 3500;
 const SWIPE_PX = 40;
 const EASE_MOVE = 'cubic-bezier(0.77, 0, 0.175, 1)'; // skill animate: ease-in-out สำหรับของที่เคลื่อนบนจอ
 
+/** ขนาดจริงเทียบ Figma (Figma ใหญ่ไปเมื่อเปิดบนจอจริง) */
+const SCALE = 0.72;
 const CARD = { w: 410, h: 540, r: 72 };
 const FRAME = { w: 510, h: 633, r: 72 };
 
@@ -60,13 +62,20 @@ function useScale(ref: React.RefObject<HTMLElement | null>) {
     if (!el) return;
     const update = () => {
       const w = el.clientWidth;
-      // มือถือ: ขยายเทียบกับเวที 760 เพื่อให้คนกลางยังใหญ่พอ และเห็นการ์ดข้าง ๆ โผล่ที่ขอบจอ
-      setS(w < 768 ? w / 760 : Math.min(w, 1600) / 1600);
+      // ย่อจากขนาด Figma ลงเหลือ 72% · มือถือเทียบเวที 900 (เห็นการ์ดข้าง ๆ โผล่ที่ขอบจอ)
+      const byWidth = w < 768 ? w / 900 : (Math.min(w, 1600) / 1600) * SCALE;
+      // จอเตี้ย (โน้ตบุ๊ก) → กรอบกลางสูงไม่เกิน 58% ของความสูงจอ จะได้เห็นทั้งการ์ดในจอเดียว
+      const byHeight = (window.innerHeight * 0.58) / FRAME.h;
+      setS(Math.min(byWidth, byHeight));
     };
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
-    return () => ro.disconnect();
+    window.addEventListener('resize', update);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', update);
+    };
   }, [ref]);
   return s;
 }
