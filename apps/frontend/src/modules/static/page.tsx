@@ -2,13 +2,6 @@ import { Card } from 'antd';
 import { PageHeader } from '@/ui/components/pageHeader';
 
 const CONTENT: Record<string, { title: string; body: string[] }> = {
-  about: {
-    title: 'เกี่ยวกับ NightList',
-    body: [
-      'NightList ช่วยให้คุณเลือกร้านกลางคืนได้มั่นใจขึ้น — ดูราคาโดยประมาณ ความปลอดภัย และความแน่นของร้าน ก่อนออกจากบ้าน',
-      'ดาวของร้านคำนวณจากรีวิวของคนที่เช็กอินจริง ร้านจ่ายเงินเพื่อเพิ่มดาวไม่ได้ พื้นที่โฆษณาจะติดป้าย "แนะนำ · โฆษณา" เสมอ',
-    ],
-  },
   terms: {
     title: 'เงื่อนไขการใช้งาน',
     body: [

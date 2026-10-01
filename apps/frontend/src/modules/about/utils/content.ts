@@ -1,0 +1,41 @@
+/**
+ * ข้อมูลหน้า /about (เกี่ยวกับเรา · ทีมงาน · ติดต่อเรา) — แก้ข้อความ/ทีมงาน/ช่องทางติดต่อที่ไฟล์นี้ไฟล์เดียว
+ * ⚠️ ทีมงานคนที่ 4–8 และเบอร์/อีเมลเป็นข้อมูลตัวอย่าง — เปลี่ยนเป็นของจริงก่อนเปิดใช้งาน
+ */
+
+export interface TeamMember {
+  name: string;
+  role: string;
+  /** รูปใน public/ เช่น '/images/team/san.webp' (แนวตั้ง 3:4) · ไม่ใส่ → แสดงภาพเงาคนแทน */
+  photo?: string;
+}
+
+export const ABOUT_TEXT = [
+  'NightList ช่วยให้คุณเลือกร้านกลางคืนได้มั่นใจขึ้น ดูราคาโดยประมาณ มาตรการความปลอดภัย และความแน่นของร้านแบบสด ๆ ก่อนออกจากบ้าน แล้วจองโต๊ะได้ในไม่กี่แตะ',
+  'ดาวของร้านมาจากรีวิวของคนที่เช็กอินจริงเท่านั้น ร้านจ่ายเงินเพื่อเพิ่มดาวไม่ได้ ส่วนพื้นที่โฆษณาจะติดป้าย "แนะนำ" ให้เห็นชัดเสมอ',
+];
+
+export const TEAM: TeamMember[] = [
+  { name: 'จารแสน', role: 'Founder | Fullstack Developer' },
+  { name: 'จารวิน', role: 'Fullstack Developer | DevOps' },
+  { name: 'จารมิ้นท์', role: 'UX/UI Designer' },
+  { name: 'จารโอ๊ต', role: 'Backend Developer' },
+  { name: 'จารปาล์ม', role: 'QA Engineer' },
+  { name: 'จารเบียร์', role: 'Marketing' },
+  { name: 'จารฟ้า', role: 'Community Manager' },
+  { name: 'จารเติ้ด', role: 'Co-Founder | Fullstack Developer' },
+];
+
+export const CONTACT = {
+  phone: '099-999-9999',
+  email: 'test@gmail.com',
+  hours: ['จันทร์ - อาทิตย์', '00:00 - 23:59'],
+  address: ['กรุงเทพมหานคร', 'ประเทศไทย'],
+};
+
+export const SOCIALS = [
+  { key: 'instagram', label: 'Instagram', href: 'https://instagram.com' },
+  { key: 'tiktok', label: 'TikTok', href: 'https://tiktok.com' },
+  { key: 'facebook', label: 'Facebook', href: 'https://facebook.com' },
+  { key: 'youtube', label: 'YouTube', href: 'https://youtube.com' },
+] as const;

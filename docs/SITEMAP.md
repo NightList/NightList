@@ -18,7 +18,7 @@ flowchart TD
   PUB --> SEARCH["/search ค้นหา"]
   PUB --> BAR["/bars/:slug หน้าร้าน"]
   PUB --> SHARE["/share/:token บัตรจอง"]
-  PUB --> INFO["/about · /terms · /privacy · /cookies"]
+  PUB --> INFO["/about (+ /contact) · /terms · /privacy · /cookies"]
 
   AUTH --> LOGIN["/login"]
   AUTH --> REG["/register"]
@@ -66,7 +66,8 @@ flowchart TD
 | `/bars/:slug/reviews` | รีวิวทั้งหมด | 🌐 | รีวิวทั้งหมด, กรอง "มีรูป/วิดีโอ", ปุ่มเขียนรีวิว (เมื่อเช็กอินแล้ว), ดูรูปเต็มจอ / เล่นวิดีโอ | ⬜ |
 | `/share/:token` | บัตรจองที่แชร์ | 🌐 | ร้าน, เวลา, โซน, แผนที่, ปุ่ม "ไปด้วย" (ไม่มีข้อมูลส่วนตัว) | ⬜ |
 | `*` | 404 | 🌐 | ภาพขวด+แก้วบนบาร์ม่วงเต็มจอ, "PAGE NOT FOUND", 404 ทองตัวใหญ่, ปุ่มกลับหน้าหลัก / ค้นหาร้าน (Figma "404") | ✅ |
-| `/about` · `/terms` · `/privacy` · `/cookies` | ข้อมูล / นโยบาย | 🌐 | เนื้อหา | ⬜ |
+| `/about` · `/contact` | เกี่ยวกับเรา · ทีมงาน (โคราเซลหมุน) · ติดต่อเรา — `/contact` เปิดหน้าเดียวกันแล้วเลื่อนไปส่วนติดต่อ | 🌐 | `modules/about/utils/content.ts` | ✅ |
+| `/terms` · `/privacy` · `/cookies` | นโยบาย | 🌐 | เนื้อหา | ⬜ |
 
 ### เข้าสู่ระบบ
 | Path | หน้า | Access | ส่วนประกอบหลัก | Figma |
