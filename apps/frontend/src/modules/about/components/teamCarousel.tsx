@@ -1,4 +1,4 @@
-import { User } from '@phosphor-icons/react';
+import { CrownIcon, User } from '@phosphor-icons/react';
 import { useReducedMotion } from 'motion/react';
 import {
   useCallback,
@@ -10,6 +10,7 @@ import {
   type PointerEvent,
 } from 'react';
 import { TEAM, type TeamMember } from '../utils/content';
+import { Tag } from 'antd';
 
 /**
  * ทีมงาน — โคราเซลแบบวงล้อ (Figma: ทีมงาน)
@@ -241,12 +242,31 @@ export function TeamCarousel({ team = TEAM }: { team?: TeamMember[] }) {
                   >
                     {m.name}
                   </span>
-                  <span
+                  <div
+                    className="flex flex-col justify-center gap-1 items-center"
+                    style={{ fontSize: 20 * s }}
+                  >
+                    {m.role.map((r, i) => (
+                      <Tag
+                        key={r}
+                        variant={i === 0 ? 'solid' : 'outlined'}
+                        color={i === 0 ? 'blue' : 'gold'}
+                        className={
+                          i === 0
+                            ? 'font-bold text-sm bg-linear-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent'
+                            : 'bg-none text-xs'
+                        }
+                      >
+                        {r}
+                      </Tag>
+                    ))}
+                  </div>
+                  {/* <span
                     className="font-poppins font-semibold leading-tight text-[#e8b64c] [text-shadow:0_1px_6px_rgba(0,0,0,0.35)]"
                     style={{ fontSize: 20 * s }}
                   >
                     {m.role}
-                  </span>
+                  </span> */}
                 </span>
               </button>
             </div>
