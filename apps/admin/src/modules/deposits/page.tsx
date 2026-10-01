@@ -100,7 +100,6 @@ export function DepositsPage() {
                     <Space>
                       <Button
                         type="primary"
-                        size="small"
                         loading={act.isPending}
                         onClick={() =>
                           act.mutate({
@@ -156,11 +155,11 @@ export function DepositsPage() {
                         cancelText="ยกเลิก"
                         onConfirm={() => settle(d, 'PAID_OUT', 'บันทึกว่าโอนให้ร้านแล้ว')}
                       >
-                        <Button type="primary" size="small" loading={act.isPending}>
+                        <Button type="primary" loading={act.isPending}>
                           โอนให้ร้านแล้ว
                         </Button>
                       </Popconfirm>
-                      <Button size="small" loading={act.isPending} onClick={() => settle(d, 'CREDIT', 'เก็บเป็นเครดิตร้านแล้ว')}>
+                      <Button loading={act.isPending} onClick={() => settle(d, 'CREDIT', 'เก็บเป็นเครดิตร้านแล้ว')}>
                         เก็บเป็นเครดิต
                       </Button>
                     </Space>
@@ -187,7 +186,7 @@ export function DepositsPage() {
                       cancelText="ยกเลิก"
                       onConfirm={() => settle(d, 'REFUNDED', 'บันทึกว่าคืนเงินลูกค้าแล้ว')}
                     >
-                      <Button type="primary" size="small" loading={act.isPending}>
+                      <Button type="primary" loading={act.isPending}>
                         คืนเงินแล้ว
                       </Button>
                     </Popconfirm>

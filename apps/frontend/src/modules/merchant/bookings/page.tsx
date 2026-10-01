@@ -49,7 +49,7 @@ export function MerchantBookingsPage() {
       .map((s) => (
         <Button
           key={s}
-          size="small"
+
           type={s === 'CONFIRMED' || s === 'CHECKED_IN' ? 'primary' : 'default'}
           danger={s === 'REJECTED' || s === 'CANCELLED_BY_MERCHANT'}
           onClick={(e) => {
@@ -146,11 +146,9 @@ export function MerchantBookingsPage() {
               )}
             </dl>
             {open.promotionTitle && (
-              <Card size="small" title="โปรโมชันที่ลูกค้าเลือก">
-                {open.promotionTitle}
-              </Card>
+              <Card title="โปรโมชันที่ลูกค้าเลือก">{open.promotionTitle}</Card>
             )}
-            <Card size="small" title="มัดจำ">
+            <Card title="มัดจำ">
               <DepositSummary booking={open} />
             </Card>
             {open.deposit?.slipDataUrl && (

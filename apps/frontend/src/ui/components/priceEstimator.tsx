@@ -81,7 +81,6 @@ export function PriceEstimator({
                   <span className="w-16 text-right text-sm text-muted">{baht(m.price)}</span>
                   <Space.Compact>
                     <Button
-                      size="small"
                       icon={<Minus />}
                       aria-label={`ลด ${m.name}`}
                       onClick={() => step(m.id, -1)}
@@ -90,7 +89,6 @@ export function PriceEstimator({
                       {value.qty[m.id] ?? 0}
                     </span>
                     <Button
-                      size="small"
                       icon={<Plus />}
                       aria-label={`เพิ่ม ${m.name}`}
                       onClick={() => step(m.id, 1)}

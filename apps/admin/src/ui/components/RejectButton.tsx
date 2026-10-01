@@ -35,7 +35,7 @@ export function RejectButton({
         setReason('');
       }}
     >
-      <Button danger size="small" loading={loading}>
+      <Button danger loading={loading}>
         {label}
       </Button>
     </Popconfirm>

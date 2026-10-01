@@ -62,7 +62,7 @@ export function PromotionsPage() {
             render: (_, p) =>
               p.status === 'PAYMENT_SUBMITTED' && (
                 <Space>
-                  <Button type="primary" size="small" loading={act.isPending} onClick={() => review(p, true)}>
+                  <Button type="primary" loading={act.isPending} onClick={() => review(p, true)}>
                     สลิปผ่าน
                   </Button>
                   <RejectButton

@@ -28,7 +28,7 @@ export function MerchantReviewsPage() {
                 ) : (
                   <Button
                     key="r"
-                    size="small"
+
                     onClick={() => {
                       setReviewReported(r.id, true);
                       message.success('ส่งให้ทีมตรวจแล้ว');

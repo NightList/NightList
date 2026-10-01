@@ -68,7 +68,6 @@ export function UsersPage() {
             onFilter: (v, u) => u.role === v,
             render: (role: Role, u) => (
               <Select<Role>
-                size="small"
                 className="w-36"
                 value={role}
                 options={ROLE_OPTIONS}

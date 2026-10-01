@@ -41,7 +41,6 @@ export function SafetyPage() {
             render: (_, r) => (
               <Button
                 type="primary"
-                size="small"
                 loading={act.isPending && act.variables?.path === `safety/${r.id}/verify`}
                 onClick={() =>
                   act.mutate({ method: 'POST', path: `safety/${r.id}/verify`, success: `ยืนยัน ${r.name_th} ของ ${r.bar.name} แล้ว` })

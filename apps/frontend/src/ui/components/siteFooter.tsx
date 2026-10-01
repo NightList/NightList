@@ -53,7 +53,7 @@ export function SiteFooter({ className = '' }: { className?: string }) {
       className={`relative isolate overflow-hidden px-4 pb-28 pt-24 md:px-8 md:pb-10 md:pt-40 ${className}`}
     >
       <img
-        src="/images/home/city-strip.jpg"
+        src="/images/home/footer-bg.png"
         alt=""
         loading="lazy"
         decoding="async"

@@ -58,20 +58,20 @@ export function ReviewsPage() {
       render: (_: unknown, r: Row) =>
         withActions === 'reported' ? (
           <Space>
-            <Button size="small" loading={act.isPending} onClick={() => moderate(r, 'KEEP')}>
+            <Button loading={act.isPending} onClick={() => moderate(r, 'KEEP')}>
               เก็บไว้
             </Button>
-            <Button size="small" loading={act.isPending} onClick={() => moderate(r, 'HIDE')}>
+            <Button loading={act.isPending} onClick={() => moderate(r, 'HIDE')}>
               ซ่อน
             </Button>
             <Popconfirm title="ลบรีวิวนี้?" okText="ลบ" cancelText="ยกเลิก" okButtonProps={{ danger: true }} onConfirm={() => moderate(r, 'REMOVE')}>
-              <Button size="small" danger loading={act.isPending}>
+              <Button danger loading={act.isPending}>
                 ลบ
               </Button>
             </Popconfirm>
           </Space>
         ) : (
-          <Button size="small" loading={act.isPending} onClick={() => moderate(r, 'RESTORE')}>
+          <Button loading={act.isPending} onClick={() => moderate(r, 'RESTORE')}>
             แสดงอีกครั้ง
           </Button>
         ),

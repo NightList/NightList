@@ -46,7 +46,7 @@ export function MerchantSafetyPage() {
                 }}
                 showUploadList={false}
               >
-                <Button size="small">แนบหลักฐาน</Button>
+                <Button>แนบหลักฐาน</Button>
               </Upload>
             </li>
           ))}

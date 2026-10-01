@@ -46,7 +46,7 @@ export function MerchantsPage() {
             key: 'a',
             render: (_, b) => (
               <Space>
-                <Button type="primary" size="small" loading={act.isPending} onClick={() => setStatus(b, 'APPROVED')}>
+                <Button type="primary" loading={act.isPending} onClick={() => setStatus(b, 'APPROVED')}>
                   อนุมัติ
                 </Button>
                 <RejectButton

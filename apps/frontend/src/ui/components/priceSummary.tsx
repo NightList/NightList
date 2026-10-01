@@ -14,7 +14,7 @@ export function PriceSummary({
     <div>
       <Descriptions
         column={1}
-        size="small"
+
         items={[
           { key: 's', label: 'รวมรายการ', children: baht(estimate.subtotal) },
           {

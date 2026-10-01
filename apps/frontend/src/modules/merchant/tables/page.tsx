@@ -37,7 +37,7 @@ export function MerchantTablesPage() {
             key={z.id}
             title={z.name}
             extra={
-              <Button size="small" icon={<Plus />} onClick={() => addTable(z.id)}>
+              <Button icon={<Plus />} onClick={() => addTable(z.id)}>
                 โต๊ะ
               </Button>
             }
@@ -45,7 +45,6 @@ export function MerchantTablesPage() {
             <p className="mb-3 text-sm text-muted">
               ความจุ {z.capacityPax} คน · จองนาน{' '}
               <InputNumber
-                size="small"
                 min={60}
                 max={480}
                 step={30}

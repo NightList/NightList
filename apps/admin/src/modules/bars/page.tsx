@@ -58,7 +58,6 @@ export function BarsPage() {
             dataIndex: 'is_editor_pick',
             render: (v: boolean, b) => (
               <Switch
-                size="small"
                 checked={v}
                 aria-label={`Editor's Pick ${b.name}`}
                 loading={act.isPending && act.variables?.path === `bars/${b.id}/editor-pick`}
@@ -79,7 +78,6 @@ export function BarsPage() {
             render: (_, b) =>
               b.status === 'SUSPENDED' ? (
                 <Button
-                  size="small"
                   loading={act.isPending}
                   onClick={() =>
                     act.mutate({

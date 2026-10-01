@@ -130,7 +130,10 @@ export function BarDetailPage() {
                           {bar.promotions
                             .filter((p) => p.active)
                             .map((p) => (
-                              <div key={p.id} className="rounded-xl border border-gold/40 bg-gold/5 p-3">
+                              <div
+                                key={p.id}
+                                className="rounded-xl border border-gold/40 bg-gold/5 p-3"
+                              >
                                 <p className="font-semibold">{p.title}</p>
                                 <p className="text-xs text-muted">
                                   {p.description}
@@ -146,10 +149,12 @@ export function BarDetailPage() {
                         <p className="flex items-center gap-2 font-semibold">
                           <MapPin /> แผนที่
                         </p>
-                        <a href={directionsUrl(bar.lat, bar.lng)} target="_blank" rel="noreferrer noopener">
-                          <Button size="small" icon={<NavigationArrow />}>
-                            นำทาง
-                          </Button>
+                        <a
+                          href={directionsUrl(bar.lat, bar.lng)}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                        >
+                          <Button icon={<NavigationArrow />}>นำทาง</Button>
                         </a>
                       </div>
                       <BarMap bars={[bar]} className="h-64" />
@@ -203,7 +208,6 @@ export function BarDetailPage() {
                       ราคาอ้างอิงสำหรับประเมินงบ — สั่งที่ร้านตอนไปถึง (ไม่มีสั่งล่วงหน้า)
                     </p>
                     <Table
-                      size="small"
                       rowKey="id"
                       pagination={false}
                       dataSource={bar.menu}
