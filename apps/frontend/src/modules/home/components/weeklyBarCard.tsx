@@ -28,7 +28,7 @@ export function WeeklyBarCard({ bar }: { bar: BarWithTier }) {
   return (
     <Link
       to={`/bars/${bar.slug}`}
-      className="group flex h-full flex-col rounded-[18px] border border-border bg-card p-2.5 !text-text transition-colors hover:border-purple/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold dark:border-white/15 dark:bg-[#1b1924]"
+      className="group flex h-full flex-col rounded-[18px] border border-border bg-card p-2.5 !text-text transition-colors hover:border-purple/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold dark:border-white/15 dark:bg-[#1b1924]/55 backdrop-blur-xl"
     >
       <div className="relative aspect-[16/9] overflow-hidden rounded-[14px] bg-black/30">
         <img
@@ -46,7 +46,21 @@ export function WeeklyBarCard({ bar }: { bar: BarWithTier }) {
       </div>
 
       <div className="flex flex-1 flex-col px-2 pb-2 pt-4">
-        <h3 className="truncate text-lg font-semibold text-gold-text">{bar.name}</h3>
+        <div className="flex items-center gap-4">
+          <h3 className="truncate text-lg font-semibold text-gold-text">{bar.name}</h3>
+          {bar.promoted && (
+            <span
+              title="ร้านโปรโมท (โฆษณา)"
+              className="relative inline-flex items-center gap-1 rounded-full text-xs px-3 py-1 text-gold-text
+               border border-transparent bg-origin-border
+               animate-gold-gradient-spin 
+               bg-[linear-gradient(to_right,theme(colors.slate.900),theme(colors.slate.900)),conic-gradient(from_var(--gold-angle),#d4af37,#fff8dc,#f3e5ab,#d4af37)]
+               [background-clip:padding-box,border-box]"
+            >
+              แนะนำ<span className="sr-only"> · โฆษณา</span>
+            </span>
+          )}
+        </div>
         <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
           {bar.isNew ? (
             <span>ร้านใหม่</span>
@@ -71,15 +85,6 @@ export function WeeklyBarCard({ bar }: { bar: BarWithTier }) {
           <span className="inline-flex items-center gap-1.5 rounded-lg border border-gold px-4 py-1.5 text-sm font-semibold text-gold-text transition-colors group-hover:bg-gold group-hover:text-on-gold">
             ดูรายละเอียด <ArrowRight size={14} weight="bold" />
           </span>
-          {bar.promoted && (
-            <span
-              title="ร้านโปรโมท (โฆษณา)"
-              className="inline-flex items-center gap-1 rounded-full border border-gold px-3 py-1 text-xs text-gold-text"
-            >
-              <BellRinging size={14} weight="fill" />
-              แนะนำ<span className="sr-only"> · โฆษณา</span>
-            </span>
-          )}
         </div>
       </div>
     </Link>
