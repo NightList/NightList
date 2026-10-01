@@ -175,32 +175,32 @@ const CATEGORIES: HomeCategory[] = [
   },
 ];
 
-  const CATEGORY_TEXT_COLORS: Record<string, string> = {
-    pub: '#F4B7FF',
-    chill: '#FFD166',
-    food: '#FFCF70',
-    live: '#FFC857',
-    rooftop: '#E9C2FF',
-    quiet: '#F2B56B',
-    outdoor: '#FFD166',
-    private: '#FFB6C1',
-    beer: '#F4D35E',
-    cocktail: '#FFB347',
-    wine: '#F2A7BB',
-    whisky: '#D9A066',
-    sake: '#E8D3A8',
-    shot: '#FF9BD2',
-    soju: '#9FE870',
-    speakeasy: '#E9B872',
-    clubs: '#FF8FD8',
-    'craft-beer': '#FFD166',
-    'rooftop-bar': '#F0C4FF',
-    korean: '#FF9A76',
-    japanese: '#FFC1A1',
-    party: '#FF91C8',
-    'date-night': '#FFB4A2',
-    'walking-street': '#F7C873',
-  };
+const CATEGORY_TEXT_COLORS: Record<string, string> = {
+  pub: '#F4B7FF',
+  chill: '#FFD166',
+  food: '#FFCF70',
+  live: '#FFC857',
+  rooftop: '#E9C2FF',
+  quiet: '#F2B56B',
+  outdoor: '#FFD166',
+  private: '#FFB6C1',
+  beer: '#F4D35E',
+  cocktail: '#FFB347',
+  wine: '#F2A7BB',
+  whisky: '#D9A066',
+  sake: '#E8D3A8',
+  shot: '#FF9BD2',
+  soju: '#9FE870',
+  speakeasy: '#E9B872',
+  clubs: '#FF8FD8',
+  'craft-beer': '#FFD166',
+  'rooftop-bar': '#F0C4FF',
+  korean: '#FF9A76',
+  japanese: '#FFC1A1',
+  party: '#FF91C8',
+  'date-night': '#FFB4A2',
+  'walking-street': '#F7C873',
+};
 
 /** px/s ของ auto-scroll */
 const SCROLL_SPEED = 40;
@@ -216,7 +216,7 @@ function CategoryCard({ category: c, hidden }: { category: HomeCategory; hidden?
         to={c.to}
         draggable={false}
         tabIndex={hidden ? -1 : undefined}
-        className="group relative flex h-[172px] w-[132px] flex-col justify-end overflow-hidden rounded-[20px] bg-card select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+        className="group relative flex h-[172px] w-[132px] md:h-[200px] md:w-[150px] flex-col justify-end overflow-hidden rounded-[20px] bg-card select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
       >
         <img
           src={c.image}
@@ -231,15 +231,13 @@ function CategoryCard({ category: c, hidden }: { category: HomeCategory; hidden?
         {/* ไล่สีม่วงอ่อนจากล่าง (Figma) ให้อ่านชื่อหมวดออก */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#A738F5] via-[#FFFFFF]/0 via-35% to-transparent to-65%" />
         <div className="relative px-3 pb-3">
-            <p
-              className="text-[15px] font-bold leading-tight"
-              style={{ color: CATEGORY_TEXT_COLORS[c.key] }}
-            >
-              {c.title}
-            </p>
-            <p className="text-xs opacity-85 text-white">
-              {c.subtitle}
-            </p>
+          <p
+            className="text-[15px] font-bold leading-tight"
+            style={{ color: CATEGORY_TEXT_COLORS[c.key] }}
+          >
+            {c.title}
+          </p>
+          <p className="text-xs opacity-85 text-white">{c.subtitle}</p>
         </div>
       </Link>
     </li>
@@ -352,7 +350,8 @@ export function CategoryRow() {
       target.current -= Math.max(-limit, Math.min(limit, px));
       // ไม่ให้เป้าวิ่งนำตำแหน่งจริงเกิน 1 รอบ (ไม่งั้นปล่อยล้อแล้วยังไหลต่อยาว)
       const lead = target.current - pos.current;
-      if (Math.abs(lead) > period.current) target.current = pos.current + Math.sign(lead) * period.current;
+      if (Math.abs(lead) > period.current)
+        target.current = pos.current + Math.sign(lead) * period.current;
     };
     vp.addEventListener('wheel', onWheel, { passive: false });
     return () => vp.removeEventListener('wheel', onWheel);
@@ -420,7 +419,9 @@ export function CategoryRow() {
           }}
         >
           {Array.from({ length: copies }, (_, i) =>
-            CATEGORIES.map((c) => <CategoryCard key={`${i}-${c.key}`} category={c} hidden={i > 0} />),
+            CATEGORIES.map((c) => (
+              <CategoryCard key={`${i}-${c.key}`} category={c} hidden={i > 0} />
+            )),
           )}
         </motion.ul>
       </div>
