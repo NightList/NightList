@@ -20,7 +20,7 @@ export const TEAM: TeamMember[] = [
   { name: 'วิน', role: ['DevOps', 'Consultant'], photo: '/images/teams/wind.png' },
   { name: 'เนวิน', role: ['Business Analyst'], photo: '/images/teams/newin.png' },
   { name: 'พี', role: ['UI/UX Designer', 'Frontend Developer'], photo: '/images/teams/pee.png' },
-  { name: 'บิว', role: ['UI/UX Designer'], photo: '/images/teams/biw.png' },
+  { name: 'บิว', role: ['UI/UX Designer', 'Frontend Developer'], photo: '/images/teams/biw.png' },
   { name: 'ก็อต', role: ['Co-Founder', 'Fullstack Developer'], photo: '/images/teams/got.png' },
   { name: 'เติร์ด', role: ['Co-Founder', 'Fullstack Developer'], photo: '/images/teams/third.png' },
 ];
