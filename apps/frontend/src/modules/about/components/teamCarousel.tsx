@@ -24,7 +24,7 @@ const SWIPE_PX = 40;
 const EASE_MOVE = 'cubic-bezier(0.77, 0, 0.175, 1)'; // skill animate: ease-in-out สำหรับของที่เคลื่อนบนจอ
 
 /** ขนาดจริงเทียบ Figma (Figma ใหญ่ไปเมื่อเปิดบนจอจริง) */
-const SCALE = 0.7;
+const SCALE = 0.6;
 const CARD = { w: 350, h: 490, r: 60 };
 const FRAME = { w: 450, h: 583, r: 60 };
 
