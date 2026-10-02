@@ -31,6 +31,10 @@
 - ใช้ function component + hooks เท่านั้น (ยกเว้น `ErrorBoundary`) และ logic ที่ใช้ซ้ำให้แยกเป็น custom hook
 - HOC ใช้เฉพาะเรื่องที่ครอบหลายหน้า ส่วนเรื่องสิทธิ์ใช้ layout route `<RequireAuth>` / `<RequireRole>`
 
+## API (NestJS)
+- key ใน body / query / response เป็น **snake_case ทั้งหมด** (เช่น `qty`, `unit_price`, `service_charge_rate`) — โค้ดภายในที่ใช้ camelCase ให้แปลงใน service
+- ทุก endpoint ต้องมี `@ApiDoc({ summary, description, returns })` (`apps/backend/src/common/api-doc.ts`) บอกว่าเส้นนี้ทำอะไรและตอบอะไรกลับ · field ใน DTO ใส่ `.describe()` ได้
+
 ## Auth
 - เข้าสู่ระบบด้วย email + password ของ Supabase Auth (supabase-js) + ปุ่ม Google / Facebook (Supabase OAuth ตาม Figma "Login") ส่วน NestJS แค่ตรวจ JWT ห้ามเพิ่ม OTP หรือ provider อื่นโดยไม่ได้ตกลงกันก่อน
 - ขั้นตอนเชื่อม Supabase project จริง: `docs/SUPABASE.md`

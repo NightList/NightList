@@ -25,12 +25,13 @@ describe('NightList API', () => {
     const res = await request(app.getHttpServer())
       .post('/pricing/estimate')
       .send({
-        items: [{ name: 'set', quantity: 2, unitPrice: 1000 }],
-        fees: { serviceChargeRate: 10, vatRate: 7, otherFees: 0 },
+        items: [{ name: 'set', qty: 2, unit_price: 1000 }],
+        fees: { service_charge_rate: 10, vat_rate: 7, other_fees: 0 },
         pax: 4,
       })
-      .expect(201);
-    expect(res.body.estimatedTotal).toBe(2354);
+      .expect(200);
+    expect(res.body.estimated_total).toBe(2354);
+    expect(res.body.per_person).toBe(588.5);
   });
 
   it('POST /pricing/estimate rejects invalid body', async () => {
