@@ -1,6 +1,6 @@
 import { Clock, ChatCircleDots, MapPin, ShareNetwork } from '@phosphor-icons/react';
 import { autoCancelAt, cancelBooking, getBar, getBooking } from '@/services/data';
-import { App, Button, Card, Result, Timeline } from 'antd';
+import { App, Button, Card, Timeline } from 'antd';
 import { QRCodeSVG } from 'qrcode.react';
 import { Link, useParams } from 'react-router';
 import { BookingStatusTag } from '@/ui/components/bookingStatusTag';
@@ -9,6 +9,7 @@ import { useAuth } from '@/services/auth';
 import { useDemo } from '@/hooks/useDemo';
 import { BOOKING_STATUS, dateTime } from '@/ui/utils/format';
 import { useNow } from '@/hooks/useNow';
+import { NotFoundResult } from '@/ui/components/notFoundResult';
 
 function useCountdown(target: Date) {
   const now = useNow(1000);
@@ -30,7 +31,7 @@ export function BookingDetailPage() {
   const bar = b ? getBar(b.barId) : null;
   const countdown = useCountdown(b ? autoCancelAt(b) : new Date(0));
 
-  if (!b || !bar || b.userId !== user?.id) return <Result status="404" title="ไม่พบการจองนี้" />;
+  if (!b || !bar || b.userId !== user?.id) return <NotFoundResult title="ไม่พบการจองนี้" kind="booking" />;
   const zone = bar.zones.find((z) => z.id === b.zoneId);
   const table = zone?.tables.find((t) => t.id === b.tableId);
   const shareUrl = `${location.origin}/share/${b.shareToken}`;

@@ -7,6 +7,7 @@ import { useNavigate, useParams } from 'react-router';
 import { PageHeader } from '@/ui/components/pageHeader';
 import { useDemo } from '@/hooks/useDemo';
 import { baht } from '@/ui/utils/format';
+import { NotFoundResult } from '@/ui/components/notFoundResult';
 
 /** ย่อรูปสลิปก่อนอัปโหลด (ยังอ่าน QR ในสลิปได้) — ใช้แสดงตัวอย่าง + อัปโหลดเข้า deposit-slips */
 function toSmallDataUrl(file: File): Promise<string> {
@@ -36,7 +37,7 @@ export function DepositPage() {
   const [sending, setSending] = useState(false);
   const b = getBooking(id);
   const bar = b ? getBar(b.barId) : null;
-  if (!b || !bar) return <Result status="404" title="ไม่พบการจอง" />;
+  if (!b || !bar) return <NotFoundResult title="ไม่พบการจอง" kind="booking" />;
   // ยอดมัดจำ snapshot ตอนจอง (ร้านเปลี่ยนนโยบายภายหลังไม่กระทบการจองนี้)
   const amount = b.depositRequired ?? 0;
   const promptpay = MASTER.depositPromptPay;

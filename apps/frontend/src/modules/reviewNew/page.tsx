@@ -5,6 +5,7 @@ import { useNavigate, useSearchParams } from 'react-router';
 import { ReviewMediaPicker } from '@/ui/components/reviewMediaPicker';
 import { PageHeader } from '@/ui/components/pageHeader';
 import { useDemo } from '@/hooks/useDemo';
+import { NotFoundResult } from '@/ui/components/notFoundResult';
 
 /** /reviews/new?booking=:id — รีวิวได้เฉพาะ booking ที่เช็กอินแล้ว (1 booking = 1 รีวิว) */
 export function ReviewNewPage() {
@@ -16,7 +17,7 @@ export function ReviewNewPage() {
   const [sending, setSending] = useState(false);
   const b = getBooking(params.get('booking') ?? '');
   const bar = b ? getBar(b.barId) : null;
-  if (!b || !bar) return <Result status="404" title="ไม่พบการจอง" />;
+  if (!b || !bar) return <NotFoundResult title="ไม่พบการจอง" kind="booking" />;
   if (!['CHECKED_IN', 'COMPLETED'].includes(b.status))
     return <Result status="warning" title="รีวิวได้หลังเช็กอินที่ร้านแล้วเท่านั้น" />;
   if (b.reviewed) return <Result status="success" title="คุณรีวิวการจองนี้แล้ว ขอบคุณครับ" />;

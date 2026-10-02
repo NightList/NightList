@@ -1,33 +1,23 @@
-import {
-  CalendarPlus,
-  Calculator,
-  Clock,
-  Gift,
-  InstagramLogo,
-  MapPin,
-  NavigationArrow,
-  Tag as PromoIcon,
-  TiktokLogo,
-} from '@phosphor-icons/react';
-import { barReviews, CATEGORY_LABELS, getBarBySlug } from '@/services/data';
-import { Button, Card, Descriptions, Drawer, Empty, Result, Table, Tabs, Tag } from 'antd';
+import { Button, Drawer, Empty, Tabs } from 'antd';
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
-import { BarCover } from '@/ui/components/barCard';
-import { CrowdBadge } from '@/ui/components/crowdBadge';
-import { FavoriteButton } from '@/ui/components/favoriteButton';
-import { SafetyList } from '@/ui/components/safetyList';
+import { useNavigate, useParams } from 'react-router';
+import { useDemo } from '@/hooks/useDemo';
+import { barReviews, getBarBySlug } from '@/services/data';
+import { NotFoundResult } from '@/ui/components/notFoundResult';
+import { PRBadge } from '@/ui/components/prBadge';
 import { PriceEstimator, type EstimatorValue } from '@/ui/components/priceEstimator';
 import { ReviewList } from '@/ui/components/reviewList';
-import { useDemo } from '@/hooks/useDemo';
-import { baht } from '@/ui/utils/format';
-import { BarRating } from '@/ui/components/barRating';
-import { BarMap, directionsUrl } from '@/ui/components/barMap';
-import { PRBadge } from '@/ui/components/prBadge';
+import { SafetyList } from '@/ui/components/safetyList';
+import { BarFacts } from './components/barFacts';
+import { BarHeader, BarHero } from './components/barHeader';
+import { BookingBar, BookingCard } from './components/bookingActions';
+import { LocationSection } from './components/locationSection';
+import { MenuTable } from './components/menuTable';
+import { OpeningHours } from './components/openingHours';
+import { Perks, SocialLinks } from './components/perksAndLinks';
+import { PromotionList } from './components/promotionList';
 
-const DAYS = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
-
-/** /bars/:slug — หน้าร้าน */
+/** /bars/:slug — หน้าร้าน: หัวร้าน → แท็บ (ข้อมูล/เมนู/ความปลอดภัย/รีวิว) · การ์ดจองด้านขวา · ลิ้นชักประเมินราคา */
 export function BarDetailPage() {
   useDemo();
   const { slug = '' } = useParams();
@@ -36,51 +26,17 @@ export function BarDetailPage() {
   const [estOpen, setEstOpen] = useState(false);
   const [est, setEst] = useState<EstimatorValue>({ pax: 4, qty: {} });
 
-  if (!bar || bar.status !== 'APPROVED') {
-    return (
-      <Result
-        status="404"
-        title="ไม่พบร้านนี้"
-        extra={
-          <Link to="/search">
-            <Button type="primary">ค้นหาร้านอื่น</Button>
-          </Link>
-        }
-      />
-    );
-  }
+  if (!bar || bar.status !== 'APPROVED') return <NotFoundResult title="ไม่พบร้านนี้" kind="bar" />;
   const reviews = barReviews(bar.id);
   const book = () => navigate(`/bars/${bar.slug}/book`);
+  const estimate = () => setEstOpen(true);
 
   return (
     <div className="pb-20">
-      <div className="relative overflow-hidden rounded-3xl border border-border">
-        <BarCover bar={bar} className="h-56 md:h-72" />
-        <FavoriteButton barId={bar.id} className="!absolute right-4 top-4" />
-      </div>
-
+      <BarHero bar={bar} />
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
         <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Tag>{CATEGORY_LABELS[bar.category]}</Tag>
-            {bar.editorsPick && <Tag color="gold">Editor&apos;s Pick</Tag>}
-            {bar.promoted && <Tag>แนะนำ · โฆษณา</Tag>}
-            {bar.styles.map((s) => (
-              <Tag key={s} color="purple" variant="filled">
-                {s}
-              </Tag>
-            ))}
-          </div>
-          <h1 className="mt-3 font-display text-4xl font-bold">{bar.name}</h1>
-          <div className="mt-2 flex flex-wrap items-center gap-4 text-sm">
-            <BarRating bar={bar} />
-            <span className="inline-flex items-center gap-1 text-muted">
-              <MapPin /> {bar.district}
-            </span>
-            <CrowdBadge crowd={bar.crowd} updatedAt={bar.crowdUpdatedAt} showTime />
-          </div>
-          <p className="mt-4 text-muted">{bar.description}</p>
-
+          <BarHeader bar={bar} />
           <Tabs
             className="mt-6"
             items={[
@@ -89,142 +45,17 @@ export function BarDetailPage() {
                 label: 'ข้อมูลร้าน',
                 children: (
                   <div className="space-y-6">
-                    <Descriptions
-                      column={{ xs: 1, sm: 2 }}
-                      items={[
-                        { key: 'a', label: 'ที่อยู่', children: bar.address },
-                        {
-                          key: 'p',
-                          label: 'ราคาเฉลี่ย',
-                          children: `~${baht(bar.avgPerPerson)} / คน`,
-                        },
-                        {
-                          key: 's',
-                          label: 'Service charge / VAT',
-                          children: `${bar.fees.serviceChargeRate}% / ${bar.fees.vatRate}%`,
-                        },
-                        {
-                          key: 'o',
-                          label: 'ค่าอื่นๆ',
-                          children: bar.fees.otherFees ? baht(bar.fees.otherFees) : 'ไม่มี',
-                        },
-                        {
-                          key: 'g',
-                          label: 'เก็บโต๊ะให้',
-                          children: `${bar.gracePeriodMinutes} นาทีหลังเวลาจอง`,
-                        },
-                        {
-                          key: 'd',
-                          label: 'มัดจำ',
-                          children: `${baht(bar.deposit.amount)} / ${bar.deposit.unit === 'PER_PERSON' ? 'คน' : 'โต๊ะ'} · โอนเข้า NightList`,
-                        },
-                      ]}
-                    />
+                    <BarFacts bar={bar} />
                     <PRBadge pr={bar.pr} />
-                    {bar.promotions.some((p) => p.active) && (
-                      <div>
-                        <p className="mb-2 flex items-center gap-2 font-semibold">
-                          <PromoIcon /> โปรโมชัน (เลือกได้ตอนจอง)
-                        </p>
-                        <div className="grid gap-2 sm:grid-cols-2">
-                          {bar.promotions
-                            .filter((p) => p.active)
-                            .map((p) => (
-                              <div
-                                key={p.id}
-                                className="rounded-xl border border-gold/40 bg-gold/5 p-3"
-                              >
-                                <p className="font-semibold">{p.title}</p>
-                                <p className="text-xs text-muted">
-                                  {p.description}
-                                  {p.cutoffTime && ` · เช็กอินก่อน ${p.cutoffTime} น.`}
-                                </p>
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    )}
-                    <div>
-                      <div className="mb-2 flex items-center justify-between">
-                        <p className="flex items-center gap-2 font-semibold">
-                          <MapPin /> แผนที่
-                        </p>
-                        <a
-                          href={directionsUrl(bar.lat, bar.lng)}
-                          target="_blank"
-                          rel="noreferrer noopener"
-                        >
-                          <Button icon={<NavigationArrow />}>นำทาง</Button>
-                        </a>
-                      </div>
-                      <BarMap bars={[bar]} className="h-64" />
-                    </div>
-                    <div>
-                      <p className="mb-2 flex items-center gap-2 font-semibold">
-                        <Clock /> เวลาเปิด-ปิด
-                      </p>
-                      <div className="grid grid-cols-4 gap-2 text-sm sm:grid-cols-7">
-                        {bar.hours.map((h) => (
-                          <div
-                            key={h.day}
-                            className="rounded-lg border border-border p-2 text-center"
-                          >
-                            <p className="text-muted">{DAYS[h.day]}</p>
-                            <p>{h.closed ? 'ปิด' : `${h.open}–${h.close}`}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="mb-2 flex items-center gap-2 font-semibold">
-                        <Gift /> สิทธิพิเศษเมื่อจองผ่าน NightList
-                      </p>
-                      <ul className="list-inside list-disc text-sm text-muted">
-                        {bar.perks.map((p) => (
-                          <li key={p}>{p}</li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="flex gap-2">
-                      {bar.links.map((l) => (
-                        <a key={l.url} href={l.url} target="_blank" rel="noreferrer noopener">
-                          <Button
-                            shape="circle"
-                            aria-label={l.type}
-                            icon={l.type === 'INSTAGRAM' ? <InstagramLogo /> : <TiktokLogo />}
-                          />
-                        </a>
-                      ))}
-                    </div>
+                    <PromotionList promotions={bar.promotions} />
+                    <LocationSection bar={bar} />
+                    <OpeningHours hours={bar.hours} />
+                    <Perks perks={bar.perks} />
+                    <SocialLinks links={bar.links} />
                   </div>
                 ),
               },
-              {
-                key: 'menu',
-                label: 'เมนู & ราคา',
-                children: (
-                  <div className="space-y-6">
-                    <p className="text-sm text-muted">
-                      ราคาอ้างอิงสำหรับประเมินงบ — สั่งที่ร้านตอนไปถึง (ไม่มีสั่งล่วงหน้า)
-                    </p>
-                    <Table
-                      rowKey="id"
-                      pagination={false}
-                      dataSource={bar.menu}
-                      columns={[
-                        { title: 'หมวด', dataIndex: 'category', width: 110 },
-                        { title: 'รายการ', dataIndex: 'name' },
-                        {
-                          title: 'ราคา',
-                          dataIndex: 'price',
-                          align: 'right',
-                          render: (v: number) => baht(v),
-                        },
-                      ]}
-                    />
-                  </div>
-                ),
-              },
+              { key: 'menu', label: 'เมนู & ราคา', children: <MenuTable menu={bar.menu} /> },
               { key: 'safety', label: 'ความปลอดภัย', children: <SafetyList bar={bar} /> },
               {
                 key: 'reviews',
@@ -240,40 +71,11 @@ export function BarDetailPage() {
         </div>
 
         <aside className="hidden lg:block">
-          <Card className="sticky top-24" title="จองโต๊ะ">
-            <p className="text-sm text-muted">ประมาณ {baht(bar.avgPerPerson)} / คน</p>
-            <Button
-              block
-              size="large"
-              className="mt-4"
-              icon={<Calculator />}
-              onClick={() => setEstOpen(true)}
-            >
-              ประเมินราคา
-            </Button>
-            <Button
-              block
-              type="primary"
-              size="large"
-              className="mt-3"
-              icon={<CalendarPlus />}
-              onClick={book}
-            >
-              จองเลย
-            </Button>
-          </Card>
+          <BookingCard avgPerPerson={bar.avgPerPerson} onEstimate={estimate} onBook={book} />
         </aside>
       </div>
 
-      {/* แถบล่าง (มือถือ) */}
-      <div className="fixed inset-x-0 bottom-16 z-20 flex gap-3 border-t border-border bg-surface/95 p-3 backdrop-blur lg:hidden">
-        <Button block size="large" icon={<Calculator />} onClick={() => setEstOpen(true)}>
-          ประเมินราคา
-        </Button>
-        <Button block type="primary" size="large" icon={<CalendarPlus />} onClick={book}>
-          จองเลย
-        </Button>
-      </div>
+      <BookingBar onEstimate={estimate} onBook={book} />
 
       <Drawer
         open={estOpen}
