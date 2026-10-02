@@ -20,8 +20,10 @@
     rel="stylesheet" media="print"
     onload="this.media='all'" />
   <!-- รูปพื้นหลัง Hero ให้เริ่มโหลดทันที (LCP) -->
-  <link rel="preload" as="image"
-    href="/images/home/hero-poster.jpg"
+  <link rel="preload" as="image" type="image/webp"
+    href="/images/home/hero-poster.webp"
+    imagesrcset="/images/home/hero-poster-sm.webp 854w, /images/home/hero-poster.webp 1280w"
+    imagesizes="100vw"
     fetchpriority="high" />
   <title>NightList</title>
   <!-- กันจอกะพริบ: ตั้งธีมก่อน React render (key ต้องตรงกับ THEME_STORAGE_KEY) -->

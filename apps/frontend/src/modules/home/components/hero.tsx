@@ -1,45 +1,23 @@
 import { CaretDown, MagnifyingGlass, MapPin } from '@phosphor-icons/react';
 import { DISTRICTS } from '@/services/data';
 import { Dropdown } from 'antd';
-import { useReducedMotion } from 'motion/react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { HeroBackdrop } from './heroBackdrop';
 
 const HERE = 'ตำแหน่งปัจจุบัน';
 
 /**
- * Hero (Figma: Main → Hero) — วิดีโอเมืองกลางคืนวนลูปเต็มจอ (poster = ภาพเดียวกับ Figma)
+ * Hero (Figma: Main → Hero) — วิดีโอเมืองกลางคืนวนลูปเต็มจอ (<HeroBackdrop>)
  * หัวข้อ "คืนนี้ไป | ร้านไหน | ดี" (ตัวกลางใหญ่สีทอง) + ช่องค้นหากระจก มีเลือกย่าน/ตำแหน่ง
- * prefers-reduced-motion → ภาพนิ่ง
  */
 export function Hero() {
   const navigate = useNavigate();
-  const reduce = useReducedMotion();
   const [area, setArea] = useState(HERE);
 
   return (
     <section className="relative isolate flex min-h-[92svh] items-center overflow-hidden bg-[#07070d] md:min-h-[100svh]">
-      {reduce ? (
-        <img
-          src="/images/home/hero-poster.jpg"
-          alt=""
-          fetchPriority="high"
-          className="absolute inset-0 -z-10 size-full object-cover"
-        />
-      ) : (
-        <video
-          className="absolute inset-0 -z-10 size-full object-cover"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          poster="/images/home/hero-poster.jpg"
-          aria-hidden
-        >
-          <source src="/videos/hero.mp4" type="video/mp4" />
-        </video>
-      )}
+      <HeroBackdrop />
       <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 -z-10 h-24 bg-gradient-to-t from-background to-transparent" />
 
