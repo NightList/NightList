@@ -3,17 +3,17 @@ import { useEffect, useRef, useState } from 'react';
 
 const POSTER = '/images/home/hero-poster.webp';
 /**
- * วิดีโอพื้นหลัง (ต้องเป็นคลิปที่หัว-ท้ายต่อกันเนียน — seamless loop) · null = ใช้ภาพนิ่งอย่างเดียว
- * hero-night-*.mp4 เรนเดอร์จากภาพ hero-poster.jpg ด้วยสคริปต์ (scripts/render-hero-loop.py):
- * ดาวกะพริบ · ดาวตกวิ่งทางเดียว · ไฟเมืองระยิบ · หมุดเรืองแสง · น้ำกระเพื่อม — ทุกอย่างเป็นคาบ 8 วิ จึงวนรอบได้พอดี
+ * วิดีโอพื้นหลัง · null = ใช้ภาพนิ่งอย่างเดียว
+ * hero-city-*.mp4 = คลิปจาก Higgsfield (1080p 10 วิ) เพิ่มเฟรมเป็น 48fps · หัว-ท้ายคลิปไม่ตรงกันเป๊ะ จึงครอสเฟด 1 วิตอนวนรอบ
+ * (สคริปต์ scripts/render-hero-loop.py ใช้เรนเดอร์คลิปวนรอบจากภาพนิ่งได้ ถ้าจะกลับไปใช้แบบนั้น)
  */
 const HERO_VIDEO: { sm: string; lg: string } | null = {
-  sm: '/videos/hero-night-480.mp4',
-  lg: '/videos/hero-night-720.mp4',
+  sm: '/videos/hero-city-480.mp4',
+  lg: '/videos/hero-city-1080.mp4',
 };
 /** ครอสเฟดตอนต่อรอบ (ms) — ตัวใหม่จางเข้าทับตัวเก่าที่ยังทึบอยู่ */
 const SEAM_FADE = 1000;
-const POSTER_SET = '/images/home/hero-poster-sm.webp 854w, /images/home/hero-poster.webp 1280w';
+const POSTER_SET = '/images/home/hero-poster-sm.webp 854w, /images/home/hero-poster.webp 1600w';
 
 /** เน็ตช้า/โหมดประหยัดเน็ต → ไม่โหลดวิดีโอ ใช้ภาพนิ่งแทน */
 function prefersLightweight() {
@@ -34,7 +34,7 @@ export function HeroBackdrop() {
   const refB = useRef<HTMLVideoElement>(null);
   const [load, setLoad] = useState(false);
   const [playing, setPlaying] = useState(false);
-  // เลือกไฟล์ครั้งเดียวตอนเริ่มโหลด: จอแคบ → 480p (~1MB) · จอใหญ่ → 720p (~2MB)
+  // เลือกไฟล์ครั้งเดียวตอนเริ่มโหลด: จอแคบ → 480p (~0.9MB) · จอใหญ่ → 1080p (~5.7MB)
   const [src] = useState(() =>
     !HERO_VIDEO
       ? ''
