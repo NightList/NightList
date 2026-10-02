@@ -29,7 +29,7 @@ export function AboutPage() {
     <div className="relative isolate overflow-hidden bg-black pb-24 text-white md:pb-0">
       <div
         aria-hidden="true"
-        className="about-bg absolute inset-x-0 top-0 -z-20 h-[min(1400px,110vw)] min-h-[720px]"
+        className="about-bg absolute inset-x-0 top-0 -z-20 h-[min(1400px,110vw)] min-h-180"
       />
 
       <AboutHero />
