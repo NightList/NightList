@@ -2,6 +2,8 @@ import { useReducedMotion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 
 const POSTER = '/images/home/hero-poster.webp';
+/** เฟดตอนต่อรอบ (ms) */
+const SEAM_FADE = 250;
 const POSTER_SET = '/images/home/hero-poster-sm.webp 854w, /images/home/hero-poster.webp 1280w';
 
 /** เน็ตช้า/โหมดประหยัดเน็ต → ไม่โหลดวิดีโอ ใช้ภาพนิ่งแทน */
@@ -12,7 +14,9 @@ function prefersLightweight() {
 
 /**
  * พื้นหลัง Hero — ภาพนิ่งขึ้นก่อนทันที (LCP) แล้วค่อยโหลดวิดีโอหลังหน้าโหลดเสร็จ
- * - วิดีโอ 48fps ภาพหัว-ท้ายต่อกัน + เล่นสลับ 2 ตัวครอสเฟด (ไม่ใช้ loop ของเบราว์เซอร์ที่ค้างตอนวนรอบ) · ชื่อไฟล์ใหม่ กัน cache ไฟล์เก่า · มือถือใช้ไฟล์ 480p
+ * - ไฟล์วิดีโอ (hero-ambient-*.mp4, 48fps, 22 วิ) เล่นไป-กลับแบบค่อยๆ ชะลอที่ปลายทั้งสองข้าง
+ *   → ท้ายไฟล์ = หัวไฟล์พอดี และภาพแทบนิ่งตรงรอยต่อ (คลิป AI ต้นฉบับหัว-ท้ายไม่ตรงกัน ตัดต่อตรงๆ ภาพกระโดด ผสมภาพก็ซ้อน)
+ * - เล่นสลับ 2 ตัว (ไม่ใช้ <video loop> ที่ค้างตอนวนรอบ) · มือถือใช้ไฟล์ 480p
  * - เฟรมแรกของวิดีโอ = ภาพนิ่ง → ค่อยๆ เฟดเข้า ไม่มีภาพกระโดด
  * - หยุดเล่นเมื่อเลื่อนพ้นจอ / สลับแท็บ (ประหยัดแบต)
  * - prefers-reduced-motion หรือเน็ตช้า → ภาพนิ่งอย่างเดียว
@@ -26,8 +30,8 @@ export function HeroBackdrop() {
   // เลือกไฟล์ครั้งเดียวตอนเริ่มโหลด: จอแคบ → 480p (~1MB) · จอใหญ่ → 720p (~2MB)
   const [src] = useState(() =>
     typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
-      ? '/videos/hero-loop-480.mp4'
-      : '/videos/hero-loop-720.mp4',
+      ? '/videos/hero-ambient-480.mp4'
+      : '/videos/hero-ambient-720.mp4',
   );
 
   // เริ่มโหลดวิดีโอหลังหน้าโหลดเสร็จ + เบราว์เซอร์ว่าง (ไม่แย่งแบนด์วิดท์กับ JS/ฟอนต์/ข้อมูลร้าน)
@@ -82,14 +86,16 @@ export function HeroBackdrop() {
         startLag = Math.min(0.4, Math.max(0.01, startLag - 0.6 * remaining));
         next.style.zIndex = '2';
         prev.style.zIndex = '1';
+        // เฟดสั้นๆ กลบความต่างของคุณภาพเฟรมแรกของไฟล์ (keyframe) — ช่วงนี้ภาพแทบนิ่ง เฟดแล้วไม่มีภาพซ้อน
+        next.style.transition = `opacity ${SEAM_FADE}ms linear`;
         next.style.opacity = '1';
-        // ปล่อยตัวเดิมแสดงข้างใต้อีกนิด (กันจอว่างเสี้ยวเฟรม) แล้วค่อยรีเซ็ตเตรียมรอบหน้า
         window.setTimeout(() => {
+          prev.style.transition = 'none';
           prev.style.opacity = '0';
           prev.pause();
           prev.currentTime = 0;
           switching = false;
-        }, 120);
+        }, SEAM_FADE + 60);
         front = next;
         back = prev;
       });
