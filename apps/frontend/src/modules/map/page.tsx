@@ -9,7 +9,7 @@ import {
   Plus,
   X,
 } from '@phosphor-icons/react';
-import { CATEGORY_LABELS, listBars, type BarFilter, type BarWithTier } from '@nightlist/mock';
+import { CATEGORY_LABELS, listBars, type BarFilter, type BarWithTier } from '@/services/data';
 import type { BarCategory, CrowdStatus } from '@nightlist/types';
 import { useThemeMode } from '@nightlist/ui';
 import { Button, Checkbox, Drawer, Input, Segmented } from 'antd';

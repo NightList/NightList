@@ -1,4 +1,4 @@
-import { availability, createBooking, depositFor, getBarBySlug, promotionApplies } from '@nightlist/mock';
+import { createBooking, depositFor, getBarBySlug, promotionApplies, useZoneAvailability } from '@/services/data';
 import {
   App,
   Alert,
@@ -10,6 +10,7 @@ import {
   Radio,
   Result,
   Select,
+  Spin,
   Steps,
 } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
@@ -53,22 +54,27 @@ export function BookPage() {
   const [promotionId, setPromotionId] = useState<string>();
   const [note, setNote] = useState('');
 
+  const [submitting, setSubmitting] = useState(false);
+
   const datetime = useMemo(() => {
     const [h, m] = time.split(':').map(Number);
     return date.hour(h!).minute(m!).second(0).millisecond(0);
   }, [date, time]);
+  // โซนว่างนับจากการจองจริงของทุกคนใน DB (เปลี่ยนวัน/เวลา → ถามใหม่)
+  const availability = useZoneAvailability(bar, datetime.toISOString());
 
   if (!bar) return <Result status="404" title="ไม่พบร้าน" />;
-  const slots = availability(bar.id, datetime.toISOString());
+  const slots = availability.data ?? [];
   const past = datetime.isBefore(dayjs());
   const promos = bar.promotions.filter((p) => p.active);
   const iso = datetime.toISOString();
   const chosenPromo = promos.find((p) => p.id === promotionId);
   const deposit = depositFor(bar, pax);
 
-  const submit = () => {
+  const submit = async () => {
+    setSubmitting(true);
     try {
-      const b = createBooking({
+      const b = await createBooking({
         barId: bar.id,
         zoneId: zoneId!,
         datetime: iso,
@@ -76,10 +82,19 @@ export function BookPage() {
         promotionId: chosenPromo && promotionApplies(chosenPromo, iso) ? chosenPromo.id : undefined,
         note,
       });
-      message.success('สร้างการจองแล้ว โอนมัดจำเพื่อยืนยันโต๊ะ');
-      navigate(`/bookings/${b.id}/deposit`);
+      if (b.status === 'AWAITING_DEPOSIT') {
+        message.success('สร้างการจองแล้ว โอนมัดจำเพื่อยืนยันโต๊ะ');
+        navigate(`/bookings/${b.id}/deposit`);
+      } else {
+        message.success('ส่งคำขอจองแล้ว รอร้านยืนยัน');
+        navigate(`/bookings/${b.id}`);
+      }
     } catch (e) {
       message.error((e as Error).message);
+      // โซนอาจเต็มระหว่างกรอก → โหลดโซนว่างใหม่
+      void availability.refetch();
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -144,6 +159,7 @@ export function BookPage() {
                 onChange={(e) => setZoneId(e.target.value)}
                 className="grid w-full gap-3 sm:grid-cols-3"
               >
+                {availability.isLoading && <Spin />}
                 {slots.map(({ zone, freeTables, full }) => (
                   <Radio.Button
                     key={zone.id}
@@ -153,7 +169,7 @@ export function BookPage() {
                   >
                     <span className="block font-semibold">{zone.name}</span>
                     <span className="block text-xs text-muted">
-                      {full ? 'เต็มแล้ว' : `ว่าง ${freeTables.length} โต๊ะ`}
+                      {full ? 'เต็มแล้ว' : freeTables > 0 ? `ว่าง ${freeTables} โต๊ะ` : 'มีที่ว่าง'}
                     </span>
                   </Radio.Button>
                 ))}
@@ -189,7 +205,12 @@ export function BookPage() {
                 </Radio.Group>
               </Form.Item>
             )}
-            <Button type="primary" block disabled={!zoneId || past} onClick={() => setStep(1)}>
+            <Button
+              type="primary"
+              block
+              disabled={!zoneId || past || !!slots.find((x) => x.zone.id === zoneId)?.full}
+              onClick={() => setStep(1)}
+            >
               ถัดไป
             </Button>
           </Form>
@@ -252,7 +273,7 @@ export function BookPage() {
             <Button block onClick={() => setStep(0)}>
               ย้อนกลับ
             </Button>
-            <Button block type="primary" onClick={submit}>
+            <Button block type="primary" loading={submitting} onClick={() => void submit()}>
               ยืนยันและไปโอนมัดจำ
             </Button>
           </div>

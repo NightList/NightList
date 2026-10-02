@@ -1,6 +1,6 @@
 import { Bell } from '@phosphor-icons/react';
-import { markAllRead, myNotifications } from '@nightlist/mock';
-import { Badge, Button, Empty, Listy } from 'antd';
+import { markAllRead, myNotifications } from '@/services/data';
+import { App, Badge, Button, Empty, Listy } from 'antd';
 import { ListRow } from '@/ui/components/listRow';
 import { Link } from 'react-router';
 import { PageHeader } from '@/ui/components/pageHeader';
@@ -9,12 +9,20 @@ import { timeAgo } from '@/ui/utils/format';
 
 export function NotificationsPage() {
   useDemo();
+  const { message } = App.useApp();
   const items = myNotifications();
   return (
     <div className="mx-auto max-w-2xl">
       <PageHeader
         title="แจ้งเตือน"
-        extra={<Button onClick={markAllRead}>อ่านทั้งหมดแล้ว</Button>}
+        extra={
+          <Button
+            disabled={!items.some((n) => !n.readAt)}
+            onClick={() => void markAllRead().catch((e: Error) => message.error(e.message))}
+          >
+            อ่านทั้งหมดแล้ว
+          </Button>
+        }
       />
       {items.length === 0 ? (
         <Empty description="ยังไม่มีแจ้งเตือน" />

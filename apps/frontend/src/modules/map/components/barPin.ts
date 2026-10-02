@@ -1,4 +1,4 @@
-import type { BarWithTier } from '@nightlist/mock';
+import type { BarWithTier } from '@/services/data';
 import { divIcon } from 'leaflet';
 import { barImage } from '@/ui/utils/barImage';
 

@@ -1,5 +1,5 @@
 import { ArrowRight } from '@phosphor-icons/react';
-import { safetyScore, type BarWithTier } from '@nightlist/mock';
+import { safetyScore, type BarWithTier } from '@/services/data';
 import { Link } from 'react-router';
 import { baht } from '@/ui/utils/format';
 import { barImage } from '@/ui/utils/barImage';

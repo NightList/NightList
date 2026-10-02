@@ -1,6 +1,6 @@
 import { SealCheck } from '@phosphor-icons/react';
-import { SAFETY_LABELS, updateBar, type SafetyValue } from '@nightlist/mock';
-import { App, Card, Segmented, Upload, Button } from 'antd';
+import { SAFETY_LABELS, setSafety, uploadSafetyProof, type SafetyValue } from '@/services/data';
+import { App, Button, Card, Segmented, Upload } from 'antd';
 import { PageHeader } from '@/ui/components/pageHeader';
 import { useMerchantBar } from '@/hooks/useMerchantBar';
 
@@ -25,13 +25,13 @@ export function MerchantSafetyPage() {
               )}
               <Segmented<SafetyValue>
                 value={s.value}
-                onChange={(value) => {
-                  updateBar(bar.id, {
-                    safety: bar.safety.map((x) =>
-                      x.key === s.key ? { ...x, value, source: 'SELF_DECLARED' } : x,
-                    ),
-                  });
-                  message.success('บันทึกแล้ว (รอทีมตรวจสอบ)');
+                onChange={async (value) => {
+                  try {
+                    await setSafety(bar.id, s.key, value);
+                    message.success('บันทึกแล้ว (รอทีม NightList ตรวจหลักฐาน)');
+                  } catch (e) {
+                    message.error((e as Error).message);
+                  }
                 }}
                 options={[
                   { label: 'มี', value: 'YES' },
@@ -40,11 +40,18 @@ export function MerchantSafetyPage() {
                 ]}
               />
               <Upload
-                beforeUpload={() => {
-                  message.info('เดโม: แนบหลักฐานแล้ว');
+                accept="image/*,application/pdf"
+                showUploadList={false}
+                beforeUpload={(file) => {
+                  if (file.size > 10 * 1024 * 1024) {
+                    message.error('ไฟล์ใหญ่เกิน 10MB');
+                    return Upload.LIST_IGNORE;
+                  }
+                  void uploadSafetyProof(bar.id, s.key, file)
+                    .then(() => message.success('ส่งหลักฐานแล้ว ทีม NightList จะตรวจให้'))
+                    .catch((e: Error) => message.error(e.message));
                   return false;
                 }}
-                showUploadList={false}
               >
                 <Button>แนบหลักฐาน</Button>
               </Upload>

@@ -1,38 +1,44 @@
 import { PageContainer } from '@ant-design/pro-components';
-import { tierList } from '@nightlist/mock';
-import type { Tier } from '@nightlist/types';
+import type { Db } from '@nightlist/types';
 import { TierStars } from '@nightlist/ui';
 import { Table, Tag } from 'antd';
-import { useDemo } from '@/hooks/useDemo';
+import { useMemo } from 'react';
+import { PAGE_SIZE } from '@/configs/constants';
+import { useAdminView } from '@/services/adminData';
+import { LoadError } from '@/ui/components/LoadError';
 
+/** อันดับร้านที่เปิดแสดง เรียงตามคะแนนรวม — การโปรโมทไม่มีผลต่อดาว */
 export function RankingPage() {
-  useDemo();
-  const tiers = tierList();
-  const rows = (['S', 'A', 'B', 'C'] as Tier[]).flatMap((t) =>
-    tiers[t].map((b) => ({ ...b, tierKey: t })),
-  );
+  const { data, isLoading, error, refetch } = useAdminView('admin_bars', {
+    filters: [['status', 'APPROVED']],
+    order: { column: 'score', ascending: false },
+  });
+  const rows = useMemo(() => (data ?? []).map((b, i) => ({ ...b, rank: i + 1 })), [data]);
   return (
     <PageContainer
       title="ดาว / อันดับ"
       content="คำนวณจากคะแนนรวม (รีวิวเช็กอินจริง · จำนวนเช็กอิน · Safety · ข้อมูลราคา) — การโปรโมทไม่มีผลต่อดาว"
     >
-      <Table
+      <LoadError error={error} onRetry={() => void refetch()} />
+      <Table<Db.AdminBar & { rank: number }>
         rowKey="id"
+        loading={isLoading}
         dataSource={rows}
+        pagination={{ pageSize: PAGE_SIZE }}
+        scroll={{ x: 800 }}
         columns={[
+          { title: 'อันดับ', dataIndex: 'rank', width: 80 },
           { title: 'ร้าน', dataIndex: 'name' },
-          { title: 'คะแนนรวม', dataIndex: 'score' },
+          { title: 'คะแนนรวม', dataIndex: 'score', render: (v: number | null) => v ?? '-' },
           {
             title: 'ดาว',
-            dataIndex: 'stars',
-            render: (n: number, r) => <TierStars stars={n} tier={r.tierKey as Tier} />,
+            key: 'stars',
+            render: (_, b) => (b.is_new || !b.current_stars ? <Tag>ร้านใหม่</Tag> : <TierStars stars={b.current_stars} />),
           },
-          { title: 'รีวิว', dataIndex: 'reviewCount' },
-          {
-            title: 'โปรโมท',
-            dataIndex: 'promoted',
-            render: (v: boolean) => (v ? <Tag>โฆษณา</Tag> : '-'),
-          },
+          { title: 'รีวิว', dataIndex: 'rating_count' },
+          { title: 'เช็กอิน', dataIndex: 'checkin_count' },
+          { title: 'Safety', dataIndex: 'safety_score', render: (v: number | null) => v ?? '-' },
+          { title: 'โปรโมท', dataIndex: 'is_promoted', render: (v: boolean) => (v ? <Tag>โฆษณา</Tag> : '-') },
         ]}
       />
     </PageContainer>

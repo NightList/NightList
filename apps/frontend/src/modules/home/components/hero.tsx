@@ -1,5 +1,5 @@
 import { CaretDown, MagnifyingGlass, MapPin } from '@phosphor-icons/react';
-import { DISTRICTS } from '@nightlist/mock';
+import { DISTRICTS } from '@/services/data';
 import { Dropdown } from 'antd';
 import { useReducedMotion } from 'motion/react';
 import { useState } from 'react';

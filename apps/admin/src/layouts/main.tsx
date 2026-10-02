@@ -1,19 +1,18 @@
 import { MoonStars, SignOut } from '@phosphor-icons/react';
 import { ProLayout } from '@ant-design/pro-components';
-import { currentUser, demoLogout } from '@nightlist/mock';
 import { ThemeToggle } from '@nightlist/ui';
-import { Button, Tooltip } from 'antd';
+import { Button, Spin, Tooltip } from 'antd';
 import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router';
-import { useDemo } from '@/hooks/useDemo';
 import { ADMIN_ROUTES } from '@/configs/menu';
+import { useAdminAuth } from '@/services/adminAuth';
 
-/** Layout หลักของ Backoffice — เข้าได้เฉพาะ ADMIN (ของจริงต้อง MFA / AAL2) */
+/** Layout หลักของ Backoffice — เข้าได้เฉพาะ ADMIN ที่ยืนยัน MFA แล้ว (Supabase AAL2) */
 export function MainLayout() {
-  useDemo();
   const location = useLocation();
   const navigate = useNavigate();
-  const user = currentUser();
-  if (!user || user.role !== 'ADMIN') return <Navigate to="/login" replace />;
+  const auth = useAdminAuth();
+  if (auth.loading) return <Spin fullscreen />;
+  if (!auth.canEnter) return <Navigate to="/login" replace />;
   return (
     <ProLayout
       title="NightList Admin"
@@ -32,8 +31,7 @@ export function MainLayout() {
             aria-label="ออกจากระบบ"
             icon={<SignOut size={18} />}
             onClick={() => {
-              demoLogout();
-              navigate('/login');
+              void auth.signOut().then(() => navigate('/login'));
             }}
           />
         </Tooltip>,

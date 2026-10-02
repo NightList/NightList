@@ -1,4 +1,4 @@
-import { CATEGORY_LABELS, listBars, rankingByPeriod, type RankingPeriod } from '@nightlist/mock';
+import { CATEGORY_LABELS, listBars, rankingByPeriod, type RankingPeriod } from '@/services/data';
 import type { BarCategory } from '@nightlist/types';
 import { Empty, Segmented } from 'antd';
 import { useSearchParams } from 'react-router';

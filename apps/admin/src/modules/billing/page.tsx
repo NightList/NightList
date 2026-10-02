@@ -1,32 +1,43 @@
 import { PageContainer } from '@ant-design/pro-components';
-import { billingEvents } from '@nightlist/mock';
+import type { Db } from '@nightlist/types';
 import { Table, Tag } from 'antd';
+import { PAGE_SIZE } from '@/configs/constants';
+import { useAdminView } from '@/services/adminData';
+import { LoadError } from '@/ui/components/LoadError';
+import { StatusTag } from '@/ui/components/StatusTag';
 import { baht, dateTime } from '@/ui/utils/format';
-import { useDemo } from '@/hooks/useDemo';
+import { BILLING_STATUS } from '@/ui/utils/labels';
 
+/** ค่าคอมมิชชันที่เกิดจากการจอง (เช็กอิน = คิดค่าคอม · ไม่มาตามนัด = ยกเว้น) */
 export function BillingPage() {
-  useDemo();
-  const rows = billingEvents();
+  const { data, isLoading, error, refetch } = useAdminView('admin_billing_events', {
+    order: { column: 'created_at', ascending: false },
+  });
+  const total = (data ?? []).filter((r) => r.status !== 'WAIVED').reduce((s, r) => s + r.amount, 0);
   return (
-    <PageContainer
-      title="ค่าคอม"
-      content={`Commission rule เดโม: 10% ของยอดประเมิน · NO_SHOW = WAIVED · รวม ${baht(rows.reduce((s, r) => s + r.amount, 0))}`}
-    >
-      <Table
+    <PageContainer title="ค่าคอม" content={`ยอดค่าคอมที่ยังไม่ยกเว้นทั้งหมด ${baht(total)}`}>
+      <LoadError error={error} onRetry={() => void refetch()} />
+      <Table<Db.AdminBillingEvent>
         rowKey="id"
-        dataSource={rows}
+        loading={isLoading}
+        dataSource={data}
+        pagination={{ pageSize: PAGE_SIZE }}
+        scroll={{ x: 900 }}
+        locale={{ emptyText: 'ยังไม่มีค่าคอม — จะเกิดขึ้นเมื่อลูกค้าเช็กอินที่ร้าน' }}
         columns={[
-          { title: 'ร้าน', dataIndex: 'barName' },
-          { title: 'รหัสจอง', dataIndex: 'bookingCode' },
+          { title: 'ร้าน', key: 'bar', render: (_, r) => r.bar.name },
+          { title: 'รหัสจอง', dataIndex: 'booking_code' },
           {
-            title: 'Event',
-            dataIndex: 'type',
-            render: (t: string) => <Tag color={t === 'CHECK_IN' ? 'green' : 'default'}>{t}</Tag>,
+            title: 'เหตุการณ์',
+            dataIndex: 'event_type',
+            render: (t: string) =>
+              t === 'CHECK_IN' ? <Tag color="green">เช็กอิน</Tag> : <Tag>ไม่มาตามนัด</Tag>,
           },
-          { title: 'ยอดฐาน', dataIndex: 'baseAmount', render: (v: number) => baht(v) },
-          { title: 'ค่าคอม', dataIndex: 'amount', render: (v: number) => baht(v) },
-          { title: 'สถานะ', dataIndex: 'status' },
-          { title: 'เวลา', dataIndex: 'at', render: (v: string) => dateTime(v) },
+          { title: 'ยอดฐาน', dataIndex: 'base_amount', align: 'right', render: (v: number) => baht(v) },
+          { title: 'ค่าคอม', dataIndex: 'amount', align: 'right', render: (v: number) => baht(v) },
+          { title: 'รอบบิล', dataIndex: 'period', render: (v: string | null) => v ?? '-' },
+          { title: 'สถานะ', dataIndex: 'status', render: (s: string) => <StatusTag map={BILLING_STATUS} value={s} /> },
+          { title: 'เวลา', dataIndex: 'created_at', render: (v: string) => dateTime(v) },
         ]}
       />
     </PageContainer>

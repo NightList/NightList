@@ -1,10 +1,36 @@
+import { WarningCircle } from '@phosphor-icons/react';
+import { ThemeProvider } from '@nightlist/ui';
+import { Result } from 'antd';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import { checkApi } from './services/api';
+import { log } from './services/log';
+import { isSupabaseConfigured } from './services/supabase';
 import './styles/index.css';
 
+/** Backoffice ต้องต่อ Supabase เสมอ (ไม่มีโหมดเดโมสำหรับการเข้าสู่ระบบ) */
+function ConfigMissing() {
+  return (
+    <ThemeProvider>
+      <main className="grid min-h-dvh place-items-center bg-background p-6">
+        <Result
+          icon={<WarningCircle size={64} weight="duotone" className="mx-auto text-gold" />}
+          title="ยังไม่ได้ตั้งค่า Supabase"
+          subTitle="ใส่ VITE_SUPABASE_URL และ VITE_SUPABASE_ANON_KEY ในไฟล์ .env ที่ root ของโปรเจกต์ แล้วรัน pnpm dev ใหม่ (ดู docs/SUPABASE.md)"
+        />
+      </main>
+    </ThemeProvider>
+  );
+}
+
+if (isSupabaseConfigured) {
+  log.info(`Supabase: ${new URL(import.meta.env.VITE_SUPABASE_URL as string).host} · เข้าสู่ระบบ + MFA แล้วจะเห็นสถานะการโหลดแต่ละหน้า`);
+  void checkApi();
+} else {
+  log.error('ยังไม่ได้ตั้ง VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY ใน .env');
+}
+
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
+  <StrictMode>{isSupabaseConfigured ? <App /> : <ConfigMissing />}</StrictMode>,
 );

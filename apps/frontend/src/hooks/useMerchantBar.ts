@@ -1,5 +1,5 @@
-import type { BarWithTier } from '@nightlist/mock';
-import { getBar } from '@nightlist/mock';
+import type { BarWithTier } from '@/services/data';
+import { getBar } from '@/services/data';
 import { useOutletContext } from 'react-router';
 import { useDemo } from '@/hooks/useDemo';
 

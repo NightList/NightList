@@ -1,4 +1,4 @@
-import type { BarWithTier } from '@nightlist/mock';
+import type { BarWithTier } from '@/services/data';
 import { TierStars } from '@nightlist/ui';
 
 /**

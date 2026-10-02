@@ -6,6 +6,8 @@
 -- ---------------------------------------------------------------------
 -- enums
 -- ---------------------------------------------------------------------
+create extension if not exists pgcrypto with schema extensions;   -- gen_random_bytes() ของ share_token
+
 create type public.bar_category as enum ('PUB_BAR', 'CHILL', 'RESTAURANT');
 create type public.bar_status   as enum ('DRAFT', 'PENDING_REVIEW', 'APPROVED', 'REJECTED', 'SUSPENDED');
 create type public.crowd_status as enum ('AVAILABLE', 'ALMOST_FULL', 'FULL');
@@ -122,6 +124,13 @@ create table public.bar_staff (
   primary key (bar_id, user_id)
 );
 
+-- ช่วงเวลาที่ถือโต๊ะ — ใช้ใน exclusion constraint (index ต้องเป็น IMMUTABLE)
+-- timestamptz + interval ปกติเป็น STABLE เพราะ interval แบบวัน/เดือนขึ้นกับ timezone
+-- แต่บวกเป็น "นาที" ไม่ขึ้นกับ timezone จึงประกาศ IMMUTABLE ได้อย่างปลอดภัย
+create or replace function public.booking_period(start_at timestamptz, minutes integer)
+returns tstzrange language sql immutable parallel safe
+as $$ select tstzrange(start_at, start_at + minutes * interval '1 minute', '[)') $$;
+
 -- ---------------------------------------------------------------------
 -- bookings — จองเฉพาะโต๊ะ (+ โปรโมชัน) ไม่มีรายการอาหาร/เครื่องดื่ม
 -- ---------------------------------------------------------------------
@@ -139,14 +148,14 @@ create table public.bookings (
   promotion_id      uuid references public.bar_promotions (id) on delete set null,
   promotion_title   text,                       -- snapshot ตอนจอง
   note              text check (char_length(note) <= 200),
-  share_token       text not null unique default encode(gen_random_bytes(12), 'hex'),
+  share_token       text not null unique default encode(extensions.gen_random_bytes(12), 'hex'),
   checked_in_at     timestamptz,
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now(),
   -- โต๊ะเดียวกันซ้อนเวลากันไม่ได้ ขณะยังถือโต๊ะอยู่
   constraint bookings_no_overlap exclude using gist (
     table_id with =,
-    tstzrange(booking_datetime, booking_datetime + make_interval(mins => duration_minutes)) with &&
+    public.booking_period(booking_datetime, duration_minutes) with &&
   ) where (table_id is not null and status in ('PENDING','AWAITING_DEPOSIT','DEPOSIT_SUBMITTED','CONFIRMED','CHECKED_IN'))
 );
 create index bookings_bar_dt_idx on public.bookings (bar_id, booking_datetime);

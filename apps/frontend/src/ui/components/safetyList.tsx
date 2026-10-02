@@ -1,5 +1,5 @@
 import { CheckCircle, Question, SealCheck, XCircle } from '@phosphor-icons/react';
-import { SAFETY_LABELS, safetyScore, type Bar } from '@nightlist/mock';
+import { SAFETY_LABELS, safetyScore, type Bar } from '@/services/data';
 import { Progress, Tooltip } from 'antd';
 
 /** checklist ความปลอดภัย: แสดงสถานะเดียวต่อรายการ ✅ / ❌ / ⚪ */

@@ -15,8 +15,13 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:diff": "supabase db diff -f",
+    "db:login": "supabase login",
+    "db:link": "supabase link --project-ref pxueavqyykdipcjqbxyd",
     "db:push": "supabase db push",
-    "db:types": "supabase gen types typescript --local > src/database.types.ts"
+    "db:reset:remote": "supabase db reset --linked",
+    "db:seed:gen": "pnpm dlx tsx scripts/seed-from-mock.ts",
+    "user:create": "pnpm dlx tsx --env-file=../../.env scripts/create-user.ts",
+    "db:types": "supabase gen types typescript --linked --schema public > ../../packages/types/src/database.generated.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.2.6",

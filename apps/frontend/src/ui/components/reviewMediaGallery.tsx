@@ -1,11 +1,11 @@
 import { Play } from '@phosphor-icons/react';
-import type { ReviewMedia } from '@nightlist/mock';
+import type { ReviewMedia } from '@/services/data';
 import { Image, Modal } from 'antd';
 import { useEffect, useState } from 'react';
 import { getBlob } from '@/services/mediaStore';
 import { fmtDuration } from '@/ui/utils/media';
 
-/** URL เล่นวิดีโอ: src จริง หรือ blob จาก IndexedDB (เดโม) */
+/** URL เล่นวิดีโอ: src (URL ชั่วคราวจาก Supabase Storage) หรือ blob จาก IndexedDB (ไฟล์ที่เพิ่งเลือก ยังไม่อัปโหลด) */
 function useVideoUrl(m: ReviewMedia | null) {
   const [loaded, setLoaded] = useState<{ id: string; url: string | null }>({ id: '', url: null });
   const blobKey = m && !m.src ? m.blobKey : undefined;
@@ -87,7 +87,7 @@ export function ReviewMediaGallery({ media }: { media: ReviewMedia[] }) {
           <video src={url} poster={playing?.poster} controls autoPlay playsInline className="max-h-[70vh] w-full rounded-lg bg-black" />
         ) : (
           <p className="py-10 text-center text-sm text-muted">
-            {missing ? 'โหมดเดโม: วิดีโอเก็บไว้เฉพาะเบราว์เซอร์ที่อัปโหลด' : 'กำลังโหลดวิดีโอ…'}
+            {missing ? 'เปิดวิดีโอไม่ได้ ลองรีเฟรชหน้า' : 'กำลังโหลดวิดีโอ…'}
           </p>
         )}
       </Modal>

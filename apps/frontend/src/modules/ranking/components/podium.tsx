@@ -1,4 +1,4 @@
-import type { RankedBar } from '@nightlist/mock';
+import type { RankedBar } from '@/services/data';
 import { useRef } from 'react';
 import { Link } from 'react-router';
 import { barImage } from '@/ui/utils/barImage';

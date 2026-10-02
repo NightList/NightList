@@ -1,4 +1,4 @@
-import { barBookings } from '@nightlist/mock';
+import { barBookings } from '@/services/data';
 import { Button, Card, Col, Row, Statistic, Table } from 'antd';
 import { Link } from 'react-router';
 import { BookingStatusTag } from '@/ui/components/bookingStatusTag';

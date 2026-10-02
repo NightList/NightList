@@ -1,0 +1,106 @@
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  HttpException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+
+interface PostgrestError {
+  code?: string;
+  message?: string;
+  details?: string | null;
+  hint?: string | null;
+}
+
+/**
+ * เรียก Supabase ด้วย Secret key (service_role) — ข้าม RLS ได้ ใช้ในหลังบ้านเท่านั้น
+ * ใช้ fetch ตรง (PostgREST / Auth) ไม่ต้องพึ่ง SDK
+ */
+@Injectable()
+export class SupabaseService {
+  private readonly url: string;
+  private readonly key: string | undefined;
+
+  constructor(config: ConfigService) {
+    this.url = config.getOrThrow<string>('SUPABASE_URL').replace(/\/$/, '');
+    this.key = config.get<string>('SUPABASE_SERVICE_ROLE_KEY');
+  }
+
+  /** มี Secret key แล้วหรือยัง */
+  get configured(): boolean {
+    return !!this.key;
+  }
+
+  private headers(extra: Record<string, string> = {}): Record<string, string> {
+    if (!this.key) throw new ServiceUnavailableException('SUPABASE_SERVICE_ROLE_KEY is not configured');
+    return { apikey: this.key, Authorization: `Bearer ${this.key}`, 'Content-Type': 'application/json', ...extra };
+  }
+
+  /** เรียกฟังก์ชันใน DB (POST /rest/v1/rpc/<fn>) */
+  async rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
+    const res = await fetch(`${this.url}/rest/v1/rpc/${fn}`, {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify(args),
+    });
+    return this.parse<T>(res);
+  }
+
+  /** อ่านตาราง/วิว (GET /rest/v1/<path>) เช่น `users?select=role&id=eq.<uuid>` */
+  async select<T>(path: string): Promise<T> {
+    const res = await fetch(`${this.url}/rest/v1/${path}`, { headers: this.headers() });
+    return this.parse<T>(res);
+  }
+
+  /** ปิดการเข้าสู่ระบบของบัญชี (ลบบัญชี) — ห้ามลบจริงเพราะการจองยังอ้างถึง */
+  async banUser(id: string): Promise<void> {
+    const res = await fetch(`${this.url}/auth/v1/admin/users/${id}`, {
+      method: 'PUT',
+      headers: this.headers(),
+      body: JSON.stringify({ ban_duration: '876000h' }),
+    });
+    if (!res.ok) throw new InternalServerErrorException(`ban user failed: ${res.status}`);
+  }
+
+  /** ตรวจ access token กับ Supabase Auth (ใช้ตอน verify JWKS ไม่ได้ เช่นโปรเจกต์ที่ยังใช้ HS256) */
+  async getUser(accessToken: string): Promise<{ id: string; email?: string } | null> {
+    const res = await fetch(`${this.url}/auth/v1/user`, {
+      headers: { apikey: this.key ?? '', Authorization: `Bearer ${accessToken}` },
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as { id: string; email?: string };
+  }
+
+  private async parse<T>(res: Response): Promise<T> {
+    const text = await res.text();
+    const body = text ? (JSON.parse(text) as unknown) : null;
+    if (res.ok) return body as T;
+    throw this.toHttpError(res.status, body as PostgrestError | null);
+  }
+
+  /** แปลง error ของ Postgres/PostgREST เป็น HTTP error ที่หน้าบ้านเข้าใจ (ข้อความ = รหัส เช่น DEPOSIT_ALREADY_REVIEWED) */
+  private toHttpError(status: number, err: PostgrestError | null): HttpException {
+    const message = err?.message ?? `Supabase error ${status}`;
+    switch (err?.code) {
+      case 'P0002':
+        return new NotFoundException(message);
+      case 'P0001':
+      case '23505':
+      case '23P01':
+        return new ConflictException(message);
+      case '42501':
+        return new ForbiddenException(message);
+      case '22023':
+      case '22P02':
+      case '23514':
+        return new BadRequestException(message);
+      default:
+        return status >= 500 ? new InternalServerErrorException(message) : new BadRequestException(message);
+    }
+  }
+}

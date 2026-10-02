@@ -1,9 +1,10 @@
 import type { Session } from '@supabase/supabase-js';
 import type { UserRole } from '@nightlist/types';
-import { currentUser, demoLogout, type DemoUser } from '@nightlist/mock';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useDemo } from '@/hooks/useDemo';
-import { isSupabaseConfigured, supabase } from '@/services/supabase';
+import { log } from '@/services/log';
+import { supabase } from '@/services/supabase';
+import { clearUser, currentProfile, startUser } from '@/services/sync';
 
 export interface AppUser {
   id: string;
@@ -14,58 +15,97 @@ export interface AppUser {
 }
 
 interface AuthContextValue {
-  /** true = ยังไม่ได้ตั้ง Supabase → ใช้ข้อมูลเดโมในเบราว์เซอร์ */
-  isDemo: boolean;
+  /** เดิมใช้แยกโหมดเดโม — ตอนนี้ต่อ Supabase เสมอ (false ตลอด) */
+  isDemo: false;
   user: AppUser | null;
   session: Session | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  /** โหลดโปรไฟล์ + ข้อมูลผู้ใช้ใหม่ (เช่นหลังสมัครเป็นร้าน → role เปลี่ยน) */
+  reload: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const fromDemo = (u: DemoUser | null): AppUser | null =>
-  u && { id: u.id, email: u.email, displayName: u.displayName, role: u.role, barId: u.barId };
+/** โปรไฟล์จาก public.users (RLS: อ่านได้เฉพาะแถวตัวเอง) — role อ่านจาก DB ไม่ใช่ user_metadata */
+async function loadProfile(session: Session): Promise<AppUser | null> {
+  if (!supabase) return null;
+  const { data: u, error } = await supabase.from('users').select('id, display_name, role').eq('id', session.user.id).maybeSingle();
+  if (error || !u) {
+    log.error('โหลดโปรไฟล์จาก Supabase ไม่สำเร็จ', error?.message ?? 'ไม่พบแถวใน public.users');
+    return null;
+  }
+  const profile = {
+    id: u.id as string,
+    email: session.user.email ?? '',
+    displayName: u.display_name as string,
+    role: u.role as UserRole,
+  };
+  // ข้อมูลของผู้ใช้ (การจอง แจ้งเตือน ร้านของฉัน …) โหลดให้เสร็จก่อนเปิดหน้าที่ต้องล็อกอิน
+  const { barId } = await startUser(profile).catch((e: Error) => {
+    log.error('โหลดข้อมูลผู้ใช้จาก Supabase ไม่สำเร็จ', e.message);
+    return { barId: undefined };
+  });
+  return { ...profile, barId };
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   useDemo();
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(isSupabaseConfigured);
+  const [sessionLoading, setSessionLoading] = useState(supabase !== null);
+  const [profile, setProfile] = useState<AppUser | null>(null);
+  /** โหลดโปรไฟล์ของ user id ไหนเสร็จแล้ว (สำเร็จหรือไม่ก็ตาม) */
+  const [profileLoadedFor, setProfileLoadedFor] = useState<string | null>(null);
+  const [version, setVersion] = useState(0);
+  const userId = session?.user.id;
 
   useEffect(() => {
     if (!supabase) return;
     void supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
-      setLoading(false);
+      setSessionLoading(false);
     });
     const { data } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
     return () => data.subscription.unsubscribe();
   }, []);
 
-  const demoUser = isSupabaseConfigured ? null : currentUser();
+  useEffect(() => {
+    if (!userId || !session) {
+      if (currentProfile()) clearUser();
+      return;
+    }
+    let cancelled = false;
+    void loadProfile(session)
+      .then((p) => !cancelled && setProfile(p))
+      .finally(() => !cancelled && setProfileLoadedFor(`${userId}:${version}`));
+    return () => {
+      cancelled = true;
+    };
+    // session object เปลี่ยนทุกครั้งที่ต่ออายุ token — โหลดใหม่เฉพาะเมื่อเปลี่ยนผู้ใช้ / สั่ง reload
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, version]);
 
-  const value = useMemo<AuthContextValue>(() => {
-    // TODO: เมื่อต่อ Supabase จริง ให้โหลด role/barId จาก public.users
-    const realUser: AppUser | null = session
-      ? {
-          id: session.user.id,
-          email: session.user.email ?? '',
-          displayName:
-            (session.user.user_metadata?.display_name as string) ?? session.user.email ?? '',
-          role: 'CUSTOMER',
-        }
-      : null;
-    return {
-      isDemo: !isSupabaseConfigured,
-      user: isSupabaseConfigured ? realUser : fromDemo(demoUser),
+  // มี session แล้วแต่โปรไฟล์ยังไม่มา = ยังโหลดอยู่ (กัน RequireAuth เด้งไป /login ระหว่างรอ)
+  const loading = sessionLoading || (!!userId && profileLoadedFor !== `${userId}:${version}`);
+
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      isDemo: false,
+      user: session && profile && profile.id === session.user.id ? profile : null,
       session,
       loading,
       signOut: async () => {
-        if (supabase) await supabase.auth.signOut();
-        else demoLogout();
+        if (!supabase) return;
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+        clearUser();
       },
-    };
-  }, [session, loading, demoUser]);
+      reload: async () => {
+        setVersion((v) => v + 1);
+      },
+    }),
+    [session, profile, loading],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

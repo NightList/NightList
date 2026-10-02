@@ -61,7 +61,7 @@ export function listBars(filter: BarFilter = {}): BarWithTier[] {
     .filter((b) => !filter.maxBudget || b.avgPerPerson <= filter.maxBudget)
     .filter((b) => !filter.crowd?.length || filter.crowd.includes(b.crowd))
     .filter((b) => !filter.minSafety || safetyScore(b) >= filter.minSafety)
-    .filter((b) => !filter.hasPR || b.pr.male + b.pr.female > 0)
+    .filter((b) => !filter.hasPR || b.pr.male + b.pr.female + (b.pr.lgbtq ?? 0) > 0)
     .filter(
       (b) =>
         !q ||
@@ -529,7 +529,7 @@ export function reviewableBooking(barId: string): Booking | null {
 
 export function barReviews(barId: string): Review[] {
   return getState()
-    .reviews.filter((r) => r.barId === barId)
+    .reviews.filter((r) => r.barId === barId && (!r.status || r.status === 'PUBLISHED'))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 

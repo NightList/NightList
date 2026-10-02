@@ -6,6 +6,8 @@ import { defineConfig } from 'vite';
 const pkg = (name: string) => fileURLToPath(new URL(`../../packages/${name}/src/index.ts`, import.meta.url));
 
 export default defineConfig({
+  // อ่าน .env จาก root ของ monorepo (ไฟล์เดียวกับ backend) — ค่าเริ่มต้นของ Vite คือโฟลเดอร์แอป
+  envDir: fileURLToPath(new URL('../..', import.meta.url)),
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: [

@@ -1,7 +1,7 @@
-import { DISTRICTS, STYLES, updateBar } from '@nightlist/mock';
+import { MASTER, updateBarInfo } from '@/services/data';
 import { App, Button, Card, Form, Input, Select, Switch, TimePicker } from 'antd';
 import dayjs from 'dayjs';
-import { useAuth } from '@/services/auth';
+import { useState } from 'react';
 import { PageHeader } from '@/ui/components/pageHeader';
 import { useMerchantBar } from '@/hooks/useMerchantBar';
 
@@ -9,8 +9,8 @@ const DAYS = ['อาทิตย์', 'จันทร์', 'อังคาร
 
 export function MerchantStorePage() {
   const bar = useMerchantBar();
-  const { user } = useAuth();
   const { message } = App.useApp();
+  const [saving, setSaving] = useState(false);
   return (
     <div>
       <PageHeader
@@ -21,38 +21,44 @@ export function MerchantStorePage() {
         layout="vertical"
         initialValues={{
           ...bar,
+          district: bar.districtId,
+          styles: MASTER.styles.filter((st) => bar.styles.includes(st.label)).map((st) => st.key),
           instagram: bar.links.find((l) => l.type === 'INSTAGRAM')?.url,
           tiktok: bar.links.find((l) => l.type === 'TIKTOK')?.url,
-          hours: bar.hours.map((h) => ({
+          // ครบ 7 วันเสมอ (ร้านใหม่ยังไม่มีเวลาเปิด-ปิด → ค่าเริ่มต้น 18:00–02:00)
+          hours: Array.from({ length: 7 }, (_, day) => bar.hours.find((h) => h.day === day) ?? { day, open: '18:00', close: '02:00', closed: false }).map((h) => ({
             closed: !!h.closed,
             range: [dayjs(h.open, 'HH:mm'), dayjs(h.close, 'HH:mm')],
           })),
         }}
-        onFinish={(v) => {
-          updateBar(
-            bar.id,
-            {
+        onFinish={async (v) => {
+          setSaving(true);
+          try {
+            await updateBarInfo(bar.id, {
               name: v.name,
-              description: v.description,
+              description: v.description || null,
               address: v.address,
-              district: v.district,
-              styles: v.styles,
+              district_id: v.district ?? null,
+              style_keys: v.styles ?? [],
+              // ลิงก์อื่นที่ร้านมีอยู่แล้ว (Facebook / เว็บไซต์) ไม่หาย
               links: [
-                ...(v.instagram ? [{ type: 'INSTAGRAM' as const, url: v.instagram }] : []),
-                ...(v.tiktok ? [{ type: 'TIKTOK' as const, url: v.tiktok }] : []),
+                ...(v.instagram ? [{ type: 'INSTAGRAM', url: v.instagram }] : []),
+                ...(v.tiktok ? [{ type: 'TIKTOK', url: v.tiktok }] : []),
+                ...bar.links.filter((l) => l.type !== 'INSTAGRAM' && l.type !== 'TIKTOK'),
               ],
-              hours: v.hours.map(
-                (h: { closed: boolean; range: [dayjs.Dayjs, dayjs.Dayjs] }, day: number) => ({
-                  day,
-                  closed: h.closed,
-                  open: h.range[0].format('HH:mm'),
-                  close: h.range[1].format('HH:mm'),
-                }),
-              ),
-            },
-            user?.email,
-          );
-          message.success('บันทึกข้อมูลร้านแล้ว');
+              hours: v.hours.map((h: { closed: boolean; range?: [dayjs.Dayjs, dayjs.Dayjs] | null }, day: number) => ({
+                day_of_week: day,
+                is_closed: !!h.closed,
+                open_time: h.closed || !h.range ? null : h.range[0].format('HH:mm'),
+                close_time: h.closed || !h.range ? null : h.range[1].format('HH:mm'),
+              })),
+            });
+            message.success('บันทึกข้อมูลร้านแล้ว');
+          } catch (e) {
+            message.error((e as Error).message);
+          } finally {
+            setSaving(false);
+          }
         }}
       >
         <Card title="ข้อมูลทั่วไป" className="!mb-6">
@@ -61,7 +67,7 @@ export function MerchantStorePage() {
               <Input />
             </Form.Item>
             <Form.Item name="district" label="ย่าน">
-              <Select options={DISTRICTS.map((d) => ({ label: d, value: d }))} />
+              <Select allowClear options={MASTER.districts.map((d) => ({ label: d.name, value: d.id }))} />
             </Form.Item>
           </div>
           <Form.Item name="address" label="ที่อยู่">
@@ -71,7 +77,7 @@ export function MerchantStorePage() {
             <Input.TextArea rows={3} maxLength={400} showCount />
           </Form.Item>
           <Form.Item name="styles" label="สไตล์">
-            <Select mode="multiple" options={STYLES.map((s) => ({ label: s, value: s }))} />
+            <Select mode="multiple" options={MASTER.styles.map((st) => ({ label: st.label, value: st.key }))} />
           </Form.Item>
         </Card>
         <Card title="เวลาเปิด-ปิด" className="!mb-6">
@@ -102,7 +108,7 @@ export function MerchantStorePage() {
             </Form.Item>
           </div>
         </Card>
-        <Button type="primary" htmlType="submit" size="large">
+        <Button type="primary" htmlType="submit" size="large" loading={saving}>
           บันทึก
         </Button>
       </Form>

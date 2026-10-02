@@ -1,11 +1,10 @@
-import { barBookings, transition, type Booking } from '@nightlist/mock';
+import { barBookings, setBookingStatus, type Booking } from '@/services/data';
 import type { BookingStatus } from '@nightlist/types';
 import { nextStatuses } from '@nightlist/utils';
 import { App, Button, Card, Drawer, Segmented, Space, Table, Timeline } from 'antd';
 import { useState } from 'react';
 import { BookingStatusTag } from '@/ui/components/bookingStatusTag';
 import { DepositSummary } from '@/ui/components/depositCard';
-import { useAuth } from '@/services/auth';
 import { PageHeader } from '@/ui/components/pageHeader';
 import { BOOKING_STATUS, dateTime } from '@/ui/utils/format';
 import { useMerchantBar } from '@/hooks/useMerchantBar';
@@ -21,11 +20,12 @@ const ACTION_LABEL: Partial<Record<BookingStatus, string>> = {
 
 export function MerchantBookingsPage() {
   const bar = useMerchantBar();
-  const { user } = useAuth();
   const { message } = App.useApp();
   const [filter, setFilter] = useState<'upcoming' | 'all'>('upcoming');
-  const [open, setOpen] = useState<Booking | null>(null);
-  const actor = user?.role === 'STAFF' ? 'STAFF' : 'MERCHANT';
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  // สิทธิ์ตามบทบาทในทีมร้าน (พนักงานยกเลิกแทนร้านไม่ได้)
+  const actor = bar.staffRole === 'STAFF' ? 'STAFF' : 'MERCHANT';
   const rows = barBookings(bar.id).filter(
     (b) =>
       filter === 'all' ||
@@ -34,13 +34,18 @@ export function MerchantBookingsPage() {
       ),
   );
 
-  const act = (b: Booking, to: BookingStatus) => {
+  const open = openId ? (barBookings(bar.id).find((b) => b.id === openId) ?? null) : null;
+  const setOpen = (b: Booking | null) => setOpenId(b?.id ?? null);
+
+  const act = async (b: Booking, to: BookingStatus) => {
+    setBusy(`${b.id}:${to}`);
     try {
-      const updated = transition(b.id, to, actor, user?.displayName ?? actor);
-      message.success(`${ACTION_LABEL[to]} แล้ว`);
-      if (open) setOpen(updated);
+      await setBookingStatus(b.id, to);
+      message.success(`${ACTION_LABEL[to]}แล้ว`);
     } catch (e) {
       message.error((e as Error).message);
+    } finally {
+      setBusy(null);
     }
   };
   const actions = (b: Booking) =>
@@ -51,10 +56,11 @@ export function MerchantBookingsPage() {
           key={s}
 
           type={s === 'CONFIRMED' || s === 'CHECKED_IN' ? 'primary' : 'default'}
+          loading={busy === `${b.id}:${s}`}
           danger={s === 'REJECTED' || s === 'CANCELLED_BY_MERCHANT'}
           onClick={(e) => {
             e.stopPropagation();
-            act(b, s);
+            void act(b, s);
           }}
         >
           {ACTION_LABEL[s]}
@@ -151,9 +157,6 @@ export function MerchantBookingsPage() {
             <Card title="มัดจำ">
               <DepositSummary booking={open} />
             </Card>
-            {open.deposit?.slipDataUrl && (
-              <img src={open.deposit.slipDataUrl} alt="สลิปมัดจำ" className="max-h-72 rounded-lg" />
-            )}
             <Timeline
               items={open.history.map((h) => ({
                 content: `${BOOKING_STATUS[h.to].label} · ${h.by} · ${dateTime(h.at)}`,

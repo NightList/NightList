@@ -10,6 +10,10 @@ export const EnvSchema = z.object({
   DATABASE_URL: z.string().optional(),
   JOB_SECRET: z.string().min(8).default('change-me-local'),
   QR_SIGNING_KEY: z.string().optional(),
+  /** เข้ารหัสเลขบัญชีร้าน (AES-256-GCM) — ห้ามเปลี่ยนหลังมีข้อมูลแล้ว */
+  PAYOUT_ENCRYPTION_KEY: z.string().min(16).optional(),
+  /** dev: รัน job หมดเวลา/ไม่มาตามนัด ทุกกี่ ms ในเครื่อง (0 = ปิด · production ใช้ pg_cron) */
+  JOBS_LOCAL_INTERVAL_MS: z.coerce.number().int().min(0).default(60_000),
 });
 export type Env = z.infer<typeof EnvSchema>;
 

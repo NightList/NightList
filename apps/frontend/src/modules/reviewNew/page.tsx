@@ -1,16 +1,19 @@
-import { addReview, getBar, getBooking, type ReviewMedia } from '@nightlist/mock';
+import { addReview, getBar, getBooking, type ReviewMedia } from '@/services/data';
 import { App, Button, Card, Form, Input, Rate, Result } from 'antd';
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { ReviewMediaPicker } from '@/ui/components/reviewMediaPicker';
 import { PageHeader } from '@/ui/components/pageHeader';
+import { useDemo } from '@/hooks/useDemo';
 
 /** /reviews/new?booking=:id — รีวิวได้เฉพาะ booking ที่เช็กอินแล้ว (1 booking = 1 รีวิว) */
 export function ReviewNewPage() {
+  useDemo();
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const { message } = App.useApp();
   const [media, setMedia] = useState<ReviewMedia[]>([]);
+  const [sending, setSending] = useState(false);
   const b = getBooking(params.get('booking') ?? '');
   const bar = b ? getBar(b.barId) : null;
   if (!b || !bar) return <Result status="404" title="ไม่พบการจอง" />;
@@ -26,13 +29,16 @@ export function ReviewNewPage() {
           layout="vertical"
           size="large"
           initialValues={{ rating: 5 }}
-          onFinish={(v: { rating: number; comment: string }) => {
+          onFinish={async (v: { rating: number; comment: string }) => {
+            setSending(true);
             try {
-              addReview(b.id, v.rating, v.comment, media);
+              await addReview(b.id, v.rating, v.comment, media);
               message.success('ขอบคุณสำหรับรีวิว!');
               navigate(`/bars/${bar.slug}`);
             } catch (e) {
               message.error((e as Error).message);
+            } finally {
+              setSending(false);
             }
           }}
         >
@@ -54,7 +60,7 @@ export function ReviewNewPage() {
           <Form.Item label="รูป / วิดีโอ (ไม่บังคับ)">
             <ReviewMediaPicker value={media} onChange={setMedia} />
           </Form.Item>
-          <Button type="primary" htmlType="submit" block>
+          <Button type="primary" htmlType="submit" block loading={sending}>
             ส่งรีวิว
           </Button>
         </Form>

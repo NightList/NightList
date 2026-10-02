@@ -1,7 +1,8 @@
 import { Heart } from '@phosphor-icons/react';
-import { favorites, toggleFavorite } from '@nightlist/mock';
+import { favorites, toggleFavorite } from '@/services/data';
 import { App, Button } from 'antd';
 import { motion } from 'motion/react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '@/services/auth';
 import { useDemo } from '@/hooks/useDemo';
@@ -11,6 +12,7 @@ export function FavoriteButton({ barId, className }: { barId: string; className?
   const { user } = useAuth();
   const { message } = App.useApp();
   const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
   const active = favorites().includes(barId);
   return (
     <Button
@@ -18,12 +20,20 @@ export function FavoriteButton({ barId, className }: { barId: string; className?
       className={className}
       aria-label={active ? 'เอาออกจากร้านโปรด' : 'บันทึกเป็นร้านโปรด'}
       aria-pressed={active}
-      onClick={(e) => {
+      loading={busy}
+      onClick={async (e) => {
         e.preventDefault();
         e.stopPropagation();
         if (!user) return navigate('/login');
-        const added = toggleFavorite(barId);
-        message.success(added ? 'บันทึกเป็นร้านโปรดแล้ว' : 'เอาออกจากร้านโปรดแล้ว');
+        setBusy(true);
+        try {
+          const added = await toggleFavorite(barId);
+          message.success(added ? 'บันทึกเป็นร้านโปรดแล้ว' : 'เอาออกจากร้านโปรดแล้ว');
+        } catch (err) {
+          message.error((err as Error).message);
+        } finally {
+          setBusy(false);
+        }
       }}
       icon={
         <motion.span

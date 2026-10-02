@@ -7,6 +7,8 @@ const pkg = (name: string) => fileURLToPath(new URL(`../../packages/${name}/src/
 
 export default defineConfig({
   base: '/admin/', // เสิร์ฟใต้ /admin บน Vercel services
+  // อ่าน .env จาก root ของ monorepo (ไฟล์เดียวกับ backend) — ค่าเริ่มต้นของ Vite คือโฟลเดอร์แอป
+  envDir: fileURLToPath(new URL('../..', import.meta.url)),
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: [

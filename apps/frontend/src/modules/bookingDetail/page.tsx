@@ -1,5 +1,5 @@
 import { Clock, ChatCircleDots, MapPin, ShareNetwork } from '@phosphor-icons/react';
-import { autoCancelAt, getBar, getBooking, transition } from '@nightlist/mock';
+import { autoCancelAt, cancelBooking, getBar, getBooking } from '@/services/data';
 import { App, Button, Card, Result, Timeline } from 'antd';
 import { QRCodeSVG } from 'qrcode.react';
 import { Link, useParams } from 'react-router';
@@ -34,7 +34,7 @@ export function BookingDetailPage() {
   const zone = bar.zones.find((z) => z.id === b.zoneId);
   const table = zone?.tables.find((t) => t.id === b.tableId);
   const shareUrl = `${location.origin}/share/${b.shareToken}`;
-  const canCancel = ['PENDING', 'AWAITING_DEPOSIT', 'CONFIRMED'].includes(b.status);
+  const canCancel = ['PENDING', 'AWAITING_DEPOSIT', 'DEPOSIT_SUBMITTED', 'CONFIRMED'].includes(b.status);
 
   const share = async () => {
     const text = `ไป ${bar.name} กัน! ${dateTime(b.datetime)} · ${zone?.name}\n${shareUrl}`;
@@ -111,9 +111,13 @@ export function BookingDetailPage() {
                     okText: 'ยกเลิกการจอง',
                     okButtonProps: { danger: true },
                     cancelText: 'ไม่ยกเลิก',
-                    onOk: () => {
-                      transition(b.id, 'CANCELLED_BY_CUSTOMER', 'CUSTOMER', b.userName);
-                      message.success('ยกเลิกแล้ว');
+                    onOk: async () => {
+                      try {
+                        await cancelBooking(b.id);
+                        message.success('ยกเลิกแล้ว');
+                      } catch (e) {
+                        message.error((e as Error).message);
+                      }
                     },
                   })
                 }
@@ -123,6 +127,11 @@ export function BookingDetailPage() {
             )}
           </div>
         </Card>
+        {b.cancelReason && ['REJECTED', 'CANCELLED_BY_MERCHANT', 'CANCELLED_BY_CUSTOMER'].includes(b.status) && (
+          <Card title="เหตุผลที่ยกเลิก">
+            <p>{b.cancelReason}</p>
+          </Card>
+        )}
         {b.promotionTitle && (
           <Card title="โปรโมชันที่เลือก">
             <p className="font-semibold">{b.promotionTitle}</p>

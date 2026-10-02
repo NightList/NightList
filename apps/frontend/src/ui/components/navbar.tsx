@@ -1,12 +1,15 @@
-import { Bell, User, type Icon } from '@phosphor-icons/react';
-import { myNotifications } from '@nightlist/mock';
+import { Bell, SignOut, User, type Icon } from '@phosphor-icons/react';
+import { myNotifications } from '@/services/data';
 import { ThemeToggle } from '@nightlist/ui';
-import { Badge, Button } from 'antd';
+import { App, Badge, Button, Dropdown, Empty, Tag } from 'antd';
 import { motion, useReducedMotion } from 'motion/react';
-import { Link, NavLink } from 'react-router';
+import { useState } from 'react';
+import { Link, NavLink, useNavigate } from 'react-router';
+import { NOTIFICATION_PREVIEW_LIMIT } from '@/configs/app';
 import { useDemo } from '@/hooks/useDemo';
 import { useScrolled } from '@/hooks/useScrolled';
 import { useAuth } from '@/services/auth';
+import { timeAgo } from '@/ui/utils/format';
 
 export interface NavItem {
   to: string;
@@ -47,12 +50,37 @@ export function Navbar({
   minimal?: boolean;
 }) {
   useDemo();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const { message } = App.useApp();
+  const navigate = useNavigate();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const scrolled = useScrolled();
   const reduce = useReducedMotion();
-  const unread = user ? myNotifications().filter((n) => !n.readAt).length : 0;
+  // แจ้งเตือนจาก Supabase (services/sync.ts โหลดใหม่ทุก 60 วินาที)
+  const notifications = user ? myNotifications() : [];
+  const latestNotifications = notifications
+    .toSorted((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
+    .slice(0, NOTIFICATION_PREVIEW_LIMIT);
+  const unread = notifications.filter((n) => !n.readAt).length;
   const glass = overVideo && !scrolled;
   const dim = glass ? 'text-white/75 hover:text-white' : 'text-muted hover:text-text';
+
+  const logout = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await signOut();
+      setProfileOpen(false);
+      setNotificationsOpen(false);
+      navigate('/', { replace: true });
+    } catch {
+      message.error('ออกจากระบบไม่สำเร็จ ลองใหม่อีกครั้ง');
+    } finally {
+      setSigningOut(false);
+    }
+  };
 
   return (
     <motion.div
@@ -110,21 +138,103 @@ export function Navbar({
       >
         {!minimal && <ThemeToggle />}
         {user && (
-          <Link to="/notifications">
-            <Badge count={unread} offset={[-4, 4]}>
-              <Button
-                type="text"
-                shape="circle"
-                aria-label={`แจ้งเตือน ${unread} รายการ`}
-                icon={<Bell size={20} />}
-              />
-            </Badge>
-          </Link>
+          <Dropdown
+            placement="bottomRight"
+            trigger={['click']}
+            open={notificationsOpen}
+            onOpenChange={setNotificationsOpen}
+            popupRender={() => (
+              <section
+                role="dialog"
+                aria-label="แจ้งเตือนล่าสุด"
+                className="w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-border bg-surface text-text shadow-xl"
+              >
+                <div className="flex items-center justify-between gap-2 border-b border-border p-4">
+                  <h2 className="font-semibold">แจ้งเตือน</h2>
+                  <Link to="/notifications" onClick={() => setNotificationsOpen(false)}>
+                    <Tag color="gold" className="!m-0 cursor-pointer">
+                      ดูรายการทั้งหมด
+                    </Tag>
+                  </Link>
+                </div>
+                {latestNotifications.length === 0 ? (
+                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="ยังไม่มีแจ้งเตือน" />
+                ) : (
+                  <ul className="max-h-80 overflow-y-auto divide-y divide-border">
+                    {latestNotifications.map((n) => (
+                      <li key={n.id}>
+                        <Link
+                          to={n.link || '/notifications'}
+                          onClick={() => setNotificationsOpen(false)}
+                          className="flex gap-3 p-4 !text-text transition-colors hover:bg-card"
+                        >
+                          <Badge dot={!n.readAt} className="mt-1 shrink-0">
+                            <Bell size={20} className="text-gold-text" />
+                          </Badge>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold">{n.title}</p>
+                            <p className="mt-1 break-words text-sm text-muted">{n.body}</p>
+                            <p className="mt-1 text-xs text-muted">{timeAgo(n.createdAt)}</p>
+                          </div>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            )}
+          >
+            <Button
+              type="text"
+              shape="circle"
+              aria-label={`แจ้งเตือน ${unread} รายการ`}
+              aria-expanded={notificationsOpen}
+              aria-haspopup="dialog"
+              icon={
+                <Badge count={unread} offset={[4, -4]}>
+                  <Bell size={20} />
+                </Badge>
+              }
+            />
+          </Dropdown>
         )}
         {user ? (
-          <Link to="/profile">
-            <Button type="text" shape="circle" aria-label="โปรไฟล์" icon={<User size={20} />} />
-          </Link>
+          <Dropdown
+            placement="bottomRight"
+            trigger={['click']}
+            open={profileOpen}
+            onOpenChange={setProfileOpen}
+            menu={{
+              items: [
+                {
+                  key: 'profile',
+                  icon: <User size={18} />,
+                  label: <Link to="/profile">ดูโปรไฟล์</Link>,
+                },
+                {
+                  key: 'logout',
+                  icon: <SignOut size={18} />,
+                  label: 'ออกจากระบบ',
+                  danger: true,
+                  disabled: signingOut,
+                },
+              ],
+              onClick: ({ key }) => {
+                setProfileOpen(false);
+                if (key === 'logout') void logout();
+              },
+            }}
+          >
+            <Button
+              type="text"
+              shape="circle"
+              aria-label="โปรไฟล์"
+              aria-haspopup="menu"
+              aria-expanded={profileOpen}
+              loading={signingOut}
+              icon={<User size={20} />}
+            />
+          </Dropdown>
         ) : minimal ? null : (
           <Link to="/login" className="ml-1">
             <Button type="primary" shape="round">

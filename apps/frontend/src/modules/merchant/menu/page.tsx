@@ -1,5 +1,5 @@
 import { Plus, TrashIcon } from '@phosphor-icons/react';
-import { updateBar, type MenuItem } from '@nightlist/mock';
+import { setMenu, type MenuItem } from '@/services/data';
 import {
   App,
   Button,
@@ -25,7 +25,18 @@ export function MerchantMenuPage() {
   const { message } = App.useApp();
   const [open, setOpen] = useState(false);
   const [form] = Form.useForm<Omit<MenuItem, 'id' | 'available'>>();
-  const save = (menu: MenuItem[]) => updateBar(bar.id, { menu });
+  const [saving, setSaving] = useState(false);
+  const save = async (menu: MenuItem[], done = 'บันทึกเมนูแล้ว') => {
+    setSaving(true);
+    try {
+      await setMenu(bar.id, menu);
+      message.success(done);
+    } catch (e) {
+      message.error((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div>
@@ -41,6 +52,7 @@ export function MerchantMenuPage() {
       <Card>
         <Table
           rowKey="id"
+          loading={saving}
           dataSource={bar.menu}
           pagination={false}
           columns={[
@@ -62,7 +74,7 @@ export function MerchantMenuPage() {
                   onBlur={(e) => {
                     const price = Number(e.target.value);
                     if (price !== v)
-                      save(bar.menu.map((m) => (m.id === r.id ? { ...m, price } : m)));
+                      void save(bar.menu.map((m) => (m.id === r.id ? { ...m, price } : m)));
                   }}
                   suffix="฿"
                 />
@@ -74,8 +86,9 @@ export function MerchantMenuPage() {
               render: (v: boolean, r) => (
                 <Switch
                   checked={v}
+                  loading={saving}
                   onChange={(available) =>
-                    save(bar.menu.map((m) => (m.id === r.id ? { ...m, available } : m)))
+                    void save(bar.menu.map((m) => (m.id === r.id ? { ...m, available } : m)))
                   }
                 />
               ),
@@ -88,7 +101,7 @@ export function MerchantMenuPage() {
                   title="ลบรายการนี้?"
                   okText="ลบ"
                   cancelText="ยกเลิก"
-                  onConfirm={() => save(bar.menu.filter((m) => m.id !== r.id))}
+                  onConfirm={() => save(bar.menu.filter((m) => m.id !== r.id), 'ลบรายการแล้ว')}
                 >
                   <Button type="default" danger icon={<TrashIcon />} aria-label="ลบ" />
                 </Popconfirm>
@@ -109,12 +122,12 @@ export function MerchantMenuPage() {
         okText="เพิ่ม"
         cancelText="ยกเลิก"
         onCancel={() => setOpen(false)}
+        confirmLoading={saving}
         onOk={async () => {
           const v = await form.validateFields();
-          save([...bar.menu, { ...v, id: `${bar.id}-m${Date.now()}`, available: true }]);
+          await save([...bar.menu, { ...v, id: `new-${Date.now()}`, available: true }], 'เพิ่มรายการแล้ว');
           form.resetFields();
           setOpen(false);
-          message.success('เพิ่มแล้ว');
         }}
       >
         <Form form={form} layout="vertical" initialValues={{ category: 'อาหาร' }}>

@@ -1,12 +1,13 @@
-import { GenderFemale, GenderMale, UsersThree } from '@phosphor-icons/react';
-import type { Bar } from '@nightlist/mock';
+import { GenderFemale, GenderMale, GenderNonbinary, UsersThree } from '@phosphor-icons/react';
+import type { Bar } from '@/services/data';
 
 /**
  * ป้าย PR ประจำร้าน — ร้านกรอกเอง
  * compact: "PR ♂2 ♀5" ในการ์ด · เต็ม: การ์ดเล็กในหน้าร้าน
  */
 export function PRBadge({ pr, compact = false }: { pr: Bar['pr']; compact?: boolean }) {
-  const total = pr.male + pr.female;
+  const lgbtq = pr.lgbtq ?? 0;
+  const total = pr.male + pr.female + lgbtq;
   if (compact) {
     if (!total) return null;
     return (
@@ -22,6 +23,12 @@ export function PRBadge({ pr, compact = false }: { pr: Bar['pr']; compact?: bool
           <span className="inline-flex items-center">
             <GenderFemale size={12} className="text-pink-400" />
             {pr.female}
+          </span>
+        )}
+        {lgbtq > 0 && (
+          <span className="inline-flex items-center" title="LGBTQ+">
+            <GenderNonbinary size={12} className="text-violet-400" />
+            {lgbtq}
           </span>
         )}
       </span>
@@ -42,6 +49,11 @@ export function PRBadge({ pr, compact = false }: { pr: Bar['pr']; compact?: bool
           <span className="inline-flex items-center gap-1">
             <GenderFemale className="text-pink-400" /> หญิง {pr.female} คน
           </span>
+          {lgbtq > 0 && (
+            <span className="inline-flex items-center gap-1">
+              <GenderNonbinary className="text-violet-400" /> LGBTQ+ {lgbtq} คน
+            </span>
+          )}
         </div>
       )}
       <p className="mt-1 text-xs text-muted">ข้อมูลจากร้านโดยตรง</p>

@@ -34,6 +34,23 @@
   }
 }
 
+@property --gold-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@theme {
+  /* ผูกอนิเมชันความเร็ว 3 วินาที สำหรับหมุนแสงทอง */
+  --animate-gold-gradient-spin: gold-gradient-spin 3s linear infinite;
+
+  @keyframes gold-gradient-spin {
+    to {
+      --gold-angle: 360deg;
+    }
+  }
+}
+
 /* หมุดแผนที่ (Leaflet divIcon) — ทอง + ขอบม่วง ให้เข้าธีม */
 .nl-pin {
   width: 28px;
@@ -80,10 +97,14 @@
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
 .nl-avatar-pin.is-promoted .nl-avatar-pin__img {
-  box-shadow: 0 0 0 2px #fff, 0 0 0 5px #e8b64c;
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 5px #e8b64c;
 }
 .nl-avatar-pin.is-active .nl-avatar-pin__img {
-  box-shadow: 0 0 0 3px #fff, 0 0 0 7px rgba(232, 182, 76, 0.55);
+  box-shadow:
+    0 0 0 3px #fff,
+    0 0 0 7px rgba(232, 182, 76, 0.55);
 }
 .nl-avatar-pin__tail {
   position: absolute;
@@ -110,8 +131,12 @@
   }
 }
 @keyframes nl-me-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.45); }
-  100% { box-shadow: 0 0 0 16px rgba(59, 130, 246, 0); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.45);
+  }
+  100% {
+    box-shadow: 0 0 0 16px rgba(59, 130, 246, 0);
+  }
 }
 
 /* พื้นแผนที่ OSM ให้เป็นโทนเรียบ (ไม่ต้องมี key) — light: เทาอ่อน · dark: กลับสีเป็นเทาเข้ม */
@@ -120,5 +145,6 @@
 }
 .nl-map-tiles--dark {
   /* สำรองเมื่อโหลด vector ไม่ได้ — โทนน้ำเงินเทาแบบ Google night (ไม่มืดจนเกิน) */
-  filter: invert(1) hue-rotate(180deg) sepia(0.25) saturate(1.4) hue-rotate(185deg) brightness(1.05) contrast(0.78);
+  filter: invert(1) hue-rotate(180deg) sepia(0.25) saturate(1.4) hue-rotate(185deg) brightness(1.05)
+    contrast(0.78);
 }

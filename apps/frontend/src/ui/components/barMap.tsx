@@ -1,4 +1,4 @@
-import type { BarWithTier } from '@nightlist/mock';
+import type { BarWithTier } from '@/services/data';
 import { divIcon, type LatLngBoundsExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MapContainer, Marker, Popup, useMap } from 'react-leaflet';

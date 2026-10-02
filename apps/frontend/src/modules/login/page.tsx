@@ -1,9 +1,7 @@
-import { FacebookLogo, GoogleLogo, ShieldStar, Storefront, User } from '@phosphor-icons/react';
-import { demoLogin, demoLoginAs } from '@nightlist/mock';
+import { FacebookLogo, GoogleLogo } from '@phosphor-icons/react';
 import { App, Button, Form, Input } from 'antd';
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
-import { useAuth } from '@/services/auth';
 import { supabase } from '@/services/supabase';
 import { AuthCard } from '@/ui/components/authCard';
 
@@ -17,11 +15,9 @@ type Provider = 'google' | 'facebook';
 /**
  * /login — ดีไซน์ตาม Figma "Login": โลโก้ · อีเมล/รหัสผ่านมีป้ายกำกับ · ลืมรหัสผ่านชิดขวา ·
  * ปุ่มม่วง "เข้าสู่ระบบ" · "หรือดำเนินการต่อด้วย" Google / Facebook · ลิงก์สมัครสมาชิก
- * โหมดเดโม: ปุ่มเข้าเร็วตามบทบาทอยู่ท้ายการ์ด
  */
 export function LoginPage() {
   const { message } = App.useApp();
-  const { isDemo } = useAuth();
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -30,13 +26,9 @@ export function LoginPage() {
   const onFinish = async ({ email, password }: LoginForm) => {
     setLoading(true);
     try {
-      if (isDemo) {
-        demoLogin(email);
-      } else {
-        // TODO: Cloudflare Turnstile → options: { captchaToken }
-        const { error } = await supabase!.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-      }
+      // TODO: Cloudflare Turnstile → options: { captchaToken }
+      const { error } = await supabase!.auth.signInWithPassword({ email, password });
+      if (error) throw error;
       navigate(next, { replace: true });
     } catch {
       message.error('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
@@ -46,22 +38,11 @@ export function LoginPage() {
   };
 
   const oauth = async (provider: Provider) => {
-    if (isDemo) {
-      message.info('โหมดเดโม: ใช้ปุ่มเข้าเร็วด้านล่างแทน');
-      return;
-    }
     const { error } = await supabase!.auth.signInWithOAuth({
       provider,
       options: { redirectTo: `${window.location.origin}${next}` },
     });
     if (error) message.error('เข้าสู่ระบบไม่สำเร็จ ลองใหม่อีกครั้ง');
-  };
-
-  const quick = (role: 'customer' | 'merchant' | 'staff') => {
-    demoLoginAs(role);
-    navigate(role === 'customer' ? next : role === 'staff' ? '/merchant/tonight' : '/merchant', {
-      replace: true,
-    });
   };
 
   return (
@@ -126,22 +107,6 @@ export function LoginPage() {
         </Link>
       </p>
 
-      {isDemo && (
-        <div className="mt-7 border-t border-white/10 pt-5 text-center">
-          <p className="mb-2.5 text-xs text-white/60">เดโม — เข้าเร็วตามบทบาท</p>
-          <div className="grid grid-cols-3 gap-2">
-            <Button type="text" icon={<User />} onClick={() => quick('customer')}>
-              ลูกค้า
-            </Button>
-            <Button type="text" icon={<Storefront />} onClick={() => quick('merchant')}>
-              เจ้าของร้าน
-            </Button>
-            <Button type="text" icon={<ShieldStar />} onClick={() => quick('staff')}>
-              Staff
-            </Button>
-          </div>
-        </div>
-      )}
     </AuthCard>
   );
 }

@@ -1,14 +1,14 @@
 import type { ThemeMode } from '@nightlist/types';
 import { useThemeMode } from '@nightlist/ui';
-import { resetDemo } from '@nightlist/mock';
 import { App, Button, Card, Segmented } from 'antd';
 import { useNavigate } from 'react-router';
 import { useAuth } from '@/services/auth';
+import { deleteAccount } from '@/services/data';
 import { PageHeader } from '@/ui/components/pageHeader';
 
 export function SettingsPage() {
   const { mode, setMode } = useThemeMode();
-  const { isDemo, signOut } = useAuth();
+  const { signOut } = useAuth();
   const { modal, message } = App.useApp();
   const navigate = useNavigate();
   return (
@@ -44,14 +44,20 @@ export function SettingsPage() {
             onClick={() =>
               modal.confirm({
                 title: 'ลบบัญชี?',
-                content: 'ข้อมูลการจองและรีวิวจะถูกลบตามนโยบาย (เดโม: รีเซ็ตข้อมูลในเบราว์เซอร์)',
+                content:
+                  'บัญชีจะถูกปิดทันทีและเข้าสู่ระบบไม่ได้อีก ข้อมูลส่วนตัวถูกล้างตามนโยบายความเป็นส่วนตัว (ประวัติการจองเก็บแบบไม่ระบุตัวตน)',
                 okText: 'ลบบัญชี',
                 okButtonProps: { danger: true },
                 cancelText: 'ยกเลิก',
                 onOk: async () => {
-                  await signOut();
-                  if (isDemo) resetDemo();
-                  navigate('/');
+                  try {
+                    await deleteAccount();
+                    await signOut().catch(() => undefined);
+                    message.success('ลบบัญชีแล้ว');
+                    navigate('/');
+                  } catch (e) {
+                    message.error((e as Error).message);
+                  }
                 },
               })
             }
