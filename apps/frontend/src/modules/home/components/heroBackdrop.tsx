@@ -4,12 +4,13 @@ import { useEffect, useRef, useState } from 'react';
 const POSTER = '/images/home/hero-poster.webp';
 /**
  * วิดีโอพื้นหลัง · null = ใช้ภาพนิ่งอย่างเดียว
- * hero-city-*.mp4 = คลิปจาก Higgsfield (1080p 10 วิ) เพิ่มเฟรมเป็น 48fps · หัว-ท้ายคลิปไม่ตรงกันเป๊ะ จึงครอสเฟด 1 วิตอนวนรอบ
+ * hero-loop-hf-*.mp4 = คลิป Higgsfield (MiniMax H3 Max, เฟรมแรก=เฟรมท้าย, 480p 5 วิ) ขยายเป็น 1080p ด้วย Real-ESRGAN
+ *   (+ เติมดาวเล็กๆ กลับจากภาพเดิม) แล้วเพิ่มเฟรมเป็น 48fps · ครอสเฟด 1 วิตอนวนรอบ
  * (สคริปต์ scripts/render-hero-loop.py ใช้เรนเดอร์คลิปวนรอบจากภาพนิ่งได้ ถ้าจะกลับไปใช้แบบนั้น)
  */
 const HERO_VIDEO: { sm: string; lg: string } | null = {
-  sm: '/videos/hero-city-480.mp4',
-  lg: '/videos/hero-city-1080.mp4',
+  sm: '/videos/hero-loop-hf-480.mp4',
+  lg: '/videos/hero-loop-hf-1080.mp4',
 };
 /** ครอสเฟดตอนต่อรอบ (ms) — ตัวใหม่จางเข้าทับตัวเก่าที่ยังทึบอยู่ */
 const SEAM_FADE = 1000;
@@ -34,7 +35,7 @@ export function HeroBackdrop() {
   const refB = useRef<HTMLVideoElement>(null);
   const [load, setLoad] = useState(false);
   const [playing, setPlaying] = useState(false);
-  // เลือกไฟล์ครั้งเดียวตอนเริ่มโหลด: จอแคบ → 480p (~0.9MB) · จอใหญ่ → 1080p (~5.7MB)
+  // เลือกไฟล์ครั้งเดียวตอนเริ่มโหลด: จอแคบ → 480p (~0.6MB) · จอใหญ่ → 1080p (~3MB)
   const [src] = useState(() =>
     !HERO_VIDEO
       ? ''
