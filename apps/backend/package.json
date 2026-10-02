@@ -20,7 +20,7 @@
     "db:push": "supabase db push",
     "db:reset:remote": "supabase db reset --linked",
     "db:seed:gen": "pnpm dlx tsx scripts/seed-from-mock.ts",
-    "user:create": "pnpm dlx tsx --env-file=../../.env scripts/create-user.ts",
+    "user:create": "pnpm dlx --allow-build esbuild tsx --env-file=../../.env scripts/create-user.ts",
     "db:types": "supabase gen types typescript --linked --schema public > ../../packages/types/src/database.generated.ts"
   },
   "dependencies": {
