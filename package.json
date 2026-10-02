@@ -5,6 +5,7 @@
   "engines": { "node": ">=22" },
   "scripts": {
     "db": "pnpm --filter @nightlist/backend db:start",
+    "db:stop": "pnpm --filter @nightlist/backend db:stop",
     "dev": "turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
