@@ -2,8 +2,6 @@ import { useReducedMotion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 
 const POSTER = '/images/home/hero-poster.webp';
-/** ครอสเฟดตอนวนรอบ (วินาที) — ภาพท้ายคลิปทำให้เหมือนหัวคลิปแล้ว แค่กลบจังหวะที่ตัวถัดไปเริ่มเล่น */
-const XFADE = 0.15;
 const POSTER_SET = '/images/home/hero-poster-sm.webp 854w, /images/home/hero-poster.webp 1280w';
 
 /** เน็ตช้า/โหมดประหยัดเน็ต → ไม่โหลดวิดีโอ ใช้ภาพนิ่งแทน */
@@ -14,7 +12,7 @@ function prefersLightweight() {
 
 /**
  * พื้นหลัง Hero — ภาพนิ่งขึ้นก่อนทันที (LCP) แล้วค่อยโหลดวิดีโอหลังหน้าโหลดเสร็จ
- * - วิดีโอ 48fps ภาพหัว-ท้ายต่อกัน + เล่นสลับ 2 ตัวครอสเฟด (ไม่ใช้ loop ของเบราว์เซอร์ที่ค้างตอนวนรอบ) · มือถือใช้ไฟล์ 480p
+ * - วิดีโอ 48fps ภาพหัว-ท้ายต่อกัน + เล่นสลับ 2 ตัวครอสเฟด (ไม่ใช้ loop ของเบราว์เซอร์ที่ค้างตอนวนรอบ) · ชื่อไฟล์ใหม่ กัน cache ไฟล์เก่า · มือถือใช้ไฟล์ 480p
  * - เฟรมแรกของวิดีโอ = ภาพนิ่ง → ค่อยๆ เฟดเข้า ไม่มีภาพกระโดด
  * - หยุดเล่นเมื่อเลื่อนพ้นจอ / สลับแท็บ (ประหยัดแบต)
  * - prefers-reduced-motion หรือเน็ตช้า → ภาพนิ่งอย่างเดียว
@@ -28,8 +26,8 @@ export function HeroBackdrop() {
   // เลือกไฟล์ครั้งเดียวตอนเริ่มโหลด: จอแคบ → 480p (~1MB) · จอใหญ่ → 720p (~2MB)
   const [src] = useState(() =>
     typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
-      ? '/videos/hero-480.mp4'
-      : '/videos/hero.mp4',
+      ? '/videos/hero-loop-480.mp4'
+      : '/videos/hero-loop-720.mp4',
   );
 
   // เริ่มโหลดวิดีโอหลังหน้าโหลดเสร็จ + เบราว์เซอร์ว่าง (ไม่แย่งแบนด์วิดท์กับ JS/ฟอนต์/ข้อมูลร้าน)
@@ -50,8 +48,10 @@ export function HeroBackdrop() {
     };
   }, [reduce]);
 
-  // วนรอบด้วยวิดีโอ 2 ตัวสลับกัน (A เล่นอยู่ · B รอที่เฟรมแรก) แล้วครอสเฟดก่อนจบ
-  // เพราะ <video loop> ของเบราว์เซอร์ต้อง seek กลับไปต้นไฟล์ → ค้างเสี้ยววินาทีทุกรอบ แม้ภาพหัว-ท้ายจะต่อกันพอดี
+  // วนรอบด้วยวิดีโอ 2 ตัวสลับกัน: <video loop> ต้อง seek กลับต้นไฟล์ → ภาพค้าง ~100 ms ทุกรอบ
+  // - ตัวหลังรออยู่ที่เฟรมแรก (ซ่อนไว้) · ก่อนตัวหน้าจบ "เท่ากับเวลาที่ตัวหลังใช้เริ่มเล่น" สั่ง play ล่วงหน้า
+  // - พอตัวหลังวาดเฟรมจริงเฟรมแรก (requestVideoFrameCallback) ค่อยสลับขึ้นมาแทนทันที → ตัวหน้าอยู่ที่ท้ายคลิปพอดี
+  //   ภาพท้าย = ภาพหัว (ทำไว้ในไฟล์แล้ว) จึงต่อกันเนียน · วัดเวลาเริ่มเล่นจริงทุกรอบแล้วปรับรอบถัดไป
   useEffect(() => {
     const pair = [refA.current, refB.current];
     if (!load || !pair[0] || !pair[1]) return;
@@ -61,28 +61,42 @@ export function HeroBackdrop() {
     let switching = false;
     let raf = 0;
     let onScreen = true;
+    /** เวลาที่ตัวหลังใช้ตั้งแต่สั่ง play จนวาดเฟรมแรก (วินาที) — ปรับตามที่วัดได้จริง */
+    let startLag = 0.05;
+
+    const onFirstFrame = (v: HTMLVideoElement, cb: () => void) => {
+      if ('requestVideoFrameCallback' in v) v.requestVideoFrameCallback(() => cb());
+      else (v as HTMLVideoElement).addEventListener('playing', () => cb(), { once: true });
+    };
 
     const tick = () => {
       raf = requestAnimationFrame(tick);
       const d = front.duration;
-      if (!switching && d && front.currentTime >= d - XFADE) {
-        switching = true;
-        // ตัวหลัง (ค้างที่เฟรมแรก) ขึ้นมาทับแล้วเฟดเข้า — ตัวหน้ายังแสดงเต็มข้างใต้ จึงไม่มีจังหวะภาพมืด
-        back.style.zIndex = '2';
-        front.style.zIndex = '1';
-        back.style.opacity = '1';
-        void back.play().catch(() => {});
-        const old = front;
+      if (switching || !d || front.currentTime < d - startLag - 1 / 60) return;
+      switching = true;
+      const next = back;
+      const prev = front;
+      onFirstFrame(next, () => {
+        // ตัวหน้ายังเหลือเวลาเท่าไหร่ตอนตัวหลังพร้อม = สั่งเร็วไปเท่านั้น → รอบหน้าสั่งช้าลงเท่านั้น (และกลับกัน)
+        const remaining = (prev.duration || d) - prev.currentTime;
+        startLag = Math.min(0.4, Math.max(0.01, startLag - 0.6 * remaining));
+        next.style.zIndex = '2';
+        prev.style.zIndex = '1';
+        next.style.opacity = '1';
+        // ปล่อยตัวเดิมแสดงข้างใต้อีกนิด (กันจอว่างเสี้ยวเฟรม) แล้วค่อยรีเซ็ตเตรียมรอบหน้า
         window.setTimeout(() => {
-          old.style.transition = 'none';
-          old.style.opacity = '0';
-          old.pause();
-          old.currentTime = 0; // เตรียมไว้ที่เฟรมแรกสำหรับรอบหน้า
-          requestAnimationFrame(() => (old.style.transition = `opacity ${XFADE}s linear`));
+          prev.style.opacity = '0';
+          prev.pause();
+          prev.currentTime = 0;
           switching = false;
-        }, XFADE * 1000 + 80);
-        [front, back] = [back, front];
-      }
+        }, 120);
+        front = next;
+        back = prev;
+      });
+      if (next.currentTime !== 0) next.currentTime = 0;
+      void next.play().catch(() => {
+        switching = false;
+      });
     };
     const resume = () => {
       if (onScreen && !document.hidden) {
@@ -119,7 +133,6 @@ export function HeroBackdrop() {
     preload: 'auto',
     className: 'absolute inset-0 size-full object-cover',
   } as const;
-  const fade = { transition: `opacity ${XFADE}s linear` };
 
   return (
     <>
@@ -138,8 +151,8 @@ export function HeroBackdrop() {
           aria-hidden
           className={`absolute inset-0 -z-10 transition-opacity duration-700 ease-out ${playing ? 'opacity-100' : 'opacity-0'}`}
         >
-          <video ref={refA} {...videoProps} style={{ ...fade, opacity: 1 }} onPlaying={() => setPlaying(true)} />
-          <video ref={refB} {...videoProps} style={{ ...fade, opacity: 0 }} />
+          <video ref={refA} {...videoProps} style={{ opacity: 1 }} onPlaying={() => setPlaying(true)} />
+          <video ref={refB} {...videoProps} style={{ opacity: 0 }} />
         </div>
       )}
     </>
