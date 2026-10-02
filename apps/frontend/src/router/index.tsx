@@ -2,6 +2,7 @@ import { createBrowserRouter, type RouteObject } from 'react-router';
 import { AuthLayout } from '@/layouts/auth';
 import { MainLayout } from '@/layouts/main';
 import { MerchantLayout } from '@/layouts/merchant';
+import { RootLayout } from '@/layouts/root';
 import { HomePage } from '@/modules/home/page';
 import { RequireAuth, RequireRole } from './middleware';
 
@@ -97,4 +98,4 @@ const routes: RouteObject[] = [
   },
 ];
 
-export const router = createBrowserRouter(routes);
+export const router = createBrowserRouter([{ element: <RootLayout />, children: routes }]);
