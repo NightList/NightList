@@ -2,6 +2,12 @@ import { useReducedMotion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 
 const POSTER = '/images/home/hero-poster.webp';
+/**
+ * วิดีโอพื้นหลัง (ต้องเป็นคลิปที่หัว-ท้ายต่อกันเนียน — seamless loop) · null = ใช้ภาพนิ่งอย่างเดียว
+ * ตอนนี้ปิดไว้: คลิป AI เดิมหัว-ท้ายไม่ตรงกัน วนแล้วสะดุด/ภาพซ้อน · รอคลิปใหม่แล้วใส่เช่น
+ * { sm: '/videos/hero-480.mp4', lg: '/videos/hero-1080.mp4' }
+ */
+const HERO_VIDEO: { sm: string; lg: string } | null = null;
 /** เฟดตอนต่อรอบ (ms) */
 const SEAM_FADE = 250;
 const POSTER_SET = '/images/home/hero-poster-sm.webp 854w, /images/home/hero-poster.webp 1280w';
@@ -14,9 +20,7 @@ function prefersLightweight() {
 
 /**
  * พื้นหลัง Hero — ภาพนิ่งขึ้นก่อนทันที (LCP) แล้วค่อยโหลดวิดีโอหลังหน้าโหลดเสร็จ
- * - ไฟล์วิดีโอ (hero-ambient-*.mp4, 48fps, 22 วิ) เล่นไป-กลับแบบค่อยๆ ชะลอที่ปลายทั้งสองข้าง
- *   → ท้ายไฟล์ = หัวไฟล์พอดี และภาพแทบนิ่งตรงรอยต่อ (คลิป AI ต้นฉบับหัว-ท้ายไม่ตรงกัน ตัดต่อตรงๆ ภาพกระโดด ผสมภาพก็ซ้อน)
- * - เล่นสลับ 2 ตัว (ไม่ใช้ <video loop> ที่ค้างตอนวนรอบ) · มือถือใช้ไฟล์ 480p
+ * - วิดีโอ (ถ้าตั้ง HERO_VIDEO) เล่นสลับ 2 ตัว ไม่ใช้ <video loop> ที่ค้างตอนวนรอบ · มือถือใช้ไฟล์เล็ก
  * - เฟรมแรกของวิดีโอ = ภาพนิ่ง → ค่อยๆ เฟดเข้า ไม่มีภาพกระโดด
  * - หยุดเล่นเมื่อเลื่อนพ้นจอ / สลับแท็บ (ประหยัดแบต)
  * - prefers-reduced-motion หรือเน็ตช้า → ภาพนิ่งอย่างเดียว
@@ -29,14 +33,16 @@ export function HeroBackdrop() {
   const [playing, setPlaying] = useState(false);
   // เลือกไฟล์ครั้งเดียวตอนเริ่มโหลด: จอแคบ → 480p (~1MB) · จอใหญ่ → 720p (~2MB)
   const [src] = useState(() =>
-    typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
-      ? '/videos/hero-ambient-480.mp4'
-      : '/videos/hero-ambient-720.mp4',
+    !HERO_VIDEO
+      ? ''
+      : typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
+        ? HERO_VIDEO.sm
+        : HERO_VIDEO.lg,
   );
 
   // เริ่มโหลดวิดีโอหลังหน้าโหลดเสร็จ + เบราว์เซอร์ว่าง (ไม่แย่งแบนด์วิดท์กับ JS/ฟอนต์/ข้อมูลร้าน)
   useEffect(() => {
-    if (reduce || prefersLightweight()) return;
+    if (!HERO_VIDEO || reduce || prefersLightweight()) return;
     let idle = 0;
     const start = () => {
       idle = window.requestIdleCallback
