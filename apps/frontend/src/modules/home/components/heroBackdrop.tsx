@@ -4,12 +4,15 @@ import { useEffect, useRef, useState } from 'react';
 const POSTER = '/images/home/hero-poster.webp';
 /**
  * วิดีโอพื้นหลัง (ต้องเป็นคลิปที่หัว-ท้ายต่อกันเนียน — seamless loop) · null = ใช้ภาพนิ่งอย่างเดียว
- * ตอนนี้ปิดไว้: คลิป AI เดิมหัว-ท้ายไม่ตรงกัน วนแล้วสะดุด/ภาพซ้อน · รอคลิปใหม่แล้วใส่เช่น
- * { sm: '/videos/hero-480.mp4', lg: '/videos/hero-1080.mp4' }
+ * hero-night-*.mp4 เรนเดอร์จากภาพ hero-poster.jpg ด้วยสคริปต์ (scripts/render-hero-loop.py):
+ * ดาวกะพริบ · ดาวตกวิ่งทางเดียว · ไฟเมืองระยิบ · หมุดเรืองแสง · น้ำกระเพื่อม — ทุกอย่างเป็นคาบ 8 วิ จึงวนรอบได้พอดี
  */
-const HERO_VIDEO: { sm: string; lg: string } | null = null;
-/** เฟดตอนต่อรอบ (ms) */
-const SEAM_FADE = 250;
+const HERO_VIDEO: { sm: string; lg: string } | null = {
+  sm: '/videos/hero-night-480.mp4',
+  lg: '/videos/hero-night-720.mp4',
+};
+/** เฟดตอนต่อรอบ (ms) — กลบความต่างคุณภาพของเฟรมแรกในไฟล์ (ช่วงรอยต่อไม่มีดาวตก จึงไม่มีภาพซ้อน) */
+const SEAM_FADE = 200;
 const POSTER_SET = '/images/home/hero-poster-sm.webp 854w, /images/home/hero-poster.webp 1280w';
 
 /** เน็ตช้า/โหมดประหยัดเน็ต → ไม่โหลดวิดีโอ ใช้ภาพนิ่งแทน */
