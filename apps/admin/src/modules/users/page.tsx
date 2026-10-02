@@ -10,7 +10,10 @@ import { dateTime } from '@/ui/utils/format';
 import { STAFF_ROLE, USER_ROLE } from '@/ui/utils/labels';
 
 type Role = Db.Enums<'user_role'>;
-const ROLE_OPTIONS = (Object.keys(USER_ROLE) as Role[]).map((r) => ({ value: r, label: USER_ROLE[r].text }));
+const ROLE_OPTIONS = (Object.keys(USER_ROLE) as Role[]).map((r) => ({
+  value: r,
+  label: USER_ROLE[r].text,
+}));
 
 /**
  * ผู้ใช้ทั้งหมด — เปลี่ยนสิทธิ์ได้ (ลงบันทึก audit)
@@ -49,7 +52,9 @@ export function UsersPage() {
   return (
     <PageContainer
       title="ผู้ใช้"
-      extra={<Input.Search placeholder="ชื่อ / อีเมล" allowClear onSearch={setQ} className="w-64" />}
+      extra={
+        <Input.Search placeholder="ชื่อ / อีเมล" allowClear onSearch={setQ} className="w-64" />
+      }
     >
       <LoadError error={error} onRetry={() => void refetch()} />
       <Table<Db.AdminUser>

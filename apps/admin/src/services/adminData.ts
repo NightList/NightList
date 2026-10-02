@@ -50,7 +50,8 @@ export function useAdminView<V extends AdminView>(view: V, opts: ListOptions = {
       if (!supabase) throw new Error('ยังไม่ได้ตั้งค่า Supabase');
       const t0 = performance.now();
       let q = supabase.from(view).select('*');
-      for (const [col, val] of opts.filters ?? []) q = Array.isArray(val) ? q.in(col, val) : q.eq(col, val);
+      for (const [col, val] of opts.filters ?? [])
+        q = Array.isArray(val) ? q.in(col, val) : q.eq(col, val);
       if (opts.order) q = q.order(opts.order.column, { ascending: opts.order.ascending ?? false });
       q = q.limit(opts.limit ?? 1000);
       const { data, error } = await q;
@@ -83,7 +84,10 @@ export function useAdminDashboard() {
 }
 
 /** ตาราง master ที่อ่านได้ทุกคน (styles, safety_features) หรือแอดมินอ่านได้ (platform_settings) */
-export function useMasterTable<T>(table: 'styles' | 'safety_features' | 'platform_settings', orderBy: string) {
+export function useMasterTable<T>(
+  table: 'styles' | 'safety_features' | 'platform_settings',
+  orderBy: string,
+) {
   return useQuery({
     queryKey: ['admin', 'master', table],
     queryFn: async (): Promise<T[]> => {
@@ -120,7 +124,10 @@ export function useAdminAction() {
 }
 
 /** URL ชั่วคราว (10 นาที) ของไฟล์ในบักเก็ตส่วนตัว เช่นสลิป */
-export function useSignedUrl(bucket: 'deposit-slips' | 'promo-slips' | 'bar-verifications', path: string | null | undefined) {
+export function useSignedUrl(
+  bucket: 'deposit-slips' | 'promo-slips' | 'bar-verifications',
+  path: string | null | undefined,
+) {
   return useQuery({
     queryKey: ['signed', bucket, path],
     enabled: !!path,
