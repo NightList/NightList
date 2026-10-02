@@ -35,7 +35,7 @@ export function Hero() {
 
         <form
           role="search"
-          className="mt-8 flex w-full max-w-3xl items-center text-left gap-2 rounded-lg border border-white/15 bg-white/10 p-1.5 pl-5 shadow-[0_8px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl"
+          className="mt-8 flex w-full max-w-3xl flex-wrap items-center text-left gap-2 rounded-lg border sm:flex-nowrap border-white/15 bg-white/10 p-1.5 pl-5 shadow-[0_8px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl"
           onSubmit={(e) => {
             e.preventDefault();
             const q = new FormData(e.currentTarget).get('q')?.toString().trim() ?? '';
@@ -64,11 +64,12 @@ export function Hero() {
           >
             <button
               type="button"
-              className="hidden shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-sm text-white/85 transition-colors select-none hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-gold sm:flex"
+              aria-label={`ย่าน: ${area}`}
+              className="order-last -ml-3.5 flex w-[calc(100%+0.875rem)] shrink-0 items-center gap-1.5 border-t border-white/10 px-3 pb-1.5 pt-3 text-sm text-white/85 transition-colors select-none hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-gold sm:order-none sm:ml-0 sm:w-auto sm:rounded-full sm:border-t-0 sm:py-2"
             >
               <MapPin size={18} weight="fill" className="text-gold" />
-              {area}
-              <CaretDown size={14} />
+              <span className="truncate">{area}</span>
+              <CaretDown size={14} className="ml-auto sm:ml-0" />
             </button>
           </Dropdown>
           <button
