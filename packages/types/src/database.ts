@@ -387,6 +387,30 @@ export type MyReview = Override<
 export type ZoneAvailability = PublicSchema['Functions']['zone_availability']['Returns'][number];
 
 // ---------------------------------------------------------------------
+// ทีมงานหน้า /about (migration …001800)
+// ---------------------------------------------------------------------
+/** team_members.contacts — key ที่ไม่มี/ค่าว่าง = ไม่แสดงไอคอนนั้น */
+export interface TeamContacts {
+  /** URL เต็ม */
+  facebook?: string;
+  instagram?: string;
+  tiktok?: string;
+  github?: string;
+  linkedin?: string;
+  /** LINE ID หรือ URL */
+  line?: string;
+  email?: string;
+  phone?: string;
+}
+
+/** public_team — ทีมงานที่ active เรียงตาม sort_order */
+export type PublicTeamMember = Override<
+  ViewRow<'public_team'>,
+  'id' | 'nickname' | 'roles' | 'skills' | 'sort_order',
+  { contacts: TeamContacts }
+>;
+
+// ---------------------------------------------------------------------
 // กฎธุรกิจที่ต้องตรงกับ DB
 // ---------------------------------------------------------------------
 export type BookingStatus = Enums<'booking_status'>;

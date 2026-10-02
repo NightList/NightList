@@ -18,11 +18,17 @@ export function MainLayout() {
   const { user } = useAuth();
   const { pathname } = useLocation();
   const isHome = pathname === '/';
-  // หน้าที่วาดเต็มจอเอง (ภาพพื้นหลังเต็มจอ + navbar ใส) ตั้ง handle: { fullBleed: true } ใน router
-  const handles = useMatches().map((m) => (m.handle ?? {}) as { fullBleed?: boolean; hideFooter?: boolean });
+  // handle ใน router:
+  // - fullBleed: หน้าวาดเต็มจอเอง (ไม่มี container / ไม่เว้นที่ด้านบน)
+  // - darkTop: ส่วนบนของหน้ามืดเสมอทุกธีม (ภาพ/วิดีโอกลางคืน) → navbar ใสตัวหนังสือขาวได้
+  //   ไม่ใส่ = navbar ใช้สีตามธีม (เช่น /ranking ธีมสว่างพื้นขาว ถ้าใช้ตัวขาวจะมองไม่เห็น)
+  const handles = useMatches().map(
+    (m) => (m.handle ?? {}) as { fullBleed?: boolean; hideFooter?: boolean; darkTop?: boolean },
+  );
   const fullBleed = handles.some((h) => h.fullBleed);
   const hideFooter = handles.some((h) => h.hideFooter);
   const bleed = isHome || fullBleed;
+  const darkTop = isHome || handles.some((h) => h.darkTop);
   const isShop = user?.role === 'MERCHANT' || user?.role === 'STAFF';
   const items: NavItem[] = [...NAV, ...(isShop ? [{ to: '/merchant', label: 'ร้านของฉัน' }] : [])];
 
@@ -31,7 +37,7 @@ export function MainLayout() {
       <AgeGate />
       <header className="sticky top-0 z-40 h-0">
         <div className="flex justify-center px-3 pt-3 md:pt-4">
-          <Navbar items={items} overVideo={bleed} />
+          <Navbar items={items} overVideo={darkTop} />
         </div>
       </header>
 

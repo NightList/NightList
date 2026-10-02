@@ -1,16 +1,17 @@
 import { CalendarCheck, MapPin, UsersThree } from '@phosphor-icons/react';
 import { getBarBySlug, useShareCard } from '@/services/data';
-import { Button, Card, Result, Spin } from 'antd';
+import { Button, Card, Spin } from 'antd';
 import { Link, useParams } from 'react-router';
 import { BarCover } from '@/ui/components/barCard';
 import { dateTime } from '@/ui/utils/format';
+import { NotFoundResult } from '@/ui/components/notFoundResult';
 
 /** /share/:token — บัตรจองสาธารณะ (rpc get_share_card · ไม่มีข้อมูลส่วนตัว / QR เช็กอิน) */
 export function SharePage() {
   const { token = '' } = useParams();
   const { data: card, isLoading } = useShareCard(token);
   if (isLoading) return <Spin fullscreen />;
-  if (!card) return <Result status="404" title="ลิงก์นี้หมดอายุหรือไม่ถูกต้อง" />;
+  if (!card) return <NotFoundResult title="ลิงก์นี้หมดอายุหรือไม่ถูกต้อง" kind="home" />;
   const bar = getBarBySlug(card.bar_slug);
   return (
     <div className="mx-auto max-w-md">

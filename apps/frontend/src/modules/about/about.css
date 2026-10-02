@@ -178,22 +178,254 @@
 }
 
 /* ---------------------------------------------------------------
- * การ์ดทีมงาน: ชื่อคนกลางสีเข้มบนรูป · คนข้าง ๆ ชื่อขาว
+ * ทีมงาน: กริดเส้นทองบาง + จุดทองทุกจุดตัด · ช่องเป็นกระจก (glassmorphism)
+ * เส้น: กริดวาดขอบบน/ซ้าย · ทุกช่องวาดขอบขวา/ล่าง → เส้นเดียวไม่ซ้อนกัน
+ * จุด: ทุกช่องมี ::before (มุมซ้ายบน) + ::after (มุมขวาล่าง) · กริดเติมมุมขวาบน/ซ้ายล่างอีก 2 จุด
  * --------------------------------------------------------------- */
-.team-card__name {
-  color: #fff;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
-  transition:
-    color 300ms ease,
-    text-shadow 300ms ease;
+.team-grid {
+  --team-line: rgba(232, 182, 76, 0.28);
+  --team-dot: #e8b64c;
+  --team-dot-size: 5px;
+  position: relative;
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--team-line);
+  border-left: 1px solid var(--team-line);
 }
-.team-card.is-active .team-card__name {
-  color: #fff;
-  text-shadow: 1px 1px 0 black;
+.team-grid::before,
+.team-grid::after,
+.team-cell::before,
+.team-cell::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  width: var(--team-dot-size);
+  height: var(--team-dot-size);
+  border-radius: 999px;
+  background: var(--team-dot);
+  pointer-events: none;
+}
+/* จุดอยู่กึ่งกลางเส้น 1px: เลื่อนครึ่งจุด + ครึ่งเส้น */
+.team-grid::before {
+  top: calc(var(--team-dot-size) / -2 - 0.5px);
+  right: calc(var(--team-dot-size) / -2 + 0.5px);
+}
+.team-grid::after {
+  bottom: calc(var(--team-dot-size) / -2 + 0.5px);
+  left: calc(var(--team-dot-size) / -2 - 0.5px);
+}
+.team-cell {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  border-right: 1px solid var(--team-line);
+  border-bottom: 1px solid var(--team-line);
+}
+.team-cell::before {
+  top: calc(var(--team-dot-size) / -2 - 0.5px);
+  left: calc(var(--team-dot-size) / -2 - 0.5px);
+}
+.team-cell::after {
+  right: calc(var(--team-dot-size) / -2 - 0.5px);
+  bottom: calc(var(--team-dot-size) / -2 - 0.5px);
+}
+/* มือถือ: คำอธิบายกินเต็มแถว ไม่ต้องสูงเท่าช่องรูป */
+.team-cell--caption {
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02) 60%);
+}
+@media (max-width: 767.98px) {
+  .team-cell--caption {
+    aspect-ratio: auto;
+    min-height: 120px;
+  }
+}
+/* ช่องว่างท้ายแถว: เส้นทแยงทองจาง */
+.team-cell--filler {
+  background: repeating-linear-gradient(135deg, transparent 0 14px, rgba(232, 182, 76, 0.1) 14px 15px);
+}
+
+/* การ์ดกระจก */
+.team-tile {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.05) 45%, rgba(255, 255, 255, 0.02));
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transition: background-color 300ms ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.team-tile:focus-visible {
+  outline: 2px solid var(--team-dot);
+  outline-offset: -2px;
+}
+.team-tile__photo {
+  position: absolute;
+  inset: 0;
+  transition: opacity 450ms ease-out;
+}
+.team-tile__arrow {
+  opacity: 0;
+  transform: translate(-4px, 4px);
+  transition:
+    opacity 200ms ease-out,
+    transform 200ms ease-out;
+}
+.team-tile:focus-visible .team-tile__arrow,
+.team-tile.is-selected .team-tile__arrow {
+  opacity: 1;
+  transform: none;
 }
 @media (hover: hover) and (pointer: fine) {
-  .team-card:not(.is-active):hover {
-    filter: brightness(1.06);
+  .team-tile:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  .team-tile:hover .team-tile__arrow {
+    opacity: 1;
+    transform: none;
+  }
+}
+.team-tile:active {
+  background-color: rgba(255, 255, 255, 0.07);
+}
+
+/* เปิดแผงโปรไฟล์: คนที่เลือกยังเห็นรูป · คนอื่นเหลือแค่กระจก · ปิดแผงแล้วกลับมาครบ */
+.team-grid.has-open .team-tile:not(.is-selected) .team-tile__photo {
+  opacity: 0;
+}
+
+/* ช่องโหลด: กระจกกระพริบเบา ๆ */
+@keyframes team-shimmer {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.team-tile--skeleton {
+  cursor: default;
+  animation: team-shimmer 1.1s ease-in-out infinite alternate;
+}
+
+/* error: กล่องกระจกในกรอบทอง */
+.team-error {
+  border: 1px solid rgba(232, 182, 76, 0.28);
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03));
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+/* ไอคอนช่องทางติดต่อ (วงกลม 44px) */
+.team-contact {
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  transition:
+    color 200ms ease,
+    border-color 200ms ease,
+    background-color 200ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.team-contact:focus-visible {
+  outline: 2px solid #e8b64c;
+  outline-offset: 2px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .team-contact:hover {
+    color: #ffd77a;
+    border-color: rgba(232, 182, 76, 0.6);
+    background: rgba(232, 182, 76, 0.12);
+  }
+}
+
+/* ---------------------------------------------------------------
+ * แผงโปรไฟล์ (antd Drawer · classNames.root = team-drawer): กระจกม่วงเข้ม
+ * --------------------------------------------------------------- */
+.team-drawer .ant-drawer-mask {
+  background: rgba(0, 0, 0, 0.25);
+}
+.team-drawer .ant-drawer-section {
+  color: #fff;
+  background: linear-gradient(170deg, rgba(40, 22, 70, 0.62), rgba(10, 8, 18, 0.72));
+  -webkit-backdrop-filter: blur(28px) saturate(140%);
+  backdrop-filter: blur(28px) saturate(140%);
+  border-left: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: -24px 0 80px -20px rgba(110, 40, 200, 0.45);
+}
+.team-drawer.ant-drawer-bottom .ant-drawer-content-wrapper {
+  border-radius: 20px 20px 0 0;
+  overflow: hidden;
+}
+.team-drawer.ant-drawer-bottom .ant-drawer-section {
+  border-left: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -24px 80px -20px rgba(110, 40, 200, 0.45);
+}
+.team-drawer .team-drawer__body {
+  padding: 0;
+  overscroll-behavior: contain;
+}
+.team-drawer .team-drawer__footer {
+  padding: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+.team-drawer__nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 0 20px calc(env(safe-area-inset-bottom, 0px));
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color 200ms ease,
+    background-color 200ms ease;
+}
+.team-drawer__nav:focus-visible {
+  outline: 2px solid #e8b64c;
+  outline-offset: -2px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .team-drawer__nav:hover {
+    color: #ffd77a;
+    background: rgba(255, 255, 255, 0.04);
+  }
+}
+.team-drawer__photo {
+  animation: about-fade 300ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .team-tile__arrow,
+  .team-tile:focus-visible .team-tile__arrow,
+  .team-tile.is-selected .team-tile__arrow {
+    transform: none;
+  }
+  .team-tile--skeleton {
+    animation: none;
+    opacity: 0.8;
+  }
+  /* แผงโปรไฟล์: ไม่เลื่อน เหลือแค่จางเข้า-ออก */
+  .team-drawer .ant-drawer-content-wrapper {
+    transform: none !important;
+    transition: opacity 200ms ease !important;
   }
 }
 

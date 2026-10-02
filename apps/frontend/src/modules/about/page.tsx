@@ -2,13 +2,13 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router';
 import { AboutHero } from './components/aboutHero';
 import { ContactSection } from './components/contactSection';
-import { TeamCarousel } from './components/teamCarousel';
+import { TeamSection } from './components/teamSection';
 import './about.css';
 
 /**
  * /about (+ /contact เลื่อนลงไปส่วนติดต่อเรา) — Figma: เกี่ยวกับเรา
- * ภาพปะติดมือถือ + เกี่ยวกับเรา → ทีมงาน (โคราเซลหมุน) → ติดต่อเรา + NIGHTLIST ยักษ์ปิดท้าย (แทนฟุตเตอร์)
- * แก้ข้อความ/ทีมงาน/ช่องทางติดต่อ: ./utils/content.ts
+ * ภาพปะติดมือถือ + เกี่ยวกับเรา → ทีมงาน (กริดเส้นทอง + แผงโปรไฟล์) → ติดต่อเรา + NIGHTLIST ยักษ์ปิดท้าย (แทนฟุตเตอร์)
+ * แก้ข้อความ/ช่องทางติดต่อ: ./utils/content.ts · ทีมงานแก้ในตาราง team_members (Supabase)
  */
 export function AboutPage() {
   const { pathname, hash } = useLocation();
@@ -34,19 +34,7 @@ export function AboutPage() {
 
       <AboutHero />
 
-      <section aria-labelledby="team-title" className="relative mt-[clamp(48px,5vw,80px)]">
-        <div
-          aria-hidden="true"
-          className="about-glow pointer-events-none absolute inset-x-0 -z-10 top-[-160px] h-[calc(100%+460px)] md:top-[-25.6vw] md:h-[max(100vw,1500px)]"
-        />
-        <h2
-          id="team-title"
-          className="font-kanit mb-[clamp(20px,2.6vw,44px)] text-center text-[clamp(44px,5.6vw,92px)] font-semibold leading-none"
-        >
-          ทีมงาน
-        </h2>
-        <TeamCarousel />
-      </section>
+      <TeamSection />
 
       <ContactSection />
     </div>

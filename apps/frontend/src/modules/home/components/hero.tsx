@@ -1,45 +1,23 @@
 import { CaretDown, MagnifyingGlass, MapPin } from '@phosphor-icons/react';
 import { DISTRICTS } from '@/services/data';
 import { Dropdown } from 'antd';
-import { useReducedMotion } from 'motion/react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { HeroBackdrop } from './heroBackdrop';
 
 const HERE = 'ตำแหน่งปัจจุบัน';
 
 /**
- * Hero (Figma: Main → Hero) — วิดีโอเมืองกลางคืนวนลูปเต็มจอ (poster = ภาพเดียวกับ Figma)
+ * Hero (Figma: Main → Hero) — วิดีโอเมืองกลางคืนวนลูปเต็มจอ (<HeroBackdrop>)
  * หัวข้อ "คืนนี้ไป | ร้านไหน | ดี" (ตัวกลางใหญ่สีทอง) + ช่องค้นหากระจก มีเลือกย่าน/ตำแหน่ง
- * prefers-reduced-motion → ภาพนิ่ง
  */
 export function Hero() {
   const navigate = useNavigate();
-  const reduce = useReducedMotion();
   const [area, setArea] = useState(HERE);
 
   return (
     <section className="relative isolate flex min-h-[92svh] items-center overflow-hidden bg-[#07070d] md:min-h-[100svh]">
-      {reduce ? (
-        <img
-          src="/images/home/hero-poster.jpg"
-          alt=""
-          fetchPriority="high"
-          className="absolute inset-0 -z-10 size-full object-cover"
-        />
-      ) : (
-        <video
-          className="absolute inset-0 -z-10 size-full object-cover"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          poster="/images/home/hero-poster.jpg"
-          aria-hidden
-        >
-          <source src="/videos/hero.mp4" type="video/mp4" />
-        </video>
-      )}
+      <HeroBackdrop />
       <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 -z-10 h-24 bg-gradient-to-t from-background to-transparent" />
 
@@ -57,7 +35,7 @@ export function Hero() {
 
         <form
           role="search"
-          className="mt-8 flex w-full max-w-3xl items-center text-left gap-2 rounded-lg border border-white/15 bg-white/10 p-1.5 pl-5 shadow-[0_8px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl"
+          className="mt-8 flex w-full max-w-3xl flex-wrap items-center text-left gap-2 rounded-lg border sm:flex-nowrap border-white/15 bg-white/10 p-1.5 pl-5 shadow-[0_8px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl"
           onSubmit={(e) => {
             e.preventDefault();
             const q = new FormData(e.currentTarget).get('q')?.toString().trim() ?? '';
@@ -86,11 +64,12 @@ export function Hero() {
           >
             <button
               type="button"
-              className="hidden shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-sm text-white/85 transition-colors select-none hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-gold sm:flex"
+              aria-label={`ย่าน: ${area}`}
+              className="order-last -ml-3.5 flex w-[calc(100%+0.875rem)] shrink-0 items-center gap-1.5 border-t border-white/10 px-3 pb-1.5 pt-3 text-sm text-white/85 transition-colors select-none hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-gold sm:order-none sm:ml-0 sm:w-auto sm:rounded-full sm:border-t-0 sm:py-2"
             >
               <MapPin size={18} weight="fill" className="text-gold" />
-              {area}
-              <CaretDown size={14} />
+              <span className="truncate">{area}</span>
+              <CaretDown size={14} className="ml-auto sm:ml-0" />
             </button>
           </Dropdown>
           <button

@@ -53,7 +53,9 @@ export function AuthLayout() {
       <div className="dark relative isolate flex min-h-dvh flex-col overflow-hidden bg-[#07070d] text-[#f5f1e8]">
         <AgeGate />
         <img
-          src="/images/login/logo-bg.png"
+          src="/images/login/bg-login.webp"
+          srcSet="/images/login/bg-login-sm.webp 900w, /images/login/bg-login.webp 1920w"
+          sizes="100vw"
           alt=""
           fetchPriority="high"
           className="absolute inset-0 -z-10 size-full object-cover object-[30%_center]"

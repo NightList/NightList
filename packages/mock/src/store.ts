@@ -6,6 +6,36 @@ const SESSION_KEY = 'nightlist-demo-session';
 type Listener = () => void;
 
 let state: DemoState | null = null;
+/** false = ไม่อ่าน/เขียน localStorage และไม่สร้างข้อมูลเดโม (หน้าเว็บที่ใช้ข้อมูลจริงจาก Supabase) */
+let persistEnabled = true;
+
+const emptyState = (): DemoState => ({
+  version: 3,
+  bars: [],
+  reviews: [],
+  bookings: [],
+  notifications: [],
+  users: [],
+  favorites: {},
+  promotions: [],
+  audit: [],
+});
+
+/**
+ * ปิดการเก็บ state ลง localStorage — store เป็นแค่ cache ในหน่วยความจำ
+ * (เดิม mutate ทุกครั้ง JSON.stringify ทั้งก้อนลง localStorage = หน้าเว็บกระตุก) · ล้างข้อมูลเดโมเก่าที่ค้างในเครื่องด้วย
+ */
+export function configureStore(opts: { persist: boolean }) {
+  persistEnabled = opts.persist;
+  if (!persistEnabled) {
+    state = state ?? emptyState();
+    try {
+      storage().removeItem(KEY);
+    } catch {
+      /* ignore */
+    }
+  }
+}
 let version = 0;
 const listeners = new Set<Listener>();
 const memory = new Map<string, string>();
@@ -26,6 +56,7 @@ function storage(kind: 'local' | 'session' = 'local') {
 
 function load(): DemoState {
   if (state) return state;
+  if (!persistEnabled) return (state = emptyState());
   try {
     const raw = storage().getItem(KEY);
     if (raw) {
@@ -44,6 +75,7 @@ function load(): DemoState {
 }
 
 function persist() {
+  if (!persistEnabled) return;
   try {
     storage().setItem(KEY, JSON.stringify(state));
   } catch {

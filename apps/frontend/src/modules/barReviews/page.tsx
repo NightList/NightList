@@ -1,12 +1,13 @@
 import { Images, PencilSimpleLine } from '@phosphor-icons/react';
 import { barReviews, getBarBySlug, reviewableBooking } from '@/services/data';
-import { Button, Empty, Result, Segmented } from 'antd';
+import { Button, Empty, Segmented } from 'antd';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { ReviewList } from '@/ui/components/reviewList';
 import { PageHeader } from '@/ui/components/pageHeader';
 import { useDemo } from '@/hooks/useDemo';
 import { BarRating } from '@/ui/components/barRating';
+import { NotFoundResult } from '@/ui/components/notFoundResult';
 
 /**
  * /bars/:slug/reviews — รีวิวทั้งหมดของร้าน
@@ -17,7 +18,7 @@ export function BarReviewsPage() {
   const { slug = '' } = useParams();
   const [filter, setFilter] = useState<'ALL' | 'MEDIA'>('ALL');
   const bar = getBarBySlug(slug);
-  if (!bar) return <Result status="404" title="ไม่พบร้าน" />;
+  if (!bar) return <NotFoundResult title="ไม่พบร้าน" kind="bar" />;
   const all = barReviews(bar.id);
   const withMedia = all.filter((r) => r.media?.length);
   const reviews = filter === 'MEDIA' ? withMedia : all;

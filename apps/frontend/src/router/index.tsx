@@ -2,6 +2,7 @@ import { createBrowserRouter, type RouteObject } from 'react-router';
 import { AuthLayout } from '@/layouts/auth';
 import { MainLayout } from '@/layouts/main';
 import { MerchantLayout } from '@/layouts/merchant';
+import { RootLayout } from '@/layouts/root';
 import { HomePage } from '@/modules/home/page';
 import { RequireAuth, RequireRole } from './middleware';
 
@@ -35,8 +36,8 @@ const routes: RouteObject[] = [
       { path: 'bars/:slug', lazy: () => import('@/modules/barDetail/page').then((m) => ({ Component: m.BarDetailPage })) },
       { path: 'bars/:slug/reviews', lazy: () => import('@/modules/barReviews/page').then((m) => ({ Component: m.BarReviewsPage })) },
       { path: 'share/:token', lazy: () => import('@/modules/share/page').then((m) => ({ Component: m.SharePage })) },
-      { path: 'about', handle: { fullBleed: true, hideFooter: true }, lazy: () => import('@/modules/about/page').then((m) => ({ Component: m.AboutPage })) },
-      { path: 'contact', handle: { fullBleed: true, hideFooter: true }, lazy: () => import('@/modules/about/page').then((m) => ({ Component: m.AboutPage })) },
+      { path: 'about', handle: { fullBleed: true, hideFooter: true, darkTop: true }, lazy: () => import('@/modules/about/page').then((m) => ({ Component: m.AboutPage })) },
+      { path: 'contact', handle: { fullBleed: true, hideFooter: true, darkTop: true }, lazy: () => import('@/modules/about/page').then((m) => ({ Component: m.AboutPage })) },
       { path: 'terms', lazy: () => import('@/modules/static/page').then((m) => ({ Component: () => <m.StaticPage page="terms" /> })) },
       { path: 'privacy', lazy: () => import('@/modules/static/page').then((m) => ({ Component: () => <m.StaticPage page="privacy" /> })) },
       { path: 'cookies', lazy: () => import('@/modules/static/page').then((m) => ({ Component: () => <m.StaticPage page="cookies" /> })) },
@@ -90,11 +91,11 @@ const routes: RouteObject[] = [
       },
       {
         path: '*',
-        handle: { fullBleed: true, hideFooter: true },
+        handle: { fullBleed: true, hideFooter: true, darkTop: true },
         lazy: () => import('@/modules/notFound/page').then((m) => ({ Component: m.NotFoundPage })),
       },
     ],
   },
 ];
 
-export const router = createBrowserRouter(routes);
+export const router = createBrowserRouter([{ element: <RootLayout />, children: routes }]);
