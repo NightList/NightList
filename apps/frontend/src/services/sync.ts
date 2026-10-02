@@ -1,4 +1,5 @@
 import {
+  configureStore,
   getState,
   mutate,
   setSessionUserId,
@@ -22,6 +23,9 @@ import { supabase } from '@/services/supabase';
  * หน้าเว็บอ่านจาก store แบบเดิม (listBars, myBookings, ...) · การเขียนทั้งหมดไป NestJS (services/actions.ts) แล้วโหลดใหม่
  * ไม่มีข้อมูลเดโม: store ถูกล้างแล้วแทนด้วยข้อมูลจาก DB ทุกครั้ง
  */
+
+// store เป็น cache ในหน่วยความจำอย่างเดียว (ไม่ JSON.stringify ทั้งก้อนลง localStorage ทุกครั้งที่ข้อมูลเปลี่ยน)
+configureStore({ persist: false });
 
 // ---------------------------------------------------------------------
 // master data (ใช้ใน dropdown) — เติมค่าตอนเปิดเว็บก่อน render (main.tsx รอโหลดเสร็จ)
@@ -252,6 +256,7 @@ interface UserData {
   promotions: PromotionOrder[];
 }
 let userData: UserData | null = null;
+let lastUserSignature = '';
 
 function commit() {
   mutate((s) => {
@@ -274,6 +279,76 @@ function commit() {
 // ---------------------------------------------------------------------
 // โหลดข้อมูลสาธารณะ (ตอนเปิดเว็บ)
 // ---------------------------------------------------------------------
+interface PublicRaw {
+  bars: BarDetailRow[];
+  reviews: PublicReviewRow[];
+  districts: { id: string; name_th: string }[];
+  styles: { id: string; key: string; name_th: string }[];
+  settings: { key: string; value: { name?: string; promptpay_id?: string } }[];
+  packages: { id: string; name: string; placement: PromotionPackage['placement']; duration_days: number; price: number }[];
+}
+
+/** แปลงข้อมูลดิบ → master + store (ใช้ทั้งตอนโหลดจาก DB และตอนอ่าน snapshot ในเครื่อง) */
+function applyPublic(raw: PublicRaw, urls: Map<string, string>) {
+  MASTER.districts = raw.districts.map((d) => ({ id: d.id, name: d.name_th }));
+  MASTER.styles = raw.styles.map((x) => ({ id: x.id, key: x.key, label: x.name_th }));
+  for (const x of MASTER.styles) STYLE_LABELS[x.key] = x.label;
+  DISTRICTS.splice(0, DISTRICTS.length, ...MASTER.districts.map((d) => d.name));
+  STYLES.splice(0, STYLES.length, ...MASTER.styles.map((x) => x.label));
+  for (const row of raw.settings) {
+    const v = { name: row.value?.name ?? '', promptpayId: row.value?.promptpay_id ?? '' };
+    if (row.key === 'deposit_promptpay') MASTER.depositPromptPay = v;
+    if (row.key === 'promotion_promptpay') MASTER.promotionPromptPay = v;
+  }
+  MASTER.packages = raw.packages.map((p) => ({ id: p.id, name: p.name, placement: p.placement, days: p.duration_days, price: Number(p.price) }));
+  publicBars = raw.bars.map(toBar);
+  publicReviews = raw.reviews.map((r) => ({
+    id: r.id,
+    barId: r.bar_id,
+    userName: r.display_name ?? 'ผู้ใช้ NightList',
+    rating: r.rating,
+    comment: r.comment ?? '',
+    createdAt: r.created_at,
+    media: r.media.length ? r.media.map((m) => toMedia(m, urls)) : undefined,
+    status: 'PUBLISHED',
+  }));
+  commit();
+}
+
+// ---------------------------------------------------------------------
+// snapshot ข้อมูลสาธารณะในเครื่อง — เปิดเว็บครั้งถัดไปแสดงได้ทันที แล้วค่อยโหลดของใหม่เบื้องหลัง
+// (URL รูปรีวิวเป็นลิงก์ชั่วคราว 6 ชม. → ไม่เก็บ ขอใหม่ทุกครั้ง)
+// ---------------------------------------------------------------------
+const SNAPSHOT_KEY = 'nightlist-public-v1';
+const SNAPSHOT_MAX_AGE = 24 * 3600_000;
+
+function saveSnapshot(raw: PublicRaw) {
+  const write = () => {
+    try {
+      localStorage.setItem(SNAPSHOT_KEY, JSON.stringify({ savedAt: Date.now(), raw }));
+    } catch {
+      /* เต็ม/ถูกปิด — ไม่เป็นไร ครั้งหน้าโหลดจาก DB ตามปกติ */
+    }
+  };
+  if (window.requestIdleCallback) window.requestIdleCallback(write, { timeout: 5000 });
+  else setTimeout(write, 1000);
+}
+
+/** มี snapshot ที่ยังไม่เก่าเกิน 24 ชม. → ใส่ store ทันที (คืน true) */
+export function hydratePublicFromCache(): boolean {
+  try {
+    const v = localStorage.getItem(SNAPSHOT_KEY);
+    if (!v) return false;
+    const snap = JSON.parse(v) as { savedAt: number; raw: PublicRaw };
+    if (!snap?.raw?.bars || Date.now() - snap.savedAt > SNAPSHOT_MAX_AGE) return false;
+    applyPublic(snap.raw, new Map());
+    log.ok(`แสดงข้อมูลจากเครื่องก่อน (${Math.round((Date.now() - snap.savedAt) / 60_000)} นาทีที่แล้ว) · กำลังโหลดของใหม่`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function loadPublic(): Promise<void> {
   if (!supabase) throw new Error('ยังไม่ได้ตั้งค่า Supabase (.env)');
   const t0 = performance.now();
@@ -285,36 +360,19 @@ export async function loadPublic(): Promise<void> {
     supabase.from('platform_settings').select('key, value'),
     supabase.from('promotion_packages').select('id, name, placement, duration_days, price').order('price'),
   ]);
-  const barRows = must(bars, 'bar_detail') as unknown as BarDetailRow[];
-  const reviewRows = must(reviews, 'public_reviews') as unknown as PublicReviewRow[];
-
-  MASTER.districts = must(districts, 'districts').map((d: { id: string; name_th: string }) => ({ id: d.id, name: d.name_th }));
-  MASTER.styles = must(styles, 'styles').map((s: { id: string; key: string; name_th: string }) => ({ id: s.id, key: s.key, label: s.name_th }));
-  for (const s of MASTER.styles) STYLE_LABELS[s.key] = s.label;
-  DISTRICTS.splice(0, DISTRICTS.length, ...MASTER.districts.map((d) => d.name));
-  STYLES.splice(0, STYLES.length, ...MASTER.styles.map((s) => s.label));
-  for (const row of must(settings, 'platform_settings') as { key: string; value: { name?: string; promptpay_id?: string } }[]) {
-    const v = { name: row.value?.name ?? '', promptpayId: row.value?.promptpay_id ?? '' };
-    if (row.key === 'deposit_promptpay') MASTER.depositPromptPay = v;
-    if (row.key === 'promotion_promptpay') MASTER.promotionPromptPay = v;
-  }
-  MASTER.packages = (must(packages, 'promotion_packages') as { id: string; name: string; placement: PromotionPackage['placement']; duration_days: number; price: number }[]).map(
-    (p) => ({ id: p.id, name: p.name, placement: p.placement, days: p.duration_days, price: Number(p.price) }),
-  );
-
-  const urls = await signReviewPaths(mediaPaths(reviewRows));
-  publicBars = barRows.map(toBar);
-  publicReviews = reviewRows.map((r) => ({
-    id: r.id,
-    barId: r.bar_id,
-    userName: r.display_name ?? 'ผู้ใช้ NightList',
-    rating: r.rating,
-    comment: r.comment ?? '',
-    createdAt: r.created_at,
-    media: r.media.length ? r.media.map((m) => toMedia(m, urls)) : undefined,
-    status: 'PUBLISHED',
-  }));
-  commit();
+  const raw: PublicRaw = {
+    bars: must(bars, 'bar_detail') as unknown as BarDetailRow[],
+    reviews: must(reviews, 'public_reviews') as unknown as PublicReviewRow[],
+    districts: must(districts, 'districts') as PublicRaw['districts'],
+    styles: must(styles, 'styles') as PublicRaw['styles'],
+    settings: must(settings, 'platform_settings') as PublicRaw['settings'],
+    packages: must(packages, 'promotion_packages') as PublicRaw['packages'],
+  };
+  // แสดงร้าน/รีวิวก่อน แล้วค่อยขอ URL รูป/วิดีโอรีวิวทีหลัง (ไม่ให้หน้าแรกต้องรอ)
+  applyPublic(raw, new Map());
+  saveSnapshot(raw);
+  const paths = mediaPaths(raw.reviews);
+  if (paths.length) void signReviewPaths(paths).then((urls) => applyPublic(raw, urls));
   const host = new URL(import.meta.env.VITE_SUPABASE_URL as string).host;
   log.ok(
     `เชื่อมต่อ Supabase สำเร็จ (${host}) · ร้าน ${publicBars.length} · รีวิว ${publicReviews.length} · ย่าน ${MASTER.districts.length} · ${since(t0)}`,
@@ -373,6 +431,10 @@ export async function loadUser(p: SessionProfile): Promise<{ barId?: string }> {
   for (const r of [...own, ...teamBookings]) allBookings.set(r.id, toBooking(r));
 
   const myReviewRows = must(reviews, 'my_reviews') as unknown as MyReviewRow[];
+  // โหลดซ้ำทุก 60 วิ: ถ้าข้อมูลเหมือนเดิมทุกอย่าง ไม่ต้องขอ URL รูปใหม่ / ไม่ re-render ทั้งแอป
+  const signature = JSON.stringify([own, teamBookings, notifications.data, favorites.data, myReviewRows, prefs.data, barRows, reports.data, listings]);
+  if (signature === lastUserSignature && userData?.user.id === p.id) return { barId: userData.user.barId };
+  lastUserSignature = signature;
   const urls = await signReviewPaths(mediaPaths(myReviewRows));
   const pr = must(prefs, 'user_preferences') as {
     preferred_style_ids: string[];
@@ -456,6 +518,7 @@ export async function startUser(p: SessionProfile) {
 
 export function clearUser() {
   lastProfile = null;
+  lastUserSignature = '';
   clearInterval(polling);
   userData = null;
   myPrefs = { styleIds: [], districtIds: [] };
