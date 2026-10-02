@@ -8,6 +8,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import type { BarWithTier } from '@nightlist/mock';
+import type { Db } from '@nightlist/types';
 import { supabase } from '@/services/supabase';
 import { log } from '@/services/log';
 
@@ -170,4 +171,24 @@ export const useShareCard = (token: string) =>
   useQuery({
     queryKey: ['share_card', token],
     queryFn: async () => (await rpc<ShareCard[]>('get_share_card', { p_token: token }))[0] ?? null,
+  });
+
+/** ทีมงานหน้า /about (view public_team — เฉพาะคนที่ active เรียงตาม sort_order) */
+export type SiteTeamMember = Db.PublicTeamMember;
+export const useSiteTeam = () =>
+  useQuery({
+    queryKey: ['public_team'],
+    staleTime: 10 * 60_000,
+    queryFn: async (): Promise<SiteTeamMember[]> => {
+      if (!supabase) throw new Error('ยังไม่ได้ตั้งค่า Supabase');
+      const { data, error } = await supabase
+        .from('public_team')
+        .select('id, nickname, full_name, roles, bio, skills, photo_url, contacts, sort_order')
+        .order('sort_order');
+      if (error) {
+        log.error('public_team', error.message);
+        throw new Error(error.message);
+      }
+      return data as SiteTeamMember[];
+    },
   });
