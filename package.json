@@ -4,6 +4,7 @@
   "packageManager": "pnpm@10.28.0",
   "engines": { "node": ">=22" },
   "scripts": {
+    "db": "pnpm --filter @nightlist/backend db:start",
     "dev": "turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
