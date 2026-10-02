@@ -16,13 +16,13 @@ export const ABOUT_TEXT = [
 ];
 
 export const TEAM: TeamMember[] = [
-  { name: 'แสน', role: ['Founder', 'Fullstack Developer'], photo: '/images/teams/san.png' },
-  { name: 'วิน', role: ['DevOps', 'Consultant'], photo: '/images/teams/wind.png' },
-  { name: 'เนวิน', role: ['Business Analyst'], photo: '/images/teams/newin.png' },
-  { name: 'พี', role: ['UI/UX Designer', 'Frontend Developer'], photo: '/images/teams/pee.png' },
-  { name: 'บิว', role: ['UI/UX Designer', 'Frontend Developer'], photo: '/images/teams/biw.png' },
-  { name: 'ก็อต', role: ['Co-Founder', 'Fullstack Developer'], photo: '/images/teams/got.png' },
-  { name: 'เติร์ด', role: ['Co-Founder', 'Fullstack Developer'], photo: '/images/teams/third.png' },
+  { name: 'แสน', role: ['Founder', 'Fullstack Developer'], photo: '/images/teams/san.webp' },
+  { name: 'วิน', role: ['DevOps', 'Consultant'], photo: '/images/teams/wind.webp' },
+  { name: 'เนวิน', role: ['Business Analyst'], photo: '/images/teams/newin.webp' },
+  { name: 'พี', role: ['UI/UX Designer', 'Frontend Developer'], photo: '/images/teams/pee.webp' },
+  { name: 'บิว', role: ['UI/UX Designer', 'Frontend Developer'], photo: '/images/teams/biw.webp' },
+  { name: 'ก็อต', role: ['Co-Founder', 'Fullstack Developer'], photo: '/images/teams/got.webp' },
+  { name: 'เติร์ด', role: ['Co-Founder', 'Fullstack Developer'], photo: '/images/teams/third.webp' },
 ];
 
 export const CONTACT = {

@@ -17,7 +17,7 @@ export function HomePage() {
       <Hero />
       <div className="relative isolate overflow-hidden py-10 md:py-14">
         <div
-          className="absolute inset-0 z-0 bg-[url(/images/home/base1.jpg)] bg-cover bg-center blur-sm scale-105 after:bg-black/60
+          className="absolute inset-0 z-0 bg-[url(/images/home/base1-blur.webp)] bg-cover bg-center after:bg-black/60
                after:absolute after:inset-0 after:bg-linear-to-b after:from-black after:via-transparent after:to-gray-950"
           aria-hidden="true"
         />
