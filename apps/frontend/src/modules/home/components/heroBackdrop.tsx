@@ -11,8 +11,8 @@ const HERO_VIDEO: { sm: string; lg: string } | null = {
   sm: '/videos/hero-night-480.mp4',
   lg: '/videos/hero-night-720.mp4',
 };
-/** เฟดตอนต่อรอบ (ms) — กลบความต่างคุณภาพของเฟรมแรกในไฟล์ (ช่วงรอยต่อไม่มีดาวตก จึงไม่มีภาพซ้อน) */
-const SEAM_FADE = 200;
+/** ครอสเฟดตอนต่อรอบ (ms) — ตัวใหม่จางเข้าทับตัวเก่าที่ยังทึบอยู่ */
+const SEAM_FADE = 1000;
 const POSTER_SET = '/images/home/hero-poster-sm.webp 854w, /images/home/hero-poster.webp 1280w';
 
 /** เน็ตช้า/โหมดประหยัดเน็ต → ไม่โหลดวิดีโอ ใช้ภาพนิ่งแทน */
@@ -61,10 +61,11 @@ export function HeroBackdrop() {
     };
   }, [reduce]);
 
-  // วนรอบด้วยวิดีโอ 2 ตัวสลับกัน: <video loop> ต้อง seek กลับต้นไฟล์ → ภาพค้าง ~100 ms ทุกรอบ
-  // - ตัวหลังรออยู่ที่เฟรมแรก (ซ่อนไว้) · ก่อนตัวหน้าจบ "เท่ากับเวลาที่ตัวหลังใช้เริ่มเล่น" สั่ง play ล่วงหน้า
-  // - พอตัวหลังวาดเฟรมจริงเฟรมแรก (requestVideoFrameCallback) ค่อยสลับขึ้นมาแทนทันที → ตัวหน้าอยู่ที่ท้ายคลิปพอดี
-  //   ภาพท้าย = ภาพหัว (ทำไว้ในไฟล์แล้ว) จึงต่อกันเนียน · วัดเวลาเริ่มเล่นจริงทุกรอบแล้วปรับรอบถัดไป
+  // วนรอบด้วยวิดีโอ 2 ตัวสลับกัน + ครอสเฟด (ไม่ใช้ <video loop> ที่ต้อง seek กลับต้นไฟล์ → ภาพค้างทุกรอบ)
+  // - ก่อนตัวหน้าจบ SEAM_FADE (+ เวลาที่ตัวหลังใช้เริ่มเล่น) สั่งตัวหลังเล่นจากต้นไฟล์
+  // - พอตัวหลังวาดเฟรมแรกจริง (requestVideoFrameCallback) ยกขึ้นด้านบนแล้วค่อยๆ ทึบขึ้นใน SEAM_FADE
+  // - ตัวหน้า "ทึบเต็มที่อยู่ข้างใต้" ตลอดการเฟด (ไม่จางพร้อมกัน → ภาพไม่โปร่ง/ไม่หายกลางทาง)
+  //   แล้วค่อยหยุด + กลับไปต้นไฟล์ หลังตัวใหม่ทับสนิทแล้ว
   useEffect(() => {
     const pair = [refA.current, refB.current];
     if (!load || !pair[0] || !pair[1]) return;
@@ -74,8 +75,9 @@ export function HeroBackdrop() {
     let switching = false;
     let raf = 0;
     let onScreen = true;
-    /** เวลาที่ตัวหลังใช้ตั้งแต่สั่ง play จนวาดเฟรมแรก (วินาที) — ปรับตามที่วัดได้จริง */
+    /** เวลาที่ตัวหลังใช้ตั้งแต่สั่ง play จนวาดเฟรมแรก (วินาที) — ปรับตามที่วัดได้จริงทุกรอบ */
     let startLag = 0.05;
+    const fade = SEAM_FADE / 1000;
 
     const onFirstFrame = (v: HTMLVideoElement, cb: () => void) => {
       if ('requestVideoFrameCallback' in v) v.requestVideoFrameCallback(() => cb());
@@ -85,28 +87,27 @@ export function HeroBackdrop() {
     const tick = () => {
       raf = requestAnimationFrame(tick);
       const d = front.duration;
-      if (switching || !d || front.currentTime < d - startLag - 1 / 60) return;
+      if (switching || !d || front.currentTime < d - fade - startLag) return;
       switching = true;
       const next = back;
       const prev = front;
+      const askedAt = performance.now();
       onFirstFrame(next, () => {
-        // ตัวหน้ายังเหลือเวลาเท่าไหร่ตอนตัวหลังพร้อม = สั่งเร็วไปเท่านั้น → รอบหน้าสั่งช้าลงเท่านั้น (และกลับกัน)
-        const remaining = (prev.duration || d) - prev.currentTime;
-        startLag = Math.min(0.4, Math.max(0.01, startLag - 0.6 * remaining));
-        next.style.zIndex = '2';
+        startLag = Math.min(0.4, Math.max(0.01, 0.5 * startLag + 0.5 * ((performance.now() - askedAt) / 1000)));
         prev.style.zIndex = '1';
-        // เฟดสั้นๆ กลบความต่างของคุณภาพเฟรมแรกของไฟล์ (keyframe) — ช่วงนี้ภาพแทบนิ่ง เฟดแล้วไม่มีภาพซ้อน
+        next.style.zIndex = '2';
         next.style.transition = `opacity ${SEAM_FADE}ms linear`;
         next.style.opacity = '1';
+        front = next;
+        back = prev;
         window.setTimeout(() => {
+          // ตัวใหม่ทับสนิทแล้ว → ซ่อน/หยุดตัวเก่า แล้วรอที่เฟรมแรกสำหรับรอบหน้า
           prev.style.transition = 'none';
           prev.style.opacity = '0';
           prev.pause();
           prev.currentTime = 0;
           switching = false;
-        }, SEAM_FADE + 60);
-        front = next;
-        back = prev;
+        }, SEAM_FADE + 80);
       });
       if (next.currentTime !== 0) next.currentTime = 0;
       void next.play().catch(() => {
