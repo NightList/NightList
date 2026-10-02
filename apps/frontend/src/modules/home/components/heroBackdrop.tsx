@@ -2,6 +2,8 @@ import { useReducedMotion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 
 const POSTER = '/images/home/hero-poster.webp';
+/** ครอสเฟดตอนวนรอบ (วินาที) — ภาพท้ายคลิปทำให้เหมือนหัวคลิปแล้ว แค่กลบจังหวะที่ตัวถัดไปเริ่มเล่น */
+const XFADE = 0.15;
 const POSTER_SET = '/images/home/hero-poster-sm.webp 854w, /images/home/hero-poster.webp 1280w';
 
 /** เน็ตช้า/โหมดประหยัดเน็ต → ไม่โหลดวิดีโอ ใช้ภาพนิ่งแทน */
@@ -12,14 +14,15 @@ function prefersLightweight() {
 
 /**
  * พื้นหลัง Hero — ภาพนิ่งขึ้นก่อนทันที (LCP) แล้วค่อยโหลดวิดีโอหลังหน้าโหลดเสร็จ
- * - วิดีโอ 48fps ต่อท้าย-หัวแบบไร้รอยต่อ (ไม่กระตุกตอนวนรอบ) · มือถือใช้ไฟล์ 480p
+ * - วิดีโอ 48fps ภาพหัว-ท้ายต่อกัน + เล่นสลับ 2 ตัวครอสเฟด (ไม่ใช้ loop ของเบราว์เซอร์ที่ค้างตอนวนรอบ) · มือถือใช้ไฟล์ 480p
  * - เฟรมแรกของวิดีโอ = ภาพนิ่ง → ค่อยๆ เฟดเข้า ไม่มีภาพกระโดด
  * - หยุดเล่นเมื่อเลื่อนพ้นจอ / สลับแท็บ (ประหยัดแบต)
  * - prefers-reduced-motion หรือเน็ตช้า → ภาพนิ่งอย่างเดียว
  */
 export function HeroBackdrop() {
   const reduce = useReducedMotion();
-  const ref = useRef<HTMLVideoElement>(null);
+  const refA = useRef<HTMLVideoElement>(null);
+  const refB = useRef<HTMLVideoElement>(null);
   const [load, setLoad] = useState(false);
   const [playing, setPlaying] = useState(false);
   // เลือกไฟล์ครั้งเดียวตอนเริ่มโหลด: จอแคบ → 480p (~1MB) · จอใหญ่ → 720p (~2MB)
@@ -47,22 +50,76 @@ export function HeroBackdrop() {
     };
   }, [reduce]);
 
-  // เล่นเฉพาะตอนเห็นบนจอ
+  // วนรอบด้วยวิดีโอ 2 ตัวสลับกัน (A เล่นอยู่ · B รอที่เฟรมแรก) แล้วครอสเฟดก่อนจบ
+  // เพราะ <video loop> ของเบราว์เซอร์ต้อง seek กลับไปต้นไฟล์ → ค้างเสี้ยววินาทีทุกรอบ แม้ภาพหัว-ท้ายจะต่อกันพอดี
   useEffect(() => {
-    const v = ref.current;
-    if (!load || !v) return;
+    const pair = [refA.current, refB.current];
+    if (!load || !pair[0] || !pair[1]) return;
+    const [a, b] = pair as [HTMLVideoElement, HTMLVideoElement];
+    let front = a;
+    let back = b;
+    let switching = false;
+    let raf = 0;
+    let onScreen = true;
+
+    const tick = () => {
+      raf = requestAnimationFrame(tick);
+      const d = front.duration;
+      if (!switching && d && front.currentTime >= d - XFADE) {
+        switching = true;
+        // ตัวหลัง (ค้างที่เฟรมแรก) ขึ้นมาทับแล้วเฟดเข้า — ตัวหน้ายังแสดงเต็มข้างใต้ จึงไม่มีจังหวะภาพมืด
+        back.style.zIndex = '2';
+        front.style.zIndex = '1';
+        back.style.opacity = '1';
+        void back.play().catch(() => {});
+        const old = front;
+        window.setTimeout(() => {
+          old.style.transition = 'none';
+          old.style.opacity = '0';
+          old.pause();
+          old.currentTime = 0; // เตรียมไว้ที่เฟรมแรกสำหรับรอบหน้า
+          requestAnimationFrame(() => (old.style.transition = `opacity ${XFADE}s linear`));
+          switching = false;
+        }, XFADE * 1000 + 80);
+        [front, back] = [back, front];
+      }
+    };
+    const resume = () => {
+      if (onScreen && !document.hidden) {
+        void front.play().catch(() => {});
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(tick);
+      }
+    };
+    const stop = () => {
+      cancelAnimationFrame(raf);
+      a.pause();
+      b.pause();
+    };
     const io = new IntersectionObserver(([e]) => {
-      if (e?.isIntersecting && !document.hidden) void v.play().catch(() => {});
-      else v.pause();
+      onScreen = !!e?.isIntersecting;
+      if (onScreen) resume();
+      else stop();
     });
-    io.observe(v);
-    const onVis = () => (document.hidden ? v.pause() : void v.play().catch(() => {}));
+    io.observe(a);
+    const onVis = () => (document.hidden ? stop() : resume());
     document.addEventListener('visibilitychange', onVis);
+    resume();
     return () => {
       io.disconnect();
       document.removeEventListener('visibilitychange', onVis);
+      stop();
     };
   }, [load]);
+
+  const videoProps = {
+    src,
+    muted: true,
+    playsInline: true,
+    preload: 'auto',
+    className: 'absolute inset-0 size-full object-cover',
+  } as const;
+  const fade = { transition: `opacity ${XFADE}s linear` };
 
   return (
     <>
@@ -76,19 +133,14 @@ export function HeroBackdrop() {
         className="absolute inset-0 -z-10 size-full object-cover"
       />
       {load && (
-        <video
-          ref={ref}
-          className={`absolute inset-0 -z-10 size-full object-cover transition-opacity duration-700 ease-out ${playing ? 'opacity-100' : 'opacity-0'}`}
-          muted
-          loop
-          playsInline
-          autoPlay
-          preload="auto"
+        // ตัวนอก = เฟดเข้าครั้งแรก (จากภาพนิ่ง) · ตัวใน 2 ตัว = สลับครอสเฟดตอนวนรอบ
+        <div
           aria-hidden
-          onPlaying={() => setPlaying(true)}
+          className={`absolute inset-0 -z-10 transition-opacity duration-700 ease-out ${playing ? 'opacity-100' : 'opacity-0'}`}
         >
-          <source src={src} type="video/mp4" />
-        </video>
+          <video ref={refA} {...videoProps} style={{ ...fade, opacity: 1 }} onPlaying={() => setPlaying(true)} />
+          <video ref={refB} {...videoProps} style={{ ...fade, opacity: 0 }} />
+        </div>
       )}
     </>
   );
