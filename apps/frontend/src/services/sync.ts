@@ -14,7 +14,7 @@ import {
 import type { BookingStatus, UserRole } from '@nightlist/types';
 import { STYLE_LABELS, toBar, type BarDetailRow } from '@/services/barsRepo';
 import { log, since } from '@/services/log';
-import { API_BASE_URL, Rest } from '@/services/apiClient';
+import { Rest } from '@nightlist/utils/rest';
 import { signedUrls } from '@/services/storage';
 
 /**
@@ -350,7 +350,7 @@ export async function loadPublic(): Promise<void> {
   const paths = mediaPaths(raw.reviews);
   if (paths.length) void signReviewPaths(paths).then((urls) => applyPublic(raw, urls));
   log.ok(
-    `โหลดข้อมูลจาก API สำเร็จ (${API_BASE_URL}) · ร้าน ${publicBars.length} · รีวิว ${publicReviews.length} · ย่าน ${MASTER.districts.length} · ${since(t0)}`,
+    `โหลดข้อมูลจาก API สำเร็จ (${Rest.baseURL}) · ร้าน ${publicBars.length} · รีวิว ${publicReviews.length} · ย่าน ${MASTER.districts.length} · ${since(t0)}`,
   );
 }
 
@@ -510,7 +510,7 @@ export function setProfileName(displayName: string) {
 /** ใช้ใน dev tools: window.__nightlist() ดูข้อมูลใน cache */
 if (typeof window !== 'undefined') {
   (window as unknown as { __nightlist: () => unknown }).__nightlist = () => ({
-    api: API_BASE_URL,
+    api: Rest.baseURL,
     bars: getState().bars.length,
     bookings: getState().bookings.length,
     reviews: getState().reviews.length,

@@ -108,7 +108,7 @@ apps/frontend/src/
 │   ├── ranking/ search/ barDetail/ barReviews/ book/ bookings/ bookingDetail/ deposit/ ...
 │   └── merchant/<ชื่อหน้า>/page.tsx   # dashboard, tonight, bookings, deposits, store, menu ...
 ├── hooks/                # custom hooks ใช้ข้ามหน้า (useDemo, useNow, useScrolled, useMerchantBar)
-├── services/             # apiClient.ts (Axios + Rest) · data.ts (TanStack Query hooks) · actions.ts (เขียน) · sync.ts (cache) · storage.ts · auth.tsx · supabase.ts (Auth เท่านั้น)
+├── services/             # data.ts (TanStack Query hooks) · actions.ts (เขียน) · sync.ts (cache) · storage.ts · auth.tsx · supabase.ts (Auth เท่านั้น)
 ├── ui/
 │   ├── components/       # component ใช้ข้ามหน้า (navbar, barCard, authCard, pageHeader ...)
 │   └── utils/            # format.ts ฯลฯ
@@ -118,7 +118,7 @@ apps/frontend/src/
 - ชื่อไฟล์ component เป็น camelCase (`barCard.tsx`) ส่วน export เป็น PascalCase (`BarCard`)
 - รูป/วิดีโอใน `public/images/<module>/` และ `public/videos/`
 - `@nightlist/*` ใน dev ถูก alias ไปที่ `packages/*/src` (vite.config.ts) — แก้ package แล้วเห็นผลทันที ไม่ต้องรอ build
-- **API client** = `src/services/apiClient.ts` (Axios) — ดูหัวข้อ Data Flow Standard ด้านล่าง · (แผนต่อไป: generate type จาก OpenAPI ของ NestJS ด้วย `openapi-typescript`)
+- **API client** = class `Rest` ใน `packages/utils/src/rest.ts` (`import { Rest } from '@nightlist/utils/rest'`) ใช้ร่วมกันทั้ง `apps/frontend` และ `apps/admin` — ดูหัวข้อ Data Flow Standard ด้านล่าง · (แผนต่อไป: generate type จาก OpenAPI ของ NestJS ด้วย `openapi-typescript`)
 - **Guard ของ route** (`RequireAuth`, `RequireRole`) ห่อที่ระดับ layout route ใน React Router
 
 ### Data Flow Standard (ADR 0002) — ✅
@@ -131,13 +131,13 @@ Component → TanStack Query Hook → API Service Layer (Rest) → Axios Client 
 sequenceDiagram
   participant C as Component
   participant H as Hook (useQuery / useMutation)<br/>services/data.ts
-  participant R as Rest.get/post/put/patch/delete<T><br/>services/apiClient.ts
+  participant R as Rest.get/post/put/patch/delete<T><br/>@nightlist/utils/rest
   participant X as Axios instance<br/>(interceptors)
   participant API as NestJS /api
   participant DB as Supabase PostgREST / Storage
   C->>H: useZoneAvailability(bar, time)
   H->>R: Rest.get<ZoneRow[]>('/bars/:id/zone-availability')
-  R->>X: apiClient.get
+  R->>X: axios instance.get
   X->>X: แนบ Authorization: Bearer <Supabase access token>
   X->>API: GET /api/bars/:id/zone-availability
   API->>DB: rpc zone_availability (anon key + token ผู้เรียก → RLS)
@@ -150,10 +150,10 @@ sequenceDiagram
 
 | ชั้น | ไฟล์ | หน้าที่ |
 |---|---|---|
-| Component | `modules/*/page.tsx`, `ui/components/*` | แสดงผล เรียก hook / action — **ห้าม** import `supabase`, `axios`, `apiClient` ตรง |
+| Component | `modules/*/page.tsx`, `ui/components/*` | แสดงผล เรียก hook / action — **ห้าม** import `supabase`, `axios`, `Rest` ตรง (เรียกผ่าน hook / service) |
 | TanStack Query Hook | `services/data.ts` (`useZoneAvailability`, `useBarTeam`, `useMyInvites`, `useBarLedger`, `useBillingEvents`, `useShareCard`, `useSiteTeam`) | cache, loading/error state, queryKey |
 | API Service Layer | `services/actions.ts` (เขียน), `services/sync.ts` (โหลดข้อมูลตั้งต้น/ข้อมูลผู้ใช้ลง cache), `services/storage.ts` (ไฟล์) | แปลง type หน้าเว็บ ↔ body/response ของ API แล้วเรียก `Rest` |
-| Axios Client | `services/apiClient.ts` | `axios.create({ baseURL: VITE_API_BASE_URL })` · interceptor แนบ Bearer token · แปลง error เป็น `ApiError` · log ใน Console · `Rest.get/post/put/patch/delete<T>` |
+| Rest + Axios Client | `packages/utils/src/rest.ts` (class `Rest` ใช้ร่วมทุกแอป) | `Rest.configure({ baseURL, getAccessToken, logger, unauthorizedCode })` ครั้งเดียวใน `main.tsx` ของแต่ละแอป → `axios.create` + interceptor แนบ Bearer token · แปลง error เป็น `ApiError` (ข้อความไทยชุดเดียว `ERROR_MESSAGES`) · log · `Rest.get/post/put/patch/delete<T>` · `Rest.upload(url, file)` · `Rest.ping()` |
 | Backend API | `apps/backend/src/modules/*` | ตรวจ JWT + validate (zod) แล้วอ่าน/เขียน Supabase · อ่านทำในนามผู้เรียก (RLS) · เขียนผ่านฟังก์ชัน `app_*` |
 
 **Endpoint อ่านที่ย้ายมาจากการ query ตรง** (`apps/backend/src/modules/query`)
@@ -176,7 +176,8 @@ sequenceDiagram
 
 **กติกา**
 - ใช้ `supabase` ได้เฉพาะ `supabase.auth.*` ทั้ง `apps/frontend` และ `apps/admin` — ESLint (`eslint.config.js` ของแต่ละแอป) บล็อก `supabase.from / rpc / storage / schema / channel`
-- Backoffice ใช้ชั้นเดียวกัน: `apps/admin/src/services/adminData.ts` (hook) → `apps/admin/src/services/apiClient.ts` (Rest/Axios)
+- Backoffice ใช้ชั้นเดียวกัน: `apps/admin/src/services/adminData.ts` (hook) → `Rest` ตัวเดียวกับหน้าเว็บ (ตั้ง `unauthorizedCode: 'MFA_REQUIRED'`)
+- `Rest` อยู่ใน entry แยก `@nightlist/utils/rest` — backend ที่ import `@nightlist/utils` (ตัวคำนวณราคา ฯลฯ) จึงไม่โหลด axios · ดู [ADR 0004](adr/0004-shared-rest-client.md)
 - ข้อมูลใหม่ที่ต้องอ่าน: เพิ่ม endpoint ใน backend (มี `@ApiDoc`) → เพิ่ม hook ใน `services/data.ts` ที่เรียก `Rest.get<T>()`
 - การเขียน: เพิ่มฟังก์ชันใน `services/actions.ts` ที่เรียก `Rest.post/put/patch/delete<T>()` (ใช้กับ `useMutation` ได้ตรงๆ เช่น `useMutation({ mutationFn: (v) => cancelBooking(v.id) })`)
 - `VITE_API_BASE_URL` ว่างได้: dev = `http://localhost:3000/api`, deploy = `/api` (same-origin) · `VITE_API_URL` เดิมยังอ่านเป็นค่าสำรอง

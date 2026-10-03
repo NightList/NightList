@@ -5,12 +5,12 @@
  *       (ร้าน รีวิว การจอง แจ้งเตือน ร้านโปรด ร้านของฉัน) — ไม่มีข้อมูลเดโม
  * เขียน: services/actions.ts → NestJS → ฟังก์ชันใน DB แล้วโหลดใหม่
  * ข้อมูลที่ต้องถามสด (โซนว่าง สมาชิกทีม สมุดมัดจำ ค่าคอม คำเชิญ) ใช้ hook ด้านล่าง (TanStack Query)
- *   Component → hook (TanStack Query) → Rest (services/apiClient) → Axios → NestJS — ไม่ query DB ตรง (ADR 0002)
+ *   Component → hook (TanStack Query) → Rest (@nightlist/utils/rest) → Axios → NestJS — ไม่ query DB ตรง (ADR 0002)
  */
 import { useQuery } from '@tanstack/react-query';
 import type { BarWithTier } from '@nightlist/mock';
 import type { Db } from '@nightlist/types';
-import { Rest } from '@/services/apiClient';
+import { Rest } from '@nightlist/utils/rest';
 
 export {
   autoCancelAt,

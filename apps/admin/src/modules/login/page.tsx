@@ -2,8 +2,7 @@ import { ShieldStar } from '@phosphor-icons/react';
 import { Alert, Button, Card, Form, Input, Spin, Typography } from 'antd';
 import { useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router';
-import { useAdminAuth } from '@/services/adminAuth';
-import { fetchProfile } from '@/services/apiClient';
+import { fetchProfile, useAdminAuth } from '@/services/adminAuth';
 import { supabase } from '@/services/supabase';
 
 type Step = 'password' | 'verify' | 'enroll';

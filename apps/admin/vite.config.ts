@@ -14,6 +14,7 @@ export default defineConfig({
     alias: [
       { find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) },
       // ใช้ source ของ workspace packages ตรงๆ — ไม่ต้องรอ tsup build dist (กัน error ตอน dist ถูกลบระหว่าง rebuild)
+      { find: /^@nightlist\/utils\/rest$/, replacement: fileURLToPath(new URL('../../packages/utils/src/rest.ts', import.meta.url)) },
       { find: /^@nightlist\/(mock|types|utils|ui)$/, replacement: pkg('$1') },
     ],
   },

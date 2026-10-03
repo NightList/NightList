@@ -1,7 +1,7 @@
 import type { Db } from '@nightlist/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
-import { Rest } from '@/services/apiClient';
+import { Rest } from '@nightlist/utils/rest';
 
 type AdminView =
   | 'admin_users'

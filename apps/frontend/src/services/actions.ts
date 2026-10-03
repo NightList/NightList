@@ -1,6 +1,6 @@
 import type { BarPromotion, MenuItem, ReviewMedia, SafetyValue } from '@nightlist/mock';
 import type { BookingStatus, CrowdStatus } from '@nightlist/types';
-import { Rest } from '@/services/apiClient';
+import { Rest } from '@nightlist/utils/rest';
 import { uploadDepositSlip, uploadPromoSlip, uploadReviewMedia, uploadSafetyEvidence } from '@/services/storage';
 import { currentProfile, refresh, setProfileName } from '@/services/sync';
 

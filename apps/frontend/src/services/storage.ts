@@ -1,8 +1,7 @@
-import axios from 'axios';
 import type { ReviewMedia } from '@nightlist/mock';
 import { getBlob } from '@/services/mediaStore';
 import { log } from '@/services/log';
-import { Rest } from '@/services/apiClient';
+import { Rest } from '@nightlist/utils/rest';
 
 /**
  * อัปโหลดไฟล์ตาม policy ของแต่ละ bucket (โฟลเดอร์แรก = เจ้าของ)
@@ -18,8 +17,8 @@ export type UploadBucket = 'deposit-slips' | 'review-media' | 'promo-slips' | 'b
 async function upload(bucket: UploadBucket, path: string, file: Blob): Promise<string> {
   const { upload_url } = await Rest.post<{ upload_url: string; path: string }>('/storage/upload-url', { bucket, path });
   try {
-    // URL มี token ในตัว — ใช้ axios ตรง (ไม่ผ่าน apiClient) จะได้ไม่แนบ baseURL / Bearer ของ API
-    await axios.put(upload_url, file, { headers: { 'Content-Type': file.type || 'application/octet-stream', 'x-upsert': 'false' } });
+    // URL มี token ในตัว — Rest.upload ไม่แนบ baseURL / Bearer ของ API
+    await Rest.upload(upload_url, file, { 'x-upsert': 'false' });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     log.error(`อัปโหลดไฟล์ไม่สำเร็จ ${bucket}/${path}`, msg);

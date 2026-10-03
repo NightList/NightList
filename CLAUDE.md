@@ -56,7 +56,8 @@
 
 ## การเชื่อมต่อ API (ADR 0002 — `docs/adr/0002-migrate-direct-db-calls-to-backend-api.md`)
 - `apps/frontend` และ `apps/admin` **ห้าม query DB / Storage ตรง** — `supabase` ใช้ได้เฉพาะ `supabase.auth.*` (ESLint บล็อก `supabase.from/rpc/storage`) · Backoffice: ADR 0003 (`/admin/views/:view`, `/admin/dashboard`, `/admin/master/:table`)
-- ลำดับชั้น: `Component → TanStack Query Hook (services/data.ts) → API Service Layer (Rest) → Axios Client (services/apiClient.ts) → Backend API`
+- ลำดับชั้น: `Component → TanStack Query Hook (services/data.ts) → API Service Layer (services/*) → `Rest` (`@nightlist/utils/rest` — class กลางใช้ร่วม frontend + admin) → Backend API`
+- ห้ามสร้าง axios/fetch client ของแต่ละแอปเอง — ตั้งค่า `Rest.configure()` ที่ `main.tsx` แล้ว import `Rest` จาก `@nightlist/utils/rest` · รหัส error ใหม่ → เพิ่มข้อความไทยใน `ERROR_MESSAGES` (`packages/utils/src/rest.ts`)
 - อ่านข้อมูลใหม่: เพิ่ม endpoint ใน backend (`modules/query` — อ่านในนามผู้เรียกด้วย `selectAs`/`rpcAs` ห้ามใช้ service_role) → hook ที่เรียก `Rest.get<T>()` · เขียน: ฟังก์ชันใน `services/actions.ts` ที่เรียก `Rest.post/put/patch/delete<T>()`
 - อัปโหลดไฟล์: `services/storage.ts` (ขอ URL จาก `POST /storage/upload-url` แล้ว PUT ไฟล์ตรง)
 - env: `VITE_API_BASE_URL` (ว่าง = dev `http://localhost:3000/api`, deploy `/api`) · backend ต้องมี `SUPABASE_ANON_KEY` (หรือใช้ `VITE_SUPABASE_ANON_KEY` ที่ root)

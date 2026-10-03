@@ -5,7 +5,7 @@ const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 /**
  * ใช้เฉพาะ Supabase Auth (เข้าสู่ระบบ + MFA) — ADR 0002
- * ห้ามใช้ .from() / .rpc() / .storage → อ่าน/เขียนข้อมูลผ่าน Rest (services/apiClient) เท่านั้น
+ * ห้ามใช้ .from() / .rpc() / .storage → อ่าน/เขียนข้อมูลผ่าน Rest (@nightlist/utils/rest) เท่านั้น
  * null เมื่อยังไม่ได้ตั้งค่า .env — Backoffice จะแสดงหน้าให้ตั้งค่าแทน
  */
 export const supabase: SupabaseClient | null =

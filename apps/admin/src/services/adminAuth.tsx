@@ -1,7 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 import type { UserRole } from '@nightlist/types';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { fetchProfile } from '@/services/apiClient';
+import { Rest } from '@nightlist/utils/rest';
 import { supabase } from '@/services/supabase';
 
 /**
@@ -20,6 +20,17 @@ interface AdminAuthValue {
   canEnter: boolean;
   refresh: () => Promise<void>;
   signOut: () => Promise<void>;
+}
+
+/** role + ชื่อจาก public.users ผ่าน API (GET /me/profile) — null ถ้าไม่พบ/อ่านไม่ได้ */
+export async function fetchProfile(accessToken: string): Promise<{ role: string; display_name: string } | null> {
+  try {
+    return await Rest.get<{ id: string; role: string; display_name: string }>('/me/profile', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    return null;
+  }
 }
 
 const AdminAuthContext = createContext<AdminAuthValue | null>(null);

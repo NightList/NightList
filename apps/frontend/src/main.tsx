@@ -1,12 +1,25 @@
 import { StrictMode, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
-import { checkApi } from './services/apiClient';
+import { apiBaseUrlFromEnv, Rest } from '@nightlist/utils/rest';
 import { log } from './services/log';
-import { isSupabaseConfigured } from './services/supabase';
+import { isSupabaseConfigured, supabase } from './services/supabase';
 import { hydratePublicFromCache, loadPublic } from './services/sync';
 import { BootError } from './ui/components/bootError';
 import './styles/index.css';
+
+// HTTP client กลาง (ADR 0002) — ตั้งค่าครั้งเดียว ทุก service เรียก Rest.get/post/… ได้เลย
+Rest.configure({
+  baseURL: apiBaseUrlFromEnv(import.meta.env),
+  getAccessToken: async () => (supabase ? ((await supabase.auth.getSession()).data.session?.access_token ?? null) : null),
+  logger: log,
+});
+
+/** log ว่า NestJS เปิดอยู่ไหม (ดูใน Console) */
+const checkApi = async () =>
+  (await Rest.ping())
+    ? log.ok(`เชื่อมต่อ NestJS API สำเร็จ (${Rest.baseURL})`)
+    : log.warn(`ติดต่อ NestJS API ไม่ได้ (${Rest.baseURL}) — เปิดด้วย pnpm dev · หน้าเว็บจะโหลดข้อมูล/บันทึกไม่ได้`);
 
 const root = createRoot(document.getElementById('root')!);
 const render = (node: ReactNode) => root.render(<StrictMode>{node}</StrictMode>);
