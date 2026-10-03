@@ -71,7 +71,7 @@ export function AboutHero() {
       </div>
 
       <div
-        className="about-pop font-kanit relative mx-auto -mt-[2.5%] max-w-[1020px] space-y-3 text-center text-[clamp(15px,1.8vw,28px)] font-light leading-[1.15] text-white [text-shadow:0_2px_14px_rgba(0,0,0,0.6)]"
+        className="about-pop font-kanit relative mx-auto mt-[-2.5%] max-w-255 space-y-3 text-center text-[clamp(15px,1.8vw,28px)] font-light leading-[1.15] text-white [text-shadow:0_2px_14px_rgba(0,0,0,0.6)]"
         style={{ ['--i' as string]: 6 }}
       >
         {ABOUT_TEXT.map((t) => (

@@ -7,7 +7,8 @@ import { TeamContactLinks } from './teamContactLinks';
 import { TeamPortrait } from './teamPortrait';
 
 const isTyping = (el: EventTarget | null) =>
-  el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
+  el instanceof HTMLElement &&
+  (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
 
 /**
  * แผงโปรไฟล์ทีมงาน (antd Drawer) — จอ md ขึ้นไปออกขวา 560px · มือถือขึ้นจากล่างสูง 88vh
@@ -73,14 +74,22 @@ export function TeamProfileDrawer({
       footer={
         n > 1 ? (
           <nav aria-label="ทีมงานคนอื่น" className="grid grid-cols-2">
-            <button type="button" onClick={() => onNavigate(prev)} className="team-drawer__nav justify-start">
+            <button
+              type="button"
+              onClick={() => onNavigate(prev)}
+              className="team-drawer__nav justify-start"
+            >
               <CaretLeft weight="bold" aria-hidden="true" className="size-4 shrink-0" />
               <span className="truncate">
                 <span className="sr-only">คนก่อนหน้า: </span>
                 {members[prev]?.nickname}
               </span>
             </button>
-            <button type="button" onClick={() => onNavigate(next)} className="team-drawer__nav justify-end border-l border-white/15">
+            <button
+              type="button"
+              onClick={() => onNavigate(next)}
+              className="team-drawer__nav justify-end border-l border-white/15"
+            >
               <span className="truncate">
                 <span className="sr-only">คนถัดไป: </span>
                 {members[next]?.nickname}
@@ -93,26 +102,35 @@ export function TeamProfileDrawer({
     >
       <header className="grid grid-cols-[minmax(0,1fr)_clamp(120px,34%,180px)] border-b border-white/15">
         <div className="flex min-w-0 flex-col justify-end gap-1 p-5 md:p-6">
-          <p className="mb-auto text-[12px] text-white/55">
-            โปรไฟล์ {shown + 1}/{n}
-          </p>
-          <h2 id={titleId} className="font-kanit mt-6 text-[clamp(32px,4vw,44px)] font-semibold leading-none text-white">
+          <h2
+            id={titleId}
+            className="font-kanit mt-6 text-[clamp(32px,4vw,44px)] font-semibold leading-none text-white"
+          >
             {m.nickname}
           </h2>
           {m.full_name && <p className="text-sm text-white/70">{m.full_name}</p>}
           {mainRole && <p className="mt-2 text-sm font-medium text-gold">{mainRole}</p>}
-          {otherRoles.length > 0 && <p className="text-[13px] text-white/65">{otherRoles.join(', ')}</p>}
+          {otherRoles.length > 0 && (
+            <p className="text-[13px] text-white/65">{otherRoles.join(', ')}</p>
+          )}
         </div>
-        <div className="relative aspect-[3/4] overflow-hidden border-l border-white/15">
-          <TeamPortrait key={m.id} photo={m.photo_url} alt={m.nickname} className="team-drawer__photo" />
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="ปิดโปรไฟล์"
-            className="absolute right-2 top-2 grid size-11 place-items-center rounded-full bg-black/55 text-white backdrop-blur-sm transition-colors hover:bg-black/75 focus-visible:outline-2 focus-visible:outline-gold"
-          >
-            <X weight="bold" aria-hidden="true" className="size-4" />
-          </button>
+        <div className="py-4 pr-4 md:py-2 md:pr-2">
+          <div className="relative aspect-[3/4] overflow-hidden rounded-lg border border-white/15">
+            <TeamPortrait
+              key={m.id}
+              photo={m.photo_url}
+              alt={m.nickname}
+              className="team-drawer__photo"
+            />
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="ปิดโปรไฟล์"
+              className="absolute right-2 top-2 grid size-11 place-items-center rounded-full bg-black/55 text-white backdrop-blur-sm transition-colors hover:bg-black/75 focus-visible:outline-2 focus-visible:outline-gold"
+            >
+              <X weight="bold" aria-hidden="true" className="size-4" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -121,7 +139,9 @@ export function TeamProfileDrawer({
           <p className="text-sm text-white/55">{m.nickname} ยังไม่ได้เขียนแนะนำตัว</p>
         ) : (
           <>
-            {bio && <p className="whitespace-pre-line text-[15px] leading-relaxed text-white/85">{bio}</p>}
+            {bio && (
+              <p className="whitespace-pre-line text-[15px] leading-relaxed text-white/85">{bio}</p>
+            )}
 
             {m.skills.length > 0 && (
               <section aria-labelledby={`${titleId}-skills`} className="flex flex-col gap-3">
