@@ -1,25 +1,46 @@
+import axios from 'axios';
 import type { ReviewMedia } from '@nightlist/mock';
 import { getBlob } from '@/services/mediaStore';
 import { log } from '@/services/log';
-import { supabase } from '@/services/supabase';
+import { Rest } from '@/services/apiClient';
 
 /**
- * อัปโหลดไฟล์เข้า Supabase Storage ตาม policy ของแต่ละ bucket (โฟลเดอร์แรก = เจ้าของ)
+ * อัปโหลดไฟล์ตาม policy ของแต่ละ bucket (โฟลเดอร์แรก = เจ้าของ)
  *   deposit-slips/<user_id>/...   review-media/<user_id>/<review_id>/...   promo-slips/<bar_id>/...
- * NestJS รับแค่ path แล้วตรวจโฟลเดอร์ซ้ำในฐานข้อมูล
+ * 1) ขอ URL อัปโหลดจาก API (POST /storage/upload-url — Storage policy ตรวจสิทธิ์ในนามผู้ใช้)
+ * 2) PUT ไฟล์ตรงเข้า URL นั้น (ไฟล์ใหญ่อย่างวิดีโอรีวิวไม่ต้องผ่าน API) · NestJS รับแค่ path แล้วตรวจซ้ำใน DB
  */
 const ext = (f: Blob) =>
   ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'application/pdf': 'pdf', 'video/mp4': 'mp4', 'video/quicktime': 'mov', 'video/webm': 'webm' })[f.type] ?? 'bin';
 
-async function upload(bucket: string, path: string, file: Blob): Promise<string> {
-  if (!supabase) throw new Error('ยังไม่ได้ตั้งค่า Supabase');
-  const { error } = await supabase.storage.from(bucket).upload(path, file, { upsert: false, contentType: file.type || undefined });
-  if (error) {
-    log.error(`อัปโหลดไฟล์ไม่สำเร็จ ${bucket}/${path}`, error.message);
-    throw new Error(`อัปโหลดไฟล์ไม่สำเร็จ: ${error.message}`);
+export type UploadBucket = 'deposit-slips' | 'review-media' | 'promo-slips' | 'bar-verifications';
+
+async function upload(bucket: UploadBucket, path: string, file: Blob): Promise<string> {
+  const { upload_url } = await Rest.post<{ upload_url: string; path: string }>('/storage/upload-url', { bucket, path });
+  try {
+    // URL มี token ในตัว — ใช้ axios ตรง (ไม่ผ่าน apiClient) จะได้ไม่แนบ baseURL / Bearer ของ API
+    await axios.put(upload_url, file, { headers: { 'Content-Type': file.type || 'application/octet-stream', 'x-upsert': 'false' } });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    log.error(`อัปโหลดไฟล์ไม่สำเร็จ ${bucket}/${path}`, msg);
+    throw new Error(`อัปโหลดไฟล์ไม่สำเร็จ: ${msg}`, { cause: e });
   }
   log.info(`อัปโหลดไฟล์ ${bucket}/${path} (${Math.round(file.size / 1024)} KB)`);
   return path;
+}
+
+/** URL ชั่วคราวของไฟล์หลายไฟล์ใน bucket เดียว (ขอครั้งละ ≤ 500) — คืน path → URL เฉพาะไฟล์ที่มีสิทธิ์ */
+export async function signedUrls(bucket: UploadBucket, paths: string[], seconds = 6 * 3600): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  for (let i = 0; i < paths.length; i += 500) {
+    const { urls } = await Rest.post<{ urls: Record<string, string> }>('/storage/signed-urls', {
+      bucket,
+      paths: paths.slice(i, i + 500),
+      expires_in: seconds,
+    });
+    for (const [p, u] of Object.entries(urls)) out.set(p, u);
+  }
+  return out;
 }
 
 export const dataUrlToBlob = async (dataUrl: string) => (await fetch(dataUrl)).blob();
@@ -57,8 +78,10 @@ export async function uploadReviewMedia(userId: string, reviewId: string, media:
 }
 
 /** URL ชั่วคราวของไฟล์ส่วนตัว (เช่นสลิปของฉัน) */
-export async function signedUrl(bucket: string, path: string, seconds = 600) {
-  if (!supabase) return null;
-  const { data } = await supabase.storage.from(bucket).createSignedUrl(path, seconds);
-  return data?.signedUrl ?? null;
+export async function signedUrl(bucket: UploadBucket, path: string, seconds = 600) {
+  try {
+    return (await signedUrls(bucket, [path], seconds)).get(path) ?? null;
+  } catch {
+    return null;
+  }
 }

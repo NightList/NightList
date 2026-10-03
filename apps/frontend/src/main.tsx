@@ -1,7 +1,7 @@
 import { StrictMode, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
-import { checkApi } from './services/api';
+import { checkApi } from './services/apiClient';
 import { log } from './services/log';
 import { isSupabaseConfigured } from './services/supabase';
 import { hydratePublicFromCache, loadPublic } from './services/sync';
@@ -12,7 +12,7 @@ const root = createRoot(document.getElementById('root')!);
 const render = (node: ReactNode) => root.render(<StrictMode>{node}</StrictMode>);
 
 /**
- * ข้อมูลทั้งหมดมาจาก Supabase (ไม่มีโหมดเดโม)
+ * ข้อมูลทั้งหมดมาจาก NestJS API ผ่าน Rest (ADR 0002 — หน้าเว็บไม่ query DB ตรง) · Supabase ใช้เฉพาะ Auth
  * - เคยเปิดเว็บแล้ว (มี snapshot ในเครื่อง ≤ 24 ชม.) → render ทันที แล้วโหลดของใหม่เบื้องหลัง
  * - ครั้งแรก → รอโหลดข้อมูลสาธารณะเสร็จก่อน render (ระหว่างนั้นเห็นหน้าโหลดใน index.html)
  * ไม่มี .env → หน้าบอกวิธีตั้งค่า · โหลดไม่ได้ → หน้าแจ้ง error + ปุ่มลองใหม่
@@ -20,7 +20,7 @@ const render = (node: ReactNode) => root.render(<StrictMode>{node}</StrictMode>)
  */
 async function boot() {
   if (!isSupabaseConfigured) {
-    log.error('ยังไม่ได้ตั้ง VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY ใน .env');
+    log.error('ยังไม่ได้ตั้ง VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY ใน .env (ใช้กับระบบเข้าสู่ระบบ)');
     render(<BootError kind="config" />);
     return;
   }
@@ -35,7 +35,7 @@ async function boot() {
     void checkApi();
     render(<App />);
   } catch (e) {
-    log.error('เชื่อมต่อ Supabase ไม่สำเร็จ', e);
+    log.error('โหลดข้อมูลจาก API ไม่สำเร็จ', e);
     render(<BootError kind="load" onRetry={() => void boot()} />);
   }
 }

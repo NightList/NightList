@@ -14,10 +14,11 @@ import {
 import type { BookingStatus, UserRole } from '@nightlist/types';
 import { STYLE_LABELS, toBar, type BarDetailRow } from '@/services/barsRepo';
 import { log, since } from '@/services/log';
-import { supabase } from '@/services/supabase';
+import { API_BASE_URL, Rest } from '@/services/apiClient';
+import { signedUrls } from '@/services/storage';
 
 /**
- * ดึงข้อมูลจาก Supabase มาใส่ store ของ @nightlist/mock (ใช้เป็น cache ฝั่งหน้าเว็บ)
+ * ดึงข้อมูลจาก NestJS API (Rest → GET /public/catalog, /me/overview) มาใส่ store ของ @nightlist/mock (cache ฝั่งหน้าเว็บ) — ไม่ query DB ตรง (ADR 0002)
  * - สาธารณะ (ตอนเปิดเว็บ): ร้าน (bar_detail) · รีวิว (public_reviews) · ย่าน/สไตล์/แพ็กเกจโปรโมท/PromptPay
  * - ผู้ใช้ (หลังล็อกอิน): การจอง · มัดจำ · แจ้งเตือน · ร้านโปรด · รีวิวของฉัน · ร้านของฉัน (ทุกสถานะ) + การจองของร้าน
  * หน้าเว็บอ่านจาก store แบบเดิม (listBars, myBookings, ...) · การเขียนทั้งหมดไป NestJS (services/actions.ts) แล้วโหลดใหม่
@@ -58,10 +59,6 @@ export const DISTRICTS: string[] = [];
 /** ชื่อสไตล์ (เหมือน STYLES เดิม) */
 export const STYLES: string[] = [];
 
-const must = <T>(r: { data: T | null; error: { message: string } | null }, what: string): T => {
-  if (r.error) throw new Error(`${what}: ${r.error.message}`);
-  return r.data as T;
-};
 
 // ---------------------------------------------------------------------
 // แปลงแถวจาก DB → รูปแบบที่หน้าเว็บใช้
@@ -135,20 +132,15 @@ interface ListingRow {
   promotion_packages: { name: string; duration_days: number } | null;
 }
 
-/** URL ชั่วคราวของไฟล์รีวิว (bucket review-media เป็น private) — ขอทีละชุด */
+/** URL ชั่วคราวของไฟล์รีวิว (bucket review-media เป็น private) — ขอผ่าน API */
 async function signReviewPaths(paths: string[]): Promise<Map<string, string>> {
-  const out = new Map<string, string>();
-  if (!supabase || paths.length === 0) return out;
-  for (let i = 0; i < paths.length; i += 100) {
-    const chunk = paths.slice(i, i + 100);
-    const { data, error } = await supabase.storage.from('review-media').createSignedUrls(chunk, 6 * 3600);
-    if (error) {
-      log.warn('ขอ URL รูปรีวิวไม่สำเร็จ', error.message);
-      continue;
-    }
-    for (const d of data ?? []) if (d.path && d.signedUrl) out.set(d.path, d.signedUrl);
+  if (paths.length === 0) return new Map();
+  try {
+    return await signedUrls('review-media', paths, 6 * 3600);
+  } catch (e) {
+    log.warn('ขอ URL รูปรีวิวไม่สำเร็จ', (e as Error).message);
+    return new Map();
   }
-  return out;
 }
 
 const mediaPaths = (rows: { media: MediaRow[] }[]) =>
@@ -350,33 +342,34 @@ export function hydratePublicFromCache(): boolean {
 }
 
 export async function loadPublic(): Promise<void> {
-  if (!supabase) throw new Error('ยังไม่ได้ตั้งค่า Supabase (.env)');
   const t0 = performance.now();
-  const [bars, reviews, districts, styles, settings, packages] = await Promise.all([
-    supabase.from('bar_detail').select('*').order('name'),
-    supabase.from('public_reviews').select('*').order('created_at', { ascending: false }).limit(2000),
-    supabase.from('districts').select('id, name_th').order('sort_order'),
-    supabase.from('styles').select('id, key, name_th').order('sort_order'),
-    supabase.from('platform_settings').select('key, value'),
-    supabase.from('promotion_packages').select('id, name, placement, duration_days, price').order('price'),
-  ]);
-  const raw: PublicRaw = {
-    bars: must(bars, 'bar_detail') as unknown as BarDetailRow[],
-    reviews: must(reviews, 'public_reviews') as unknown as PublicReviewRow[],
-    districts: must(districts, 'districts') as PublicRaw['districts'],
-    styles: must(styles, 'styles') as PublicRaw['styles'],
-    settings: must(settings, 'platform_settings') as PublicRaw['settings'],
-    packages: must(packages, 'promotion_packages') as PublicRaw['packages'],
-  };
+  const raw = await Rest.get<PublicRaw>('/public/catalog');
   // แสดงร้าน/รีวิวก่อน แล้วค่อยขอ URL รูป/วิดีโอรีวิวทีหลัง (ไม่ให้หน้าแรกต้องรอ)
   applyPublic(raw, new Map());
   saveSnapshot(raw);
   const paths = mediaPaths(raw.reviews);
   if (paths.length) void signReviewPaths(paths).then((urls) => applyPublic(raw, urls));
-  const host = new URL(import.meta.env.VITE_SUPABASE_URL as string).host;
   log.ok(
-    `เชื่อมต่อ Supabase สำเร็จ (${host}) · ร้าน ${publicBars.length} · รีวิว ${publicReviews.length} · ย่าน ${MASTER.districts.length} · ${since(t0)}`,
+    `โหลดข้อมูลจาก API สำเร็จ (${API_BASE_URL}) · ร้าน ${publicBars.length} · รีวิว ${publicReviews.length} · ย่าน ${MASTER.districts.length} · ${since(t0)}`,
   );
+}
+
+/** GET /me/overview (แถวจาก view ของ DB — snake_case) */
+interface MeOverview {
+  bookings: BookingDetailRow[];
+  notifications: NotificationRow[];
+  favorites: { id: string }[];
+  reviews: MyReviewRow[];
+  preferences: {
+    preferred_style_ids: string[];
+    preferred_district_ids: string[];
+    budget_per_person: number | null;
+    usual_pax: number | null;
+  } | null;
+  bars: BarDetailRow[];
+  team_bookings: BookingDetailRow[];
+  listings: ListingRow[];
+  review_reports: { review_id: string }[];
 }
 
 // ---------------------------------------------------------------------
@@ -398,50 +391,25 @@ export let myPrefs: UserPrefs = { styleIds: [], districtIds: [] };
 
 /** คืน id ร้านหลักของผู้ใช้ (ร้านแรกที่เป็นเจ้าของ/อยู่ในทีม) */
 export async function loadUser(p: SessionProfile): Promise<{ barId?: string }> {
-  if (!supabase) return {};
   const t0 = performance.now();
-  const [bookings, notifications, favorites, reviews, prefs, myBars, reports] = await Promise.all([
-    supabase.from('booking_detail').select('*').eq('user_id', p.id).order('booking_datetime', { ascending: false }),
-    supabase.from('notifications').select('id, user_id, title, body, payload, read_at, created_at').order('created_at', { ascending: false }).limit(100),
-    supabase.from('my_favorites').select('id'),
-    supabase.from('my_reviews').select('*').order('created_at', { ascending: false }),
-    supabase.from('user_preferences').select('*').eq('user_id', p.id).maybeSingle(),
-    supabase.from('my_bar_detail').select('*').order('created_at'),
-    supabase.from('review_reports').select('review_id'),
-  ]);
-  const barRows = must(myBars, 'my_bar_detail') as unknown as BarDetailRow[];
+  const o = await Rest.get<MeOverview>('/me/overview');
+  const barRows = o.bars;
   const bars = barRows.map(toBar);
-  const barIds = bars.map((b) => b.id);
+  // ร้านของฉัน: การจองทั้งหมดของร้าน + ประวัติโปรโมท (API รวมมาให้แล้ว)
+  const teamBookings = o.team_bookings;
+  const listings = o.listings;
 
-  // ร้านของฉัน: การจองทั้งหมดของร้าน + ประวัติโปรโมท
-  let teamBookings: BookingDetailRow[] = [];
-  let listings: ListingRow[] = [];
-  if (barIds.length) {
-    const [tb, pl] = await Promise.all([
-      supabase.from('booking_detail').select('*').in('bar->>id', barIds).order('booking_datetime', { ascending: false }).limit(1000),
-      supabase.from('promoted_listings').select('id, bar_id, placement, price_paid, status, created_at, promotion_packages(name, duration_days)')
-        .in('bar_id', barIds).order('created_at', { ascending: false }),
-    ]);
-    teamBookings = must(tb, 'booking_detail (ร้าน)') as unknown as BookingDetailRow[];
-    listings = must(pl, 'promoted_listings') as unknown as ListingRow[];
-  }
-
-  const own = must(bookings, 'booking_detail') as unknown as BookingDetailRow[];
+  const own = o.bookings;
   const allBookings = new Map<string, Booking>();
   for (const r of [...own, ...teamBookings]) allBookings.set(r.id, toBooking(r));
 
-  const myReviewRows = must(reviews, 'my_reviews') as unknown as MyReviewRow[];
+  const myReviewRows = o.reviews;
   // โหลดซ้ำทุก 60 วิ: ถ้าข้อมูลเหมือนเดิมทุกอย่าง ไม่ต้องขอ URL รูปใหม่ / ไม่ re-render ทั้งแอป
-  const signature = JSON.stringify([own, teamBookings, notifications.data, favorites.data, myReviewRows, prefs.data, barRows, reports.data, listings]);
+  const signature = JSON.stringify(o);
   if (signature === lastUserSignature && userData?.user.id === p.id) return { barId: userData.user.barId };
   lastUserSignature = signature;
   const urls = await signReviewPaths(mediaPaths(myReviewRows));
-  const pr = must(prefs, 'user_preferences') as {
-    preferred_style_ids: string[];
-    preferred_district_ids: string[];
-    budget_per_person: number | null;
-    usual_pax: number | null;
-  } | null;
+  const pr = o.preferences;
   myPrefs = {
     styleIds: pr?.preferred_style_ids ?? [],
     districtIds: pr?.preferred_district_ids ?? [],
@@ -480,9 +448,9 @@ export async function loadUser(p: SessionProfile): Promise<{ barId?: string }> {
       media: r.media.length ? r.media.map((m) => toMedia(m, urls)) : undefined,
       status: r.status,
     })),
-    reportedReviewIds: new Set((must(reports, 'review_reports') as { review_id: string }[]).map((x) => x.review_id)),
-    favorites: (must(favorites, 'my_favorites') as { id: string }[]).map((f) => f.id),
-    notifications: (must(notifications, 'notifications') as NotificationRow[]).map(toNotification),
+    reportedReviewIds: new Set(o.review_reports.map((x) => x.review_id)),
+    favorites: o.favorites.map((f) => f.id),
+    notifications: o.notifications.map(toNotification),
     promotions: listings.map((l) => ({
       id: l.id,
       barId: l.bar_id,
@@ -497,7 +465,7 @@ export async function loadUser(p: SessionProfile): Promise<{ barId?: string }> {
   setSessionUserId(p.id);
   commit();
   log.ok(
-    `โหลดข้อมูลผู้ใช้จาก Supabase (${p.email} · ${p.role}) · การจอง ${userData.bookings.length} · แจ้งเตือน ${userData.notifications.length} · ร้านโปรด ${userData.favorites.length}${bars.length ? ` · ร้านของฉัน ${bars.length}` : ''} · ${since(t0)}`,
+    `โหลดข้อมูลผู้ใช้จาก API (${p.email} · ${p.role}) · การจอง ${userData.bookings.length} · แจ้งเตือน ${userData.notifications.length} · ร้านโปรด ${userData.favorites.length}${bars.length ? ` · ร้านของฉัน ${bars.length}` : ''} · ${since(t0)}`,
   );
   return { barId: primary?.id };
 }
@@ -542,7 +510,7 @@ export function setProfileName(displayName: string) {
 /** ใช้ใน dev tools: window.__nightlist() ดูข้อมูลใน cache */
 if (typeof window !== 'undefined') {
   (window as unknown as { __nightlist: () => unknown }).__nightlist = () => ({
-    supabase: import.meta.env.VITE_SUPABASE_URL,
+    api: API_BASE_URL,
     bars: getState().bars.length,
     bookings: getState().bookings.length,
     reviews: getState().reviews.length,
