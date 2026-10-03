@@ -1,6 +1,7 @@
 import { PageContainer } from '@ant-design/pro-components';
+import { UserPlus } from '@phosphor-icons/react';
 import type { Db } from '@nightlist/types';
-import { App, Input, Select, Space, Table, Tag } from 'antd';
+import { App, Button, Input, Select, Space, Table, Tag } from 'antd';
 import { useMemo, useState } from 'react';
 import { PAGE_SIZE } from '@/configs/constants';
 import { useAdminAuth } from '@/services/adminAuth';
@@ -8,6 +9,7 @@ import { useAdminAction, useAdminView } from '@/services/adminData';
 import { LoadError } from '@/ui/components/LoadError';
 import { dateTime } from '@/ui/utils/format';
 import { STAFF_ROLE, USER_ROLE } from '@/ui/utils/labels';
+import { CreateUserModal } from './modal/createUserModal';
 
 type Role = Db.Enums<'user_role'>;
 const ROLE_OPTIONS = (Object.keys(USER_ROLE) as Role[]).map((r) => ({
@@ -16,13 +18,13 @@ const ROLE_OPTIONS = (Object.keys(USER_ROLE) as Role[]).map((r) => ({
 }));
 
 /**
- * ผู้ใช้ทั้งหมด — เปลี่ยนสิทธิ์ได้ (ลงบันทึก audit)
- * ผูกบัญชีกับร้าน (เจ้าของ / ผู้จัดการ / พนักงาน) ใช้สคริปต์ user:create ดู docs/SUPABASE.md
+ * ผู้ใช้ทั้งหมด — เพิ่มผู้ใช้ (ลูกค้า / แอดมิน / เจ้าของ / ผู้จัดการ / พนักงานร้าน) · เปลี่ยนสิทธิ์ได้ (ลงบันทึก audit)
  */
 export function UsersPage() {
   const { modal } = App.useApp();
   const auth = useAdminAuth();
   const [q, setQ] = useState('');
+  const [creating, setCreating] = useState(false);
   const { data, isLoading, error, refetch } = useAdminView('admin_users', {
     order: { column: 'created_at', ascending: false },
   });
@@ -53,7 +55,12 @@ export function UsersPage() {
     <PageContainer
       title="ผู้ใช้"
       extra={
-        <Input.Search placeholder="ชื่อ / อีเมล" allowClear onSearch={setQ} className="w-64" />
+        <Space wrap>
+          <Input.Search placeholder="ชื่อ / อีเมล" allowClear onSearch={setQ} className="w-64" />
+          <Button type="primary" icon={<UserPlus size={16} weight="bold" />} onClick={() => setCreating(true)}>
+            เพิ่มผู้ใช้
+          </Button>
+        </Space>
       }
     >
       <LoadError error={error} onRetry={() => void refetch()} />
@@ -105,6 +112,7 @@ export function UsersPage() {
           },
         ]}
       />
+      <CreateUserModal open={creating} onClose={() => setCreating(false)} />
     </PageContainer>
   );
 }
