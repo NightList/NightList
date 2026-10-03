@@ -410,6 +410,9 @@ export type PublicTeamMember = Override<
   { contacts: TeamContacts }
 >;
 
+/** admin_team_members (migration 20261003000100) — ทุกคนรวมที่ซ่อนอยู่ · Backoffice "ทีมงาน" */
+export type AdminTeamMember = Omit<Tables<'team_members'>, 'contacts'> & { contacts: TeamContacts };
+
 // ---------------------------------------------------------------------
 // กฎธุรกิจที่ต้องตรงกับ DB
 // ---------------------------------------------------------------------

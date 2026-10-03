@@ -2,7 +2,9 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
 /** bucket ที่หน้าเว็บอัปโหลด/ขอ URL ได้ (สิทธิ์จริงตัดสินโดย Storage policy ของแต่ละ bucket) */
-export const UPLOAD_BUCKETS = ['deposit-slips', 'review-media', 'promo-slips', 'bar-verifications'] as const;
+export const UPLOAD_BUCKETS = ['deposit-slips', 'review-media', 'promo-slips', 'bar-verifications', 'team-photos'] as const;
+/** bucket ที่เป็น public — ตอบ public_url กลับไปด้วย */
+export const PUBLIC_BUCKETS: readonly string[] = ['team-photos'];
 const bucket = z.enum(UPLOAD_BUCKETS);
 /** path ใน bucket — ห้าม .. / ขึ้นต้นด้วย / (โฟลเดอร์แรกต้องเป็นเจ้าของ ตาม policy) */
 const objectPath = z

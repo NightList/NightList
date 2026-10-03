@@ -65,6 +65,9 @@ export const ERROR_MESSAGES: Readonly<Record<string, string>> = {
   DEPOSIT_NOT_REFUND_PENDING: 'รายการนี้ยังไม่ถึงขั้นคืนเงินลูกค้า',
   PROMOTION_NOT_FOUND: 'ไม่พบรายการโปรโมทนี้แล้ว',
   PROMOTION_NOT_AWAITING_REVIEW: 'รายการโปรโมทนี้ตรวจไปแล้ว',
+  TEAM_MEMBER_NOT_FOUND: 'ไม่พบทีมงานคนนี้แล้ว (อาจถูกลบไปแล้ว)',
+  INVALID_TEAM_MEMBER: 'ข้อมูลทีมงานไม่ครบหรือไม่ถูกต้อง (ชื่อเล่น 1–40 ตัว · รูปต้องเป็น URL หรือ path ที่ขึ้นต้นด้วย /)',
+  INVALID_TEAM_ORDER: 'ลำดับทีมงานไม่ถูกต้อง — รีเฟรชหน้าแล้วลองใหม่',
   CANNOT_DEMOTE_SELF: 'ลดสิทธิ์แอดมินของตัวเองไม่ได้ ให้แอดมินคนอื่นทำแทน',
 };
 

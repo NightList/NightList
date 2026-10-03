@@ -5,7 +5,7 @@ import { CurrentUser } from '../../auth/current-user.decorator';
 import { SupabaseJwtGuard, type AuthedRequest, type AuthUser } from '../../auth/supabase-jwt.guard';
 import { ApiDoc } from '../../common/api-doc';
 import { SupabaseService } from '../../supabase/supabase.service';
-import { UploadUrlDto } from './query.dto';
+import { PUBLIC_BUCKETS, UploadUrlDto } from './query.dto';
 
 const inList = (ids: string[]) => `in.(${ids.map(encodeURIComponent).join(',')})`;
 
@@ -93,10 +93,11 @@ export class MeReadController {
     summary: 'ขอ URL อัปโหลดไฟล์',
     description:
       'สลิปมัดจำ / รูป-วิดีโอรีวิว / สลิปโปรโมท / หลักฐานความปลอดภัย — หน้าเว็บ PUT ไฟล์ตรงเข้า URL นี้ (ไฟล์ใหญ่ไม่ผ่าน API) · Storage policy ตรวจว่าโฟลเดอร์แรกเป็นของผู้เรียก',
-    returns: '`upload_url` URL สำหรับ PUT ไฟล์ (ใช้ได้ครั้งเดียว ~2 ชม.) · `path` path ที่จะได้',
+    returns: '`upload_url` URL สำหรับ PUT ไฟล์ (ใช้ได้ครั้งเดียว ~2 ชม.) · `path` path ที่จะได้ · `public_url` URL ถาวร (เฉพาะ bucket public เช่น team-photos)',
     forbidden: 'อัปโหลดลงโฟลเดอร์ของคนอื่นไม่ได้',
   })
   async uploadUrl(@Req() req: AuthedRequest, @Body() b: UploadUrlDto) {
-    return { upload_url: await this.db.signedUploadUrlAs(bearerOf(req)!, b.bucket, b.path), path: b.path };
+    const upload_url = await this.db.signedUploadUrlAs(bearerOf(req)!, b.bucket, b.path);
+    return { upload_url, path: b.path, public_url: PUBLIC_BUCKETS.includes(b.bucket) ? this.db.publicUrl(b.bucket, b.path) : null };
   }
 }

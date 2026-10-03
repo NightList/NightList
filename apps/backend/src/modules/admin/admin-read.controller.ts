@@ -18,6 +18,7 @@ export const ADMIN_VIEWS = [
   'admin_billing_events',
   'admin_audit_logs',
   'admin_bar_promotions',
+  'admin_team_members',
 ] as const;
 export const ADMIN_MASTER_TABLES = ['styles', 'safety_features', 'platform_settings'] as const;
 

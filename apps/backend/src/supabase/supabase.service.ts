@@ -110,6 +110,11 @@ export class SupabaseService {
     return `${this.url}/storage/v1${body.url}`;
   }
 
+  /** URL ถาวรของไฟล์ใน bucket public */
+  publicUrl(bucket: string, path: string): string {
+    return `${this.url}/storage/v1/object/public/${encodeURIComponent(bucket)}/${path.split('/').map(encodeURIComponent).join('/')}`;
+  }
+
   /** ปิดการเข้าสู่ระบบของบัญชี (ลบบัญชี) — ห้ามลบจริงเพราะการจองยังอ้างถึง */
   async banUser(id: string): Promise<void> {
     const res = await fetch(`${this.url}/auth/v1/admin/users/${id}`, {

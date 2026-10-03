@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, Param, ParseUUIDPipe, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, HttpCode, Param, ParseUUIDPipe, Patch, Post, Put, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AdminGuard } from '../../auth/admin.guard';
 import { ApiDoc } from '../../common/api-doc';
@@ -6,12 +6,15 @@ import { CurrentUser } from '../../auth/current-user.decorator';
 import { SupabaseJwtGuard, type AuthUser } from '../../auth/supabase-jwt.guard';
 import { SupabaseService } from '../../supabase/supabase.service';
 import {
+  CreateTeamMemberDto,
   ModerateReviewDto,
+  ReorderTeamDto,
   ReviewDto,
   SetBarStatusDto,
   SetEditorPickDto,
   SetUserRoleDto,
   SettleDepositDto,
+  UpdateTeamMemberDto,
 } from './admin.dto';
 
 const Id = () => Param('id', new ParseUUIDPipe());
@@ -130,5 +133,51 @@ export class AdminController {
   })
   setUserRole(@CurrentUser() me: AuthUser, @Id() id: string, @Body() b: SetUserRoleDto) {
     return this.db.rpc('admin_set_user_role', { p_actor: me.id, p_user: id, p_role: b.role });
+  }
+
+  // ----------------------------- ทีมงานหน้า /about -----------------------------
+  @Post('team-members')
+  @ApiDoc({
+    summary: 'เพิ่มทีมงาน',
+    description: 'เพิ่มคนในหน้าเกี่ยวกับเรา (ต่อท้ายลำดับ) · รูปอัปโหลดเข้า bucket team-photos ก่อนด้วย POST /storage/upload-url แล้วส่ง URL มา · บันทึก audit log',
+    returns: '`id` · `nickname` · `active` · `sort_order`',
+    status: 201,
+    forbidden: 'ไม่ใช่ ADMIN',
+  })
+  createTeamMember(@CurrentUser() me: AuthUser, @Body() b: CreateTeamMemberDto) {
+    return this.db.rpc('admin_save_team_member', { p_actor: me.id, p_id: null, p: b });
+  }
+
+  @Patch('team-members/:id')
+  @ApiDoc({
+    summary: 'แก้ข้อมูลทีมงาน',
+    description: 'ส่งเฉพาะ field ที่ต้องการแก้ เช่น `{ "active": false }` = ซ่อนจากหน้าเว็บ · บันทึก audit log (ก่อน/หลัง)',
+    returns: '`id` · `nickname` · `active` · `sort_order`',
+    forbidden: 'ไม่ใช่ ADMIN',
+  })
+  updateTeamMember(@CurrentUser() me: AuthUser, @Id() id: string, @Body() b: UpdateTeamMemberDto) {
+    return this.db.rpc('admin_save_team_member', { p_actor: me.id, p_id: id, p: b });
+  }
+
+  @Delete('team-members/:id')
+  @ApiDoc({
+    summary: 'ลบทีมงาน',
+    description: 'ลบถาวร (ถ้าแค่ไม่อยากให้แสดง ใช้ PATCH active=false) · บันทึก audit log',
+    returns: '`id` · `deleted` = true',
+    forbidden: 'ไม่ใช่ ADMIN',
+  })
+  deleteTeamMember(@CurrentUser() me: AuthUser, @Id() id: string) {
+    return this.db.rpc('admin_delete_team_member', { p_actor: me.id, p_id: id });
+  }
+
+  @Put('team-members/order')
+  @ApiDoc({
+    summary: 'เรียงลำดับทีมงาน',
+    description: 'ส่ง id ทั้งหมดเรียงจากบนลงล่าง → sort_order 10, 20, 30, … (ลำดับเดียวกับหน้าเกี่ยวกับเรา)',
+    returns: '`updated` จำนวนแถวที่เปลี่ยนลำดับ',
+    forbidden: 'ไม่ใช่ ADMIN',
+  })
+  reorderTeam(@CurrentUser() me: AuthUser, @Body() b: ReorderTeamDto) {
+    return this.db.rpc('admin_reorder_team_members', { p_actor: me.id, p_ids: b.ids });
   }
 }

@@ -58,6 +58,8 @@ describe('NightList API', () => {
     await request(app.getHttpServer()).get('/admin/dashboard').expect(401);
     await request(app.getHttpServer()).get('/admin/views/admin_bars').expect(401);
     await request(app.getHttpServer()).get('/admin/master/styles').expect(401);
+    await request(app.getHttpServer()).post('/admin/team-members').send({ nickname: 'x' }).expect(401);
+    await request(app.getHttpServer()).put('/admin/team-members/order').send({ ids: [] }).expect(401);
   });
 
   it('read endpoints validate input before touching Supabase', async () => {
