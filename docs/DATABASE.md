@@ -47,6 +47,7 @@
 | `…001500_fk_indexes_final` | — | index บน FK ทุกตัว (63 ตัว สร้างจาก catalog) · เปิด RLS · revoke write |
 | `…001600_admin` | Backoffice | `is_admin()` (ADMIN + MFA aal2) · policy `admin_read` ทุกตาราง · view `admin_*` 9 ตัว · `rpc('admin_dashboard')` · ฟังก์ชันการกระทำ `admin_*` 8 ตัว (service_role เท่านั้น + audit log) |
 | `…001700_app_actions` | แอปจริง | ฟังก์ชันการกระทำของลูกค้า/ร้าน `app_*` 26 ตัว (service_role เท่านั้น เรียกผ่าน NestJS) · trigger ผลของสถานะการจอง (มัดจำ → รอโอน/รอคืน, เช็กอิน, ค่าคอม, แจ้งเตือน) · `run_booking_timeouts()` · view `my_bar_detail` / `my_reviews` / `admin_bar_promotions` · RPC `zone_availability`, `bar_deposit_ledger`, `bar_team`, `my_invites` · `booking_detail` เพิ่ม `customer_name, share_token, has_review` |
+| `…20261003000100_admin_team_members` | Backoffice จัดการทีมงาน | view `admin_team_members` · policy `admin_read` บน team_members · ฟังก์ชัน `admin_save/delete/reorder_team_member(s)` (service_role) · bucket `team-photos` (public · เขียนได้เฉพาะแอดมิน + MFA) |
 | `…001800_team_members` | หน้า /about | team_members (ทีมงาน: ชื่อเล่น, ชื่อจริง, ตำแหน่ง, bio, สกิล, รูป, `contacts` jsonb) · view `public_team` (เฉพาะ active เรียง sort_order) · RLS อ่านได้เฉพาะ active · revoke write · ทีมตั้งต้น 7 คน |
 
 view ในเฟส 1 เรียกฟังก์ชัน stub (`bar_is_promoted`, `booking_deposit_summary`) ที่เฟส 2 แทนที่ → เฟส 1 ใช้งานได้เองโดยไม่พึ่งตารางเฟส 2
@@ -136,7 +137,7 @@ stateDiagram-v2
 
 ### 5.1 Backoffice (`…001600_admin`)
 
-**อ่าน** — หน้าแอดมินอ่าน view ตรงด้วย supabase-js · ทุก view มี `where public.is_admin()` → คนที่ไม่ใช่ ADMIN หรือยังไม่ผ่าน MFA (aal1) ได้แถวว่าง · anon อ่านไม่ได้เลย
+**อ่าน** — หน้าแอดมินอ่าน view ผ่าน `GET /api/admin/views/:view` (ADR 0003 — backend อ่านในนามแอดมิน) · ทุก view มี `where public.is_admin()` → คนที่ไม่ใช่ ADMIN หรือยังไม่ผ่าน MFA (aal1) ได้แถวว่าง · anon อ่านไม่ได้เลย
 
 | view / RPC | หน้า | type |
 |---|---|---|
@@ -150,6 +151,7 @@ stateDiagram-v2
 | `admin_promoted_listings` | โปรโมท + แพ็กเกจ + สลิปล่าสุด | `Db.AdminPromotedListing` |
 | `admin_billing_events` | ค่าคอม | `Db.AdminBillingEvent` |
 | `admin_audit_logs` | Audit log + ผู้ทำ | `Db.AdminAuditLog` |
+| `admin_team_members` (`…20261003000100`) | จัดการทีมงาน — ทีมงานหน้า /about ทุกคน (รวมที่ซ่อน) | `Db.AdminTeamMember` |
 
 **เขียน** — ผ่าน NestJS `/api/admin/*` เท่านั้น (guard: token Supabase + `users.role = ADMIN` + `aal2`) → เรียกฟังก์ชัน `admin_*` ด้วย service_role · ฟังก์ชันตรวจ ADMIN ซ้ำ (`admin_assert`) และเขียน `audit_logs` ในธุรกรรมเดียวกัน · หน้าเว็บเรียกฟังก์ชันเหล่านี้ตรงไม่ได้
 
@@ -163,12 +165,16 @@ stateDiagram-v2
 | `POST reviews/:id/moderate` `{action: KEEP\|HIDE\|REMOVE\|RESTORE, reason?}` | `admin_moderate_review` | + `review_moderation_logs` |
 | `POST promotions/:id/review` `{approve, reason?}` | `admin_review_promotion` | ผ่าน → ACTIVE |
 | `PATCH users/:id/role` `{role}` | `admin_set_user_role` | ลดสิทธิ์ตัวเองไม่ได้ |
+| `POST team-members` `{nickname, full_name?, roles, bio?, skills, photo_url?, contacts, active}` | `admin_save_team_member` (p_id = null) | เพิ่มทีมงาน (ต่อท้ายลำดับ) |
+| `PATCH team-members/:id` (ส่งเฉพาะ field ที่แก้) | `admin_save_team_member` | แก้ / ซ่อน-แสดง (`active`) · audit เก็บก่อน/หลัง |
+| `DELETE team-members/:id` | `admin_delete_team_member` | ลบถาวร |
+| `PUT team-members/order` `{ids}` | `admin_reorder_team_members` | เรียงใหม่ → sort_order 10, 20, 30 … |
 
 error เป็นรหัส (`NOT_ADMIN`, `MFA_REQUIRED`, `*_NOT_FOUND` → 404, `DEPOSIT_ALREADY_REVIEWED` / `CANNOT_DEMOTE_SELF` ฯลฯ → 409) · หน้าแอดมินแปลเป็นภาษาไทยใน `apps/admin/src/services/api.ts`
 
 ### 5.2 แอปลูกค้า / ร้าน (`…001700_app_actions`)
 
-**อ่าน** — หน้าบ้านอ่านตรงด้วย supabase-js (RLS คุม) ใน `apps/frontend/src/services/sync.ts` แล้วใส่ store ของ `@nightlist/mock` (ใช้เป็น cache) → หน้าเว็บเรียก `listBars()`, `myBookings()`, `barReviews()` … ได้เหมือนเดิม
+**อ่าน** — หน้าบ้านอ่านผ่าน API (`GET /api/public/catalog`, `/api/me/overview` — ADR 0002 · backend อ่านในนามผู้เรียก RLS คุม) ใน `apps/frontend/src/services/sync.ts` แล้วใส่ store ของ `@nightlist/mock` (ใช้เป็น cache) → หน้าเว็บเรียก `listBars()`, `myBookings()`, `barReviews()` … ได้เหมือนเดิม
 
 | ตอนไหน | อ่านอะไร |
 |---|---|
