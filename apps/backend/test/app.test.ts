@@ -54,6 +54,12 @@ describe('NightList API', () => {
     await request(app.getHttpServer()).post('/storage/upload-url').send({ bucket: 'deposit-slips', path: 'a/b.jpg' }).expect(401);
   });
 
+  it('GET /admin/* (reads) requires a bearer token', async () => {
+    await request(app.getHttpServer()).get('/admin/dashboard').expect(401);
+    await request(app.getHttpServer()).get('/admin/views/admin_bars').expect(401);
+    await request(app.getHttpServer()).get('/admin/master/styles').expect(401);
+  });
+
   it('read endpoints validate input before touching Supabase', async () => {
     await request(app.getHttpServer()).get('/bars/not-a-uuid/zone-availability?datetime=2026-10-03T20:00:00%2B07:00').expect(400);
     await request(app.getHttpServer()).get('/bars/00000000-0000-4000-8000-000000000000/zone-availability').expect(400);
