@@ -3,6 +3,7 @@ import { Alert, Button, Card, Form, Input, Spin, Typography } from 'antd';
 import { useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router';
 import { useAdminAuth } from '@/services/adminAuth';
+import { fetchProfile } from '@/services/apiClient';
 import { supabase } from '@/services/supabase';
 
 type Step = 'password' | 'verify' | 'enroll';
@@ -94,7 +95,7 @@ export function LoginPage() {
         password: v.password,
       });
       if (signInError) throw signInError;
-      const { data: profile } = await supabase.from('users').select('role').eq('id', data.user.id).maybeSingle();
+      const profile = await fetchProfile(data.session.access_token);
       if (profile?.role !== 'ADMIN') {
         await supabase.auth.signOut();
         setError('บัญชีนี้ไม่มีสิทธิ์เข้า Backoffice');

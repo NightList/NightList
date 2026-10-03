@@ -1,9 +1,7 @@
 import type { Db } from '@nightlist/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
-import { adminApi } from '@/services/api';
-import { log, since } from '@/services/log';
-import { supabase } from '@/services/supabase';
+import { Rest } from '@/services/apiClient';
 
 type AdminView =
   | 'admin_users'
@@ -39,29 +37,22 @@ interface ListOptions {
   limit?: number;
 }
 
+/** ตัวกรอง → query string ของ GET /admin/views/:view (หลายค่า = คั่นด้วย , → in) */
+function viewParams(opts: ListOptions): Record<string, string | number> {
+  const params: Record<string, string | number> = { limit: opts.limit ?? 1000 };
+  for (const [col, val] of opts.filters ?? []) params[col] = Array.isArray(val) ? val.join(',') : String(val);
+  if (opts.order) params.order = `${opts.order.column}.${opts.order.ascending ? 'asc' : 'desc'}`;
+  return params;
+}
+
 /**
- * อ่าน view ของแอดมินตรงจาก Supabase (RLS: ADMIN + MFA เท่านั้น — คนอื่นได้แถวว่าง)
+ * อ่าน view ของแอดมินผ่าน API (GET /admin/views/:view — ADMIN + MFA · ADR 0002)
  * query key ขึ้นต้นด้วย 'admin' เสมอ → การกระทำใด ๆ สำเร็จแล้วรีเฟรชทุกหน้าในคราวเดียว
  */
 export function useAdminView<V extends AdminView>(view: V, opts: ListOptions = {}) {
   return useQuery({
     queryKey: ['admin', view, opts],
-    queryFn: async (): Promise<AdminViewRows[V][]> => {
-      if (!supabase) throw new Error('ยังไม่ได้ตั้งค่า Supabase');
-      const t0 = performance.now();
-      let q = supabase.from(view).select('*');
-      for (const [col, val] of opts.filters ?? [])
-        q = Array.isArray(val) ? q.in(col, val) : q.eq(col, val);
-      if (opts.order) q = q.order(opts.order.column, { ascending: opts.order.ascending ?? false });
-      q = q.limit(opts.limit ?? 1000);
-      const { data, error } = await q;
-      if (error) {
-        log.error(`Supabase ${view}`, error.message);
-        throw error;
-      }
-      log.info(`Supabase ${view} → ${data.length} แถว · ${since(t0)}`);
-      return data as unknown as AdminViewRows[V][];
-    },
+    queryFn: () => Rest.get<AdminViewRows[V][]>(`/admin/views/${view}`, { params: viewParams(opts) }),
   });
 }
 
@@ -69,33 +60,18 @@ export function useAdminView<V extends AdminView>(view: V, opts: ListOptions = {
 export function useAdminDashboard() {
   return useQuery({
     queryKey: ['admin', 'dashboard'],
-    queryFn: async (): Promise<Db.AdminDashboard | null> => {
-      if (!supabase) throw new Error('ยังไม่ได้ตั้งค่า Supabase');
-      const t0 = performance.now();
-      const { data, error } = await supabase.rpc('admin_dashboard');
-      if (error) {
-        log.error('Supabase rpc admin_dashboard', error.message);
-        throw error;
-      }
-      log.ok(`เชื่อมต่อ Supabase สำเร็จ · แดชบอร์ด ${since(t0)}`, data);
-      return ((data as Db.AdminDashboard[] | null) ?? [])[0] ?? null;
-    },
+    queryFn: () => Rest.get<Db.AdminDashboard | null>('/admin/dashboard'),
   });
 }
 
-/** ตาราง master ที่อ่านได้ทุกคน (styles, safety_features) หรือแอดมินอ่านได้ (platform_settings) */
+/** ตาราง master (styles, safety_features, platform_settings) เรียงจากน้อยไปมาก */
 export function useMasterTable<T>(
   table: 'styles' | 'safety_features' | 'platform_settings',
   orderBy: string,
 ) {
   return useQuery({
     queryKey: ['admin', 'master', table],
-    queryFn: async (): Promise<T[]> => {
-      if (!supabase) throw new Error('ยังไม่ได้ตั้งค่า Supabase');
-      const { data, error } = await supabase.from(table).select('*').order(orderBy);
-      if (error) throw error;
-      return data as T[];
-    },
+    queryFn: () => Rest.get<T[]>(`/admin/master/${table}`, { params: { order: `${orderBy}.asc` } }),
   });
 }
 
@@ -112,7 +88,8 @@ export function useAdminAction() {
   const qc = useQueryClient();
   const { message } = App.useApp();
   return useMutation({
-    mutationFn: ({ method, path, body }: ActionInput) => adminApi(method, path, body),
+    mutationFn: ({ method, path, body }: ActionInput) =>
+      method === 'PATCH' ? Rest.patch(`/admin/${path}`, body) : Rest.post(`/admin/${path}`, body),
     onSuccess: (_d, v) => {
       void message.success(v.success);
       void qc.invalidateQueries({ queryKey: ['admin'] });
@@ -133,10 +110,17 @@ export function useSignedUrl(
     enabled: !!path,
     staleTime: 9 * 60_000,
     queryFn: async () => {
-      if (!supabase || !path) return null;
-      const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 600);
-      if (error) return null;
-      return data.signedUrl;
+      if (!path) return null;
+      try {
+        const { urls } = await Rest.post<{ urls: Record<string, string> }>('/storage/signed-urls', {
+          bucket,
+          paths: [path],
+          expires_in: 600,
+        });
+        return urls[path] ?? null;
+      } catch {
+        return null;
+      }
     },
   });
 }

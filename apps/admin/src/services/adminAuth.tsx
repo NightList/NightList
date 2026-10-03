@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 import type { UserRole } from '@nightlist/types';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { fetchProfile } from '@/services/apiClient';
 import { supabase } from '@/services/supabase';
 
 /**
@@ -41,8 +42,8 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return;
     }
-    const [{ data: profile }, { data: level }] = await Promise.all([
-      supabase.from('users').select('role, display_name').eq('id', s.user.id).maybeSingle(),
+    const [profile, { data: level }] = await Promise.all([
+      fetchProfile(s.access_token),
       supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
     ]);
     setSession(s);

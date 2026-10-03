@@ -4,12 +4,12 @@ import { Result } from 'antd';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
-import { checkApi } from './services/api';
+import { checkApi } from './services/apiClient';
 import { log } from './services/log';
 import { isSupabaseConfigured } from './services/supabase';
 import './styles/index.css';
 
-/** Backoffice ต้องต่อ Supabase เสมอ (ไม่มีโหมดเดโมสำหรับการเข้าสู่ระบบ) */
+/** Backoffice ต้องต่อ Supabase Auth เสมอ (เข้าสู่ระบบ + MFA) — ข้อมูลทั้งหมดอ่าน/เขียนผ่าน NestJS (ADR 0002) */
 function ConfigMissing() {
   return (
     <ThemeProvider>
