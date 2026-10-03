@@ -55,7 +55,7 @@
 - ไม่มีโหมดเดโมแล้ว (เอาปุ่มเข้าเร็วเดโม/ปุ่มรีเซ็ตออก)
 
 ## การเชื่อมต่อ API (ADR 0002 — `docs/adr/0002-migrate-direct-db-calls-to-backend-api.md`)
-- `apps/frontend` **ห้าม query DB / Storage ตรง** — `supabase` ในหน้าเว็บใช้ได้เฉพาะ `supabase.auth.*` (ESLint บล็อก `supabase.from/rpc/storage`)
+- `apps/frontend` และ `apps/admin` **ห้าม query DB / Storage ตรง** — `supabase` ใช้ได้เฉพาะ `supabase.auth.*` (ESLint บล็อก `supabase.from/rpc/storage`) · Backoffice: ADR 0003 (`/admin/views/:view`, `/admin/dashboard`, `/admin/master/:table`)
 - ลำดับชั้น: `Component → TanStack Query Hook (services/data.ts) → API Service Layer (Rest) → Axios Client (services/apiClient.ts) → Backend API`
 - อ่านข้อมูลใหม่: เพิ่ม endpoint ใน backend (`modules/query` — อ่านในนามผู้เรียกด้วย `selectAs`/`rpcAs` ห้ามใช้ service_role) → hook ที่เรียก `Rest.get<T>()` · เขียน: ฟังก์ชันใน `services/actions.ts` ที่เรียก `Rest.post/put/patch/delete<T>()`
 - อัปโหลดไฟล์: `services/storage.ts` (ขอ URL จาก `POST /storage/upload-url` แล้ว PUT ไฟล์ตรง)
@@ -69,5 +69,5 @@
 - log การเชื่อมต่อออก Console ผ่าน `src/services/log.ts` (ป้าย `NightList`) — ดูวิธีเช็กใน `docs/SUPABASE.md` หัวข้อ 5
 - มัดจำ/โอนเงินให้ร้านยังเป็น DRAFT (ข้อ 10.3) ห้ามเปิดรับเงินจริง
 - โครงสร้างตาราง: `docs/DATABASE.md` (spec: `docs/DATABASE_CHANGES.md`) · types: `import { Db } from '@nightlist/types'` (`Db.BarCard`, `Db.BarDetail` …)
-- backend อ่าน view/RPC ให้หน้าเว็บ (`bar_detail`, `public_reviews`, `booking_detail`, `my_favorites`, `my_reviews`, `my_bar_detail`, `zone_availability` …) ในนามผู้เรียก (RLS) · **เขียนผ่าน NestJS เท่านั้น** (RLS ไม่เปิดให้หน้าบ้านเขียน) · `apps/admin` ยังอ่าน view `admin_*` ตรง (ย้ายตามทีหลัง)
+- backend อ่าน view/RPC ให้หน้าเว็บ (`bar_detail`, `public_reviews`, `booking_detail`, `my_favorites`, `my_reviews`, `my_bar_detail`, `zone_availability` …) ในนามผู้เรียก (RLS) · **เขียนผ่าน NestJS เท่านั้น** (RLS ไม่เปิดให้หน้าบ้านเขียน) · `apps/admin` อ่าน view `admin_*` ผ่าน `GET /admin/views/:view` (ADMIN + MFA)
 - แก้ migration แล้วต้องรัน `pnpm --filter @nightlist/backend db:types` · migration ใหม่ต้องมี index บน FK + enable RLS + revoke write (ดูไฟล์ `…001500`)

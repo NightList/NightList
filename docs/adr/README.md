@@ -6,3 +6,4 @@
 |---|---|---|
 | [0001](0001-writes-through-backend-api.md) | การเขียนข้อมูลทั้งหมดผ่าน NestJS | Accepted |
 | [0002](0002-migrate-direct-db-calls-to-backend-api.md) | ย้ายการอ่าน DB ตรงจากหน้าเว็บไปที่ Backend API | Accepted |
+| [0003](0003-migrate-admin-direct-db-calls-to-backend-api.md) | ย้ายการอ่านข้อมูลของ Backoffice ไปที่ Backend API | Accepted |

@@ -2,7 +2,7 @@
 
 - **สถานะ:** Accepted
 - **วันที่:** 2026-10-03
-- **ขอบเขต:** `apps/frontend` (เว็บลูกค้า + หลังร้าน) · `apps/admin` ยังไม่ย้าย (ดู "งานต่อ")
+- **ขอบเขต:** `apps/frontend` (เว็บลูกค้า + หลังร้าน) · `apps/admin` ย้ายตามใน [ADR 0003](0003-migrate-admin-direct-db-calls-to-backend-api.md)
 - **ต่อจาก:** [ADR 0001](0001-writes-through-backend-api.md)
 
 ## Context
@@ -65,6 +65,6 @@
 - env: `VITE_API_URL` → `VITE_API_BASE_URL` (ค่าเดิมยังอ่านเป็นค่าสำรอง ไม่ต้องแก้ทันที)
 
 ## งานต่อ (ยังไม่ทำใน ADR นี้)
-1. ย้าย `apps/admin` (อ่าน view `admin_*` ตรง) มาใช้แนวเดียวกัน
+1. ~~ย้าย `apps/admin` (อ่าน view `admin_*` ตรง) มาใช้แนวเดียวกัน~~ → ทำแล้วใน ADR 0003
 2. หลังย้ายครบ: `REVOKE SELECT` ของ view/ตารางที่ไม่ต้องให้ `anon`/`authenticated` อ่านตรงแล้ว → ปิดทาง PostgREST จาก anon key ให้สนิท (ตอนนี้ยังเปิดอยู่เพราะ backend อ่านในนามผู้ใช้ผ่าน role เดียวกัน — ถ้าจะ revoke ต้องเปลี่ยน backend ไปใช้ service_role + ตรวจสิทธิ์เองใน service ก่อน)
 3. generate type ของ response จาก OpenAPI (`openapi-typescript`) แทน interface ที่เขียนเองใน `services/*`

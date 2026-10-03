@@ -38,7 +38,6 @@ flowchart LR
   A --> ADM
   F --> OG
   WEB & ADM -- "REST + JWT (อ่าน+เขียน)" --> API
-  ADM -- "subscribe" --> RT
   WEB & ADM --> AUTH
   WEB -- "PUT ไฟล์ด้วย signed upload URL จาก API" --> ST
   WEB --> MAP
@@ -52,7 +51,7 @@ flowchart LR
 
 **หลักคิด 4 ข้อ**
 1. **เขียนผ่าน API เท่านั้น:** การจอง สถานะ เช็กอิน มัดจำ ค่าคอม และโปรโมท ต้องผ่าน NestJS ทุกครั้ง เพื่อให้มีการตรวจกฎธุรกิจและ transaction ครบ
-2. **หน้าเว็บอ่านผ่าน API ด้วย (ADR 0002):** `apps/frontend` ไม่ query DB / Storage ตรงอีกแล้ว — ใช้ Supabase เฉพาะ Auth · NestJS อ่าน view/RPC เดิม **ในนามผู้เรียก** (anon key + access token ของผู้ใช้) RLS จึงยังเป็นด่านเดียวกับเดิม (Backoffice `apps/admin` ยังอ่าน view `admin_*` ตรง — ย้ายตามมาทีหลัง)
+2. **หน้าเว็บอ่านผ่าน API ด้วย (ADR 0002):** `apps/frontend` ไม่ query DB / Storage ตรงอีกแล้ว — ใช้ Supabase เฉพาะ Auth · NestJS อ่าน view/RPC เดิม **ในนามผู้เรียก** (anon key + access token ของผู้ใช้) RLS จึงยังเป็นด่านเดียวกับเดิม · Backoffice `apps/admin` ก็เช่นกัน ([ADR 0003](adr/0003-migrate-admin-direct-db-calls-to-backend-api.md))
 3. **Serverless-friendly:** NestJS บน Vercel ไม่ถืองานค้างไว้เอง งานตั้งเวลาทั้งหมดให้ `pg_cron` เป็นตัวเรียก
 4. **โค้ดกฎธุรกิจชุดเดียว:** ตารางเปลี่ยนสถานะ ตัวคำนวณราคา และตัวคำนวณดาว อยู่ใน `packages/utils` แล้วใช้ร่วมกันทั้ง frontend และ backend
 
@@ -169,11 +168,15 @@ sequenceDiagram
 | `booking_detail`, `notifications`, `my_favorites`, `my_reviews`, `user_preferences`, `my_bar_detail`, `review_reports`, `promoted_listings` | `GET /me/overview` |
 | rpc `my_invites` | `GET /me/invites` |
 | rpc `bar_team`, `bar_deposit_ledger`, `billing_events` | `GET /merchant/bars/:barId/team` · `/deposit-ledger` · `/billing-events` |
+| (admin) view `admin_*` + filter/order/limit | `GET /admin/views/:view?<คอลัมน์>=<ค่า>[,…]&order=<คอลัมน์>.asc\|desc&limit=` (whitelist view · ADMIN + MFA) |
+| (admin) rpc `admin_dashboard` | `GET /admin/dashboard` |
+| (admin) `styles`, `safety_features`, `platform_settings` | `GET /admin/master/:table?order=` |
 | `storage.upload()` | `POST /storage/upload-url` → PUT ไฟล์เข้า URL ที่ได้ (ไฟล์ใหญ่ไม่ผ่าน Vercel Function) |
 | `storage.createSignedUrl(s)` | `POST /storage/signed-urls` |
 
 **กติกา**
-- ใช้ `supabase` ในหน้าเว็บได้เฉพาะ `supabase.auth.*` — ESLint (`apps/frontend/eslint.config.js`) บล็อก `supabase.from / rpc / storage / schema / channel`
+- ใช้ `supabase` ได้เฉพาะ `supabase.auth.*` ทั้ง `apps/frontend` และ `apps/admin` — ESLint (`eslint.config.js` ของแต่ละแอป) บล็อก `supabase.from / rpc / storage / schema / channel`
+- Backoffice ใช้ชั้นเดียวกัน: `apps/admin/src/services/adminData.ts` (hook) → `apps/admin/src/services/apiClient.ts` (Rest/Axios)
 - ข้อมูลใหม่ที่ต้องอ่าน: เพิ่ม endpoint ใน backend (มี `@ApiDoc`) → เพิ่ม hook ใน `services/data.ts` ที่เรียก `Rest.get<T>()`
 - การเขียน: เพิ่มฟังก์ชันใน `services/actions.ts` ที่เรียก `Rest.post/put/patch/delete<T>()` (ใช้กับ `useMutation` ได้ตรงๆ เช่น `useMutation({ mutationFn: (v) => cancelBooking(v.id) })`)
 - `VITE_API_BASE_URL` ว่างได้: dev = `http://localhost:3000/api`, deploy = `/api` (same-origin) · `VITE_API_URL` เดิมยังอ่านเป็นค่าสำรอง
@@ -356,3 +359,4 @@ sequenceDiagram
 | 6 | Component style | Function component + hooks (standard React) และ HOC เฉพาะ cross-cutting | ✅ |
 | 7 | วิธีล็อกอิน | email + password (Supabase Auth) + Turnstile และ MFA สำหรับ Admin | ✅ |
 | 8 | หน้าเว็บอ่านข้อมูล | ผ่าน NestJS เท่านั้น (Axios `Rest`) — ไม่ query DB ตรง · [ADR 0002](adr/0002-migrate-direct-db-calls-to-backend-api.md) | ✅ |
+| 9 | Backoffice อ่านข้อมูล | ผ่าน NestJS เท่านั้น (`/admin/views`, `/admin/dashboard`, `/admin/master`) · [ADR 0003](adr/0003-migrate-admin-direct-db-calls-to-backend-api.md) | ✅ |

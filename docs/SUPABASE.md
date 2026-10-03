@@ -82,7 +82,7 @@ pnpm --filter @nightlist/backend user:create --email staff@bar.com --name "พ�
 - บันทึกทุกครั้งใน `audit_logs`
 - เข้า Backoffice (`/admin/login`): อีเมล + รหัสผ่าน → ต้องเป็น `ADMIN` ในตาราง `users` → MFA แบบ TOTP (ครั้งแรกสแกน QR ผูกแอป Authenticator) · ต้องเปิด TOTP ที่ Authentication → Multi-Factor (เปิดอยู่แล้วเป็นค่าเริ่มต้น)
   - แอดมินทำมือถือหาย: ลบ factor ของบัญชีนั้นที่ Authentication → Users → เลือกบัญชี → MFA factors แล้วให้ล็อกอินใหม่เพื่อผูกแอปอีกครั้ง
-- Backoffice อ่านข้อมูลจาก view `admin_*` ตรง · **ปุ่มทุกปุ่ม (อนุมัติร้าน, ตรวจสลิป, ซ่อนรีวิว, เปลี่ยนสิทธิ์ ฯลฯ) ยิงไปที่ NestJS** `VITE_API_URL` (ค่าเริ่มต้น `http://localhost:3000/api`) → ต้องเปิด backend ด้วย (`pnpm dev` ที่ root เปิดให้ครบ) และมี `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` ใน `.env` · `CORS_ORIGINS` ต้องมี `http://localhost:5174`
+- Backoffice **อ่านและเขียนผ่าน NestJS ทั้งหมด** (ADR 0003: view `admin_*` → `GET /admin/views/:view` · ปุ่มอนุมัติร้าน ตรวจสลิป ซ่อนรีวิว เปลี่ยนสิทธิ์ ฯลฯ → `POST/PATCH /admin/*`) ที่ `VITE_API_BASE_URL` (ค่าเริ่มต้น dev `http://localhost:3000/api`) → ต้องเปิด backend ด้วย (`pnpm dev` ที่ root เปิดให้ครบ) และมี `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` + anon key ใน `.env` · `CORS_ORIGINS` ต้องมี `http://localhost:5174`
 - ⚠️ ปุ่ม **Add user** ใน Supabase Dashboard ใช้ไม่ได้ (ไม่มีช่องวันเกิด → trigger ตรวจอายุ 20+ ปฏิเสธ)
 
 ## 4. Vercel
