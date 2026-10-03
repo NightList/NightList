@@ -14,6 +14,7 @@ import { MerchantModule } from './modules/merchant/merchant.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { PricingController } from './modules/pricing/pricing.controller';
 import { PricingModule } from './modules/pricing/pricing.module';
+import { QueryModule } from './modules/query/query.module';
 import { RankingModule } from './modules/ranking/ranking.module';
 import { SupabaseModule } from './supabase/supabase.module';
 
@@ -29,6 +30,7 @@ import { SupabaseModule } from './supabase/supabase.module';
     PricingModule,
     RankingModule,
     NotificationModule,
+    QueryModule,
   ],
   controllers: [HealthController, PricingController, JobsController],
   providers: [

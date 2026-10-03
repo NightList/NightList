@@ -23,12 +23,14 @@ export async function createApp(): Promise<INestApplication> {
     new DocumentBuilder()
       .setTitle('NightList API')
       .setDescription(
-        'API งานเขียนของ NightList (การอ่านข้อมูลหน้าเว็บใช้ view/RPC ของ Supabase ตรง) · key ใน body และ response เป็น snake_case ทั้งหมด · ' +
+        'API ของ NightList — หน้าเว็บอ่าน/เขียนข้อมูลผ่าน API นี้เท่านั้น (ADR 0002) · key ใน body และ response เป็น snake_case ทั้งหมด · ' +
           'เส้นที่มีรูปกุญแจต้องส่ง `Authorization: Bearer <Supabase access token>`',
       )
       .setVersion('0.1.0')
       .addBearerAuth()
       .addTag('health', 'สถานะของ API')
+      .addTag('public', 'ข้อมูลสาธารณะ: ร้าน รีวิว ย่าน ทีมงาน โซนว่าง บัตรแชร์ URL ไฟล์')
+      .addTag('me', 'ข้อมูลของฉัน (ล็อกอิน): โปรไฟล์ การจอง แจ้งเตือน คำเชิญ อัปโหลดไฟล์')
       .addTag('pricing', 'ประเมินราคาก่อนไปร้าน (สาธารณะ)')
       .addTag('customer', 'ลูกค้า: จอง มัดจำ รีวิว ร้านโปรด แจ้งเตือน โปรไฟล์ สมัครลงร้าน')
       .addTag('merchant', 'ทีมร้าน: การจอง เช็กอิน ข้อมูลร้าน เมนู โปร โซน ความปลอดภัย การเงิน พนักงาน')

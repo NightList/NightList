@@ -45,4 +45,19 @@ describe('NightList API', () => {
       .set('x-job-secret', 'test-job-secret')
       .expect(200);
   });
+
+  // ADR 0002: หน้าเว็บอ่านข้อมูลผ่าน API — endpoint ของผู้ใช้ต้องล็อกอิน · ข้อมูลที่ส่งมาต้องผ่าน validation
+  it('GET /me/* requires a bearer token', async () => {
+    await request(app.getHttpServer()).get('/me/overview').expect(401);
+    await request(app.getHttpServer()).get('/me/profile').expect(401);
+    await request(app.getHttpServer()).get('/merchant/bars/00000000-0000-4000-8000-000000000000/team').expect(401);
+    await request(app.getHttpServer()).post('/storage/upload-url').send({ bucket: 'deposit-slips', path: 'a/b.jpg' }).expect(401);
+  });
+
+  it('read endpoints validate input before touching Supabase', async () => {
+    await request(app.getHttpServer()).get('/bars/not-a-uuid/zone-availability?datetime=2026-10-03T20:00:00%2B07:00').expect(400);
+    await request(app.getHttpServer()).get('/bars/00000000-0000-4000-8000-000000000000/zone-availability').expect(400);
+    await request(app.getHttpServer()).post('/storage/signed-urls').send({ bucket: 'secret-bucket', paths: ['x/y.jpg'] }).expect(400);
+    await request(app.getHttpServer()).post('/storage/signed-urls').send({ bucket: 'review-media', paths: ['../etc/passwd'] }).expect(400);
+  });
 });
