@@ -54,13 +54,20 @@
 - ธีมมืดเป็นค่าเริ่มต้น · หน้า Auth ไม่มีปุ่มเปลี่ยนธีม/ปุ่มเข้าสู่ระบบบน navbar (`<Navbar minimal />`)
 - ไม่มีโหมดเดโมแล้ว (เอาปุ่มเข้าเร็วเดโม/ปุ่มรีเซ็ตออก)
 
-## ข้อมูล (Supabase เท่านั้น)
-- `apps/frontend`: **ข้อมูลร้านมาจาก Supabase เท่านั้น** — ต้องมี `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` ใน `.env` ที่ root (ไม่มี → หน้าแจ้งให้ตั้งค่า, ต่อไม่ได้ → หน้า error + ปุ่มลองใหม่) ห้ามใช้ร้านเดโมเป็น fallback
-  - `main.tsx` รอ `loadPublic()` (`src/services/sync.ts` อ่าน `bar_detail`, `public_reviews`, master) ก่อน render แล้วเอาข้อมูลไปใส่ store ของ `@nightlist/mock` → หน้าเว็บยังเรียก `listBars()` / `getBarBySlug()` ได้เหมือนเดิม
+## การเชื่อมต่อ API (ADR 0002 — `docs/adr/0002-migrate-direct-db-calls-to-backend-api.md`)
+- `apps/frontend` **ห้าม query DB / Storage ตรง** — `supabase` ในหน้าเว็บใช้ได้เฉพาะ `supabase.auth.*` (ESLint บล็อก `supabase.from/rpc/storage`)
+- ลำดับชั้น: `Component → TanStack Query Hook (services/data.ts) → API Service Layer (Rest) → Axios Client (services/apiClient.ts) → Backend API`
+- อ่านข้อมูลใหม่: เพิ่ม endpoint ใน backend (`modules/query` — อ่านในนามผู้เรียกด้วย `selectAs`/`rpcAs` ห้ามใช้ service_role) → hook ที่เรียก `Rest.get<T>()` · เขียน: ฟังก์ชันใน `services/actions.ts` ที่เรียก `Rest.post/put/patch/delete<T>()`
+- อัปโหลดไฟล์: `services/storage.ts` (ขอ URL จาก `POST /storage/upload-url` แล้ว PUT ไฟล์ตรง)
+- env: `VITE_API_BASE_URL` (ว่าง = dev `http://localhost:3000/api`, deploy `/api`) · backend ต้องมี `SUPABASE_ANON_KEY` (หรือใช้ `VITE_SUPABASE_ANON_KEY` ที่ root)
+
+## ข้อมูล (Supabase ผ่าน API)
+- `apps/frontend`: **ข้อมูลร้านมาจาก Supabase ผ่าน NestJS เท่านั้น** — ต้องมี `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` (Auth) ใน `.env` ที่ root และเปิด backend (ไม่มี → หน้าแจ้งให้ตั้งค่า, ต่อไม่ได้ → หน้า error + ปุ่มลองใหม่) ห้ามใช้ร้านเดโมเป็น fallback
+  - `main.tsx` รอ `loadPublic()` (`src/services/sync.ts` → `GET /public/catalog`) ก่อน render แล้วเอาข้อมูลไปใส่ store ของ `@nightlist/mock` → หน้าเว็บยังเรียก `listBars()` / `getBarBySlug()` ได้เหมือนเดิม
   - ร้านเดโมอยู่ใน DB แล้ว (`apps/backend/supabase/seed.sql` สร้างจาก `@nightlist/mock` ด้วย `db:seed:gen`) — ห้ามใส่ชื่อร้านจริงใน seed
-- ทุกหน้าใช้ข้อมูลจริงแล้ว: `src/services/sync.ts` โหลดจาก Supabase ใส่ store ของ `@nightlist/mock` (cache) · หน้า import จาก `@/services/data` (ห้าม import `@nightlist/mock` ตรงในหน้า) · การเขียนเรียก `src/services/actions.ts` → NestJS → `rpc('app_*')` (`docs/DATABASE.md` หัวข้อ 5.2)
+- ทุกหน้าใช้ข้อมูลจริงแล้ว: `src/services/sync.ts` โหลดจาก API (`/public/catalog`, `/me/overview`) ใส่ store ของ `@nightlist/mock` (cache) · หน้า import จาก `@/services/data` (ห้าม import `@nightlist/mock` ตรงในหน้า) · การเขียนเรียก `src/services/actions.ts` → NestJS → `rpc('app_*')` (`docs/DATABASE.md` หัวข้อ 5.2)
 - log การเชื่อมต่อออก Console ผ่าน `src/services/log.ts` (ป้าย `NightList`) — ดูวิธีเช็กใน `docs/SUPABASE.md` หัวข้อ 5
 - มัดจำ/โอนเงินให้ร้านยังเป็น DRAFT (ข้อ 10.3) ห้ามเปิดรับเงินจริง
 - โครงสร้างตาราง: `docs/DATABASE.md` (spec: `docs/DATABASE_CHANGES.md`) · types: `import { Db } from '@nightlist/types'` (`Db.BarCard`, `Db.BarDetail` …)
-- หน้าบ้านอ่านผ่าน view/RPC เท่านั้น (`bar_detail`, `public_reviews`, `booking_detail`, `my_favorites`, `my_reviews`, `my_bar_detail`, `zone_availability` …) · **เขียนผ่าน NestJS เท่านั้น** (RLS ไม่เปิดให้หน้าบ้านเขียน)
+- backend อ่าน view/RPC ให้หน้าเว็บ (`bar_detail`, `public_reviews`, `booking_detail`, `my_favorites`, `my_reviews`, `my_bar_detail`, `zone_availability` …) ในนามผู้เรียก (RLS) · **เขียนผ่าน NestJS เท่านั้น** (RLS ไม่เปิดให้หน้าบ้านเขียน) · `apps/admin` ยังอ่าน view `admin_*` ตรง (ย้ายตามทีหลัง)
 - แก้ migration แล้วต้องรัน `pnpm --filter @nightlist/backend db:types` · migration ใหม่ต้องมี index บน FK + enable RLS + revoke write (ดูไฟล์ `…001500`)

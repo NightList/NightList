@@ -37,11 +37,10 @@ flowchart LR
   C & M --> WEB
   A --> ADM
   F --> OG
-  WEB & ADM -- "REST + JWT" --> API
-  WEB -- "อ่านข้อมูลสาธารณะ (RLS)" --> DB
-  WEB & ADM -- "subscribe" --> RT
+  WEB & ADM -- "REST + JWT (อ่าน+เขียน)" --> API
+  ADM -- "subscribe" --> RT
   WEB & ADM --> AUTH
-  WEB --> ST
+  WEB -- "PUT ไฟล์ด้วย signed upload URL จาก API" --> ST
   WEB --> MAP
   API --> DB
   API --> ST
@@ -53,7 +52,7 @@ flowchart LR
 
 **หลักคิด 4 ข้อ**
 1. **เขียนผ่าน API เท่านั้น:** การจอง สถานะ เช็กอิน มัดจำ ค่าคอม และโปรโมท ต้องผ่าน NestJS ทุกครั้ง เพื่อให้มีการตรวจกฎธุรกิจและ transaction ครบ
-2. **อ่านตรงได้:** รายชื่อร้าน เมนู รีวิว และ Realtime ให้ frontend อ่านจาก Supabase ตรงโดยมี RLS คุม เพื่อลดภาระของ API
+2. **หน้าเว็บอ่านผ่าน API ด้วย (ADR 0002):** `apps/frontend` ไม่ query DB / Storage ตรงอีกแล้ว — ใช้ Supabase เฉพาะ Auth · NestJS อ่าน view/RPC เดิม **ในนามผู้เรียก** (anon key + access token ของผู้ใช้) RLS จึงยังเป็นด่านเดียวกับเดิม (Backoffice `apps/admin` ยังอ่าน view `admin_*` ตรง — ย้ายตามมาทีหลัง)
 3. **Serverless-friendly:** NestJS บน Vercel ไม่ถืองานค้างไว้เอง งานตั้งเวลาทั้งหมดให้ `pg_cron` เป็นตัวเรียก
 4. **โค้ดกฎธุรกิจชุดเดียว:** ตารางเปลี่ยนสถานะ ตัวคำนวณราคา และตัวคำนวณดาว อยู่ใน `packages/utils` แล้วใช้ร่วมกันทั้ง frontend และ backend
 
@@ -110,7 +109,7 @@ apps/frontend/src/
 │   ├── ranking/ search/ barDetail/ barReviews/ book/ bookings/ bookingDetail/ deposit/ ...
 │   └── merchant/<ชื่อหน้า>/page.tsx   # dashboard, tonight, bookings, deposits, store, menu ...
 ├── hooks/                # custom hooks ใช้ข้ามหน้า (useDemo, useNow, useScrolled, useMerchantBar)
-├── services/             # auth.tsx (AuthProvider/useAuth), supabase.ts, api.ts
+├── services/             # apiClient.ts (Axios + Rest) · data.ts (TanStack Query hooks) · actions.ts (เขียน) · sync.ts (cache) · storage.ts · auth.tsx · supabase.ts (Auth เท่านั้น)
 ├── ui/
 │   ├── components/       # component ใช้ข้ามหน้า (navbar, barCard, authCard, pageHeader ...)
 │   └── utils/            # format.ts ฯลฯ
@@ -120,8 +119,64 @@ apps/frontend/src/
 - ชื่อไฟล์ component เป็น camelCase (`barCard.tsx`) ส่วน export เป็น PascalCase (`BarCard`)
 - รูป/วิดีโอใน `public/images/<module>/` และ `public/videos/`
 - `@nightlist/*` ใน dev ถูก alias ไปที่ `packages/*/src` (vite.config.ts) — แก้ package แล้วเห็นผลทันที ไม่ต้องรอ build
-- **API client** สร้างจาก OpenAPI ของ NestJS (`openapi-typescript`) เพื่อให้ type ตรงกับ backend เสมอ
+- **API client** = `src/services/apiClient.ts` (Axios) — ดูหัวข้อ Data Flow Standard ด้านล่าง · (แผนต่อไป: generate type จาก OpenAPI ของ NestJS ด้วย `openapi-typescript`)
 - **Guard ของ route** (`RequireAuth`, `RequireRole`) ห่อที่ระดับ layout route ใน React Router
+
+### Data Flow Standard (ADR 0002) — ✅
+
+```
+Component → TanStack Query Hook → API Service Layer (Rest) → Axios Client → Backend API (NestJS) → Supabase (RLS)
+```
+
+```mermaid
+sequenceDiagram
+  participant C as Component
+  participant H as Hook (useQuery / useMutation)<br/>services/data.ts
+  participant R as Rest.get/post/put/patch/delete<T><br/>services/apiClient.ts
+  participant X as Axios instance<br/>(interceptors)
+  participant API as NestJS /api
+  participant DB as Supabase PostgREST / Storage
+  C->>H: useZoneAvailability(bar, time)
+  H->>R: Rest.get<ZoneRow[]>('/bars/:id/zone-availability')
+  R->>X: apiClient.get
+  X->>X: แนบ Authorization: Bearer <Supabase access token>
+  X->>API: GET /api/bars/:id/zone-availability
+  API->>DB: rpc zone_availability (anon key + token ผู้เรียก → RLS)
+  DB-->>API: rows
+  API-->>X: 200 JSON (snake_case)
+  X-->>R: response / error → ApiError (ข้อความไทยจากรหัส)
+  R-->>H: data: T
+  H-->>C: { data, isLoading, error }
+```
+
+| ชั้น | ไฟล์ | หน้าที่ |
+|---|---|---|
+| Component | `modules/*/page.tsx`, `ui/components/*` | แสดงผล เรียก hook / action — **ห้าม** import `supabase`, `axios`, `apiClient` ตรง |
+| TanStack Query Hook | `services/data.ts` (`useZoneAvailability`, `useBarTeam`, `useMyInvites`, `useBarLedger`, `useBillingEvents`, `useShareCard`, `useSiteTeam`) | cache, loading/error state, queryKey |
+| API Service Layer | `services/actions.ts` (เขียน), `services/sync.ts` (โหลดข้อมูลตั้งต้น/ข้อมูลผู้ใช้ลง cache), `services/storage.ts` (ไฟล์) | แปลง type หน้าเว็บ ↔ body/response ของ API แล้วเรียก `Rest` |
+| Axios Client | `services/apiClient.ts` | `axios.create({ baseURL: VITE_API_BASE_URL })` · interceptor แนบ Bearer token · แปลง error เป็น `ApiError` · log ใน Console · `Rest.get/post/put/patch/delete<T>` |
+| Backend API | `apps/backend/src/modules/*` | ตรวจ JWT + validate (zod) แล้วอ่าน/เขียน Supabase · อ่านทำในนามผู้เรียก (RLS) · เขียนผ่านฟังก์ชัน `app_*` |
+
+**Endpoint อ่านที่ย้ายมาจากการ query ตรง** (`apps/backend/src/modules/query`)
+
+| เดิม (หน้าเว็บ → Supabase) | ตอนนี้ (หน้าเว็บ → API) |
+|---|---|
+| `bar_detail`, `public_reviews`, `districts`, `styles`, `platform_settings`, `promotion_packages` | `GET /public/catalog` |
+| `public_team` | `GET /public/team` |
+| rpc `zone_availability` | `GET /bars/:barId/zone-availability?datetime=` |
+| rpc `get_share_card` | `GET /share-cards/:token` |
+| `users` (โปรไฟล์ของฉัน) | `GET /me/profile` |
+| `booking_detail`, `notifications`, `my_favorites`, `my_reviews`, `user_preferences`, `my_bar_detail`, `review_reports`, `promoted_listings` | `GET /me/overview` |
+| rpc `my_invites` | `GET /me/invites` |
+| rpc `bar_team`, `bar_deposit_ledger`, `billing_events` | `GET /merchant/bars/:barId/team` · `/deposit-ledger` · `/billing-events` |
+| `storage.upload()` | `POST /storage/upload-url` → PUT ไฟล์เข้า URL ที่ได้ (ไฟล์ใหญ่ไม่ผ่าน Vercel Function) |
+| `storage.createSignedUrl(s)` | `POST /storage/signed-urls` |
+
+**กติกา**
+- ใช้ `supabase` ในหน้าเว็บได้เฉพาะ `supabase.auth.*` — ESLint (`apps/frontend/eslint.config.js`) บล็อก `supabase.from / rpc / storage / schema / channel`
+- ข้อมูลใหม่ที่ต้องอ่าน: เพิ่ม endpoint ใน backend (มี `@ApiDoc`) → เพิ่ม hook ใน `services/data.ts` ที่เรียก `Rest.get<T>()`
+- การเขียน: เพิ่มฟังก์ชันใน `services/actions.ts` ที่เรียก `Rest.post/put/patch/delete<T>()` (ใช้กับ `useMutation` ได้ตรงๆ เช่น `useMutation({ mutationFn: (v) => cancelBooking(v.id) })`)
+- `VITE_API_BASE_URL` ว่างได้: dev = `http://localhost:3000/api`, deploy = `/api` (same-origin) · `VITE_API_URL` เดิมยังอ่านเป็นค่าสำรอง
 
 ### Component style — ✅ Function component + hooks
 - เขียนทุก component เป็น function + hooks ตาม standard React (antd, TanStack Query, React Router และ Motion ออกแบบมาให้ใช้แบบนี้)
@@ -300,3 +355,4 @@ sequenceDiagram
 | 5 | Jobs | pg_cron → `/jobs/*` | ✅ |
 | 6 | Component style | Function component + hooks (standard React) และ HOC เฉพาะ cross-cutting | ✅ |
 | 7 | วิธีล็อกอิน | email + password (Supabase Auth) + Turnstile และ MFA สำหรับ Admin | ✅ |
+| 8 | หน้าเว็บอ่านข้อมูล | ผ่าน NestJS เท่านั้น (Axios `Rest`) — ไม่ query DB ตรง · [ADR 0002](adr/0002-migrate-direct-db-calls-to-backend-api.md) | ✅ |
