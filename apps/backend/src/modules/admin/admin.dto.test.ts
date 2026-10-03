@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ReorderTeamDto, TeamMemberBody, UpdateTeamMemberDto } from './admin.dto';
+import { CreateUserBody, ReorderTeamDto, TeamMemberBody, UpdateTeamMemberDto } from './admin.dto';
 
 describe('team member DTOs', () => {
   it('accepts a full member and applies defaults', () => {
@@ -19,5 +19,24 @@ describe('team member DTOs', () => {
   });
   it('order needs uuids', () => {
     expect(ReorderTeamDto.schema.safeParse({ ids: ['x'] }).success).toBe(false);
+  });
+});
+
+describe('CreateUserBody', () => {
+  const base = { email: ' New@Mail.com ', display_name: 'ใหม่', birthdate: '1995-05-05' };
+  it('normalizes email and allows customer without bar', () => {
+    const r = CreateUserBody.parse({ ...base, account_type: 'CUSTOMER' });
+    expect(r.email).toBe('new@mail.com');
+  });
+  it('requires a bar for bar roles and forbids it otherwise', () => {
+    expect(CreateUserBody.safeParse({ ...base, account_type: 'STAFF' }).success).toBe(false);
+    expect(CreateUserBody.safeParse({ ...base, account_type: 'OWNER', bar_id: '00000000-0000-4000-8000-000000000001' }).success).toBe(true);
+    expect(CreateUserBody.safeParse({ ...base, account_type: 'ADMIN', bar_id: '00000000-0000-4000-8000-000000000001' }).success).toBe(false);
+  });
+  it('rejects under 20, short passwords', () => {
+    const young = new Date();
+    young.setFullYear(young.getFullYear() - 19);
+    expect(CreateUserBody.safeParse({ ...base, account_type: 'CUSTOMER', birthdate: young.toISOString().slice(0, 10) }).success).toBe(false);
+    expect(CreateUserBody.safeParse({ ...base, account_type: 'CUSTOMER', password: 'short' }).success).toBe(false);
   });
 });

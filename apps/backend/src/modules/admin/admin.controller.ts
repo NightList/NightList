@@ -5,8 +5,10 @@ import { ApiDoc } from '../../common/api-doc';
 import { CurrentUser } from '../../auth/current-user.decorator';
 import { SupabaseJwtGuard, type AuthUser } from '../../auth/supabase-jwt.guard';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { AdminUsersService } from './admin-users.service';
 import {
   CreateTeamMemberDto,
+  CreateUserDto,
   ModerateReviewDto,
   ReorderTeamDto,
   ReviewDto,
@@ -28,7 +30,10 @@ const Id = () => Param('id', new ParseUUIDPipe());
 @UseGuards(SupabaseJwtGuard, AdminGuard)
 @Controller('admin')
 export class AdminController {
-  constructor(private readonly db: SupabaseService) {}
+  constructor(
+    private readonly db: SupabaseService,
+    private readonly users: AdminUsersService,
+  ) {}
 
   @Patch('bars/:id/status')
   @ApiDoc({
@@ -122,6 +127,19 @@ export class AdminController {
   })
   moderateBarPromotion(@CurrentUser() me: AuthUser, @Id() id: string, @Body() b: ReviewDto) {
     return this.db.rpc('admin_moderate_bar_promotion', { p_actor: me.id, p_promotion: id, p_approve: b.approve, p_reason: b.reason ?? null });
+  }
+
+  @Post('users')
+  @ApiDoc({
+    summary: 'เพิ่มผู้ใช้',
+    description:
+      'สร้างบัญชีที่ยืนยันอีเมลแล้ว ใช้เข้าสู่ระบบได้ทันที · เลือกประเภทบัญชี: ลูกค้า / แอดมิน / เจ้าของร้าน / ผู้จัดการร้าน / พนักงานร้าน (3 แบบหลังต้องเลือกร้าน) · ไม่ใส่รหัสผ่าน = ระบบสุ่มให้ · บันทึก audit log',
+    returns: '`id` · `email` · `display_name` · `role` · `bar_id` · `bar_role` · `password` (เฉพาะเมื่อระบบสุ่มให้ — แสดงครั้งเดียว ไม่ถูกเก็บ)',
+    status: 201,
+    forbidden: 'ไม่ใช่ ADMIN',
+  })
+  createUser(@CurrentUser() me: AuthUser, @Body() b: CreateUserDto) {
+    return this.users.create(me.id, b);
   }
 
   @Patch('users/:id/role')

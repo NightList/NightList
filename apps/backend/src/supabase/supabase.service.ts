@@ -115,6 +115,31 @@ export class SupabaseService {
     return `${this.url}/storage/v1/object/public/${encodeURIComponent(bucket)}/${path.split('/').map(encodeURIComponent).join('/')}`;
   }
 
+  /**
+   * สร้างบัญชีใน Supabase Auth (ยืนยันอีเมลให้เลย) — trigger handle_new_auth_user สร้าง public.users (CUSTOMER)
+   * คืน null ถ้าอีเมลนี้มีบัญชีแล้ว
+   */
+  async createAuthUser(input: { email: string; password: string; metadata: Record<string, unknown> }): Promise<{ id: string } | null> {
+    const res = await fetch(`${this.url}/auth/v1/admin/users`, {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify({ email: input.email, password: input.password, email_confirm: true, user_metadata: input.metadata }),
+    });
+    const text = await res.text();
+    const body = (text ? JSON.parse(text) : null) as { id?: string; code?: string; error_code?: string; msg?: string; message?: string } | null;
+    if (res.ok && body?.id) return { id: body.id };
+    const reason = `${body?.error_code ?? body?.code ?? ''} ${body?.msg ?? body?.message ?? ''}`;
+    if (res.status === 422 && /exists|already been registered/i.test(reason)) return null;
+    if (/AGE_UNDER_20/.test(reason)) throw new BadRequestException('AGE_UNDER_20');
+    if (res.status === 422 || res.status === 400) throw new BadRequestException(reason.trim() || 'INVALID_ACCOUNT');
+    throw new InternalServerErrorException(`create auth user failed: ${res.status} ${reason}`.trim());
+  }
+
+  /** ลบบัญชีใน Auth (ใช้ย้อนกลับเมื่อสร้างไม่ครบขั้นตอน — public.users ถูกลบตาม FK) */
+  async deleteAuthUser(id: string): Promise<void> {
+    await fetch(`${this.url}/auth/v1/admin/users/${encodeURIComponent(id)}`, { method: 'DELETE', headers: this.headers() });
+  }
+
   /** ปิดการเข้าสู่ระบบของบัญชี (ลบบัญชี) — ห้ามลบจริงเพราะการจองยังอ้างถึง */
   async banUser(id: string): Promise<void> {
     const res = await fetch(`${this.url}/auth/v1/admin/users/${id}`, {
