@@ -47,6 +47,7 @@
 | `…001500_fk_indexes_final` | — | index บน FK ทุกตัว (63 ตัว สร้างจาก catalog) · เปิด RLS · revoke write |
 | `…001600_admin` | Backoffice | `is_admin()` (ADMIN + MFA aal2) · policy `admin_read` ทุกตาราง · view `admin_*` 9 ตัว · `rpc('admin_dashboard')` · ฟังก์ชันการกระทำ `admin_*` 8 ตัว (service_role เท่านั้น + audit log) |
 | `…001700_app_actions` | แอปจริง | ฟังก์ชันการกระทำของลูกค้า/ร้าน `app_*` 26 ตัว (service_role เท่านั้น เรียกผ่าน NestJS) · trigger ผลของสถานะการจอง (มัดจำ → รอโอน/รอคืน, เช็กอิน, ค่าคอม, แจ้งเตือน) · `run_booking_timeouts()` · view `my_bar_detail` / `my_reviews` / `admin_bar_promotions` · RPC `zone_availability`, `bar_deposit_ledger`, `bar_team`, `my_invites` · `booking_detail` เพิ่ม `customer_name, share_token, has_review` |
+| `…20261003000200_admin_create_user` | Backoffice เพิ่มผู้ใช้ | ฟังก์ชัน `admin_finish_new_user` (ตั้ง role + ผูกร้าน + audit · service_role) |
 | `…20261003000100_admin_team_members` | Backoffice จัดการทีมงาน | view `admin_team_members` · policy `admin_read` บน team_members · ฟังก์ชัน `admin_save/delete/reorder_team_member(s)` (service_role) · bucket `team-photos` (public · เขียนได้เฉพาะแอดมิน + MFA) |
 | `…001800_team_members` | หน้า /about | team_members (ทีมงาน: ชื่อเล่น, ชื่อจริง, ตำแหน่ง, bio, สกิล, รูป, `contacts` jsonb) · view `public_team` (เฉพาะ active เรียง sort_order) · RLS อ่านได้เฉพาะ active · revoke write · ทีมตั้งต้น 7 คน |
 
@@ -164,6 +165,7 @@ stateDiagram-v2
 | `POST deposits/:id/settle` `{how: PAID_OUT\|CREDIT\|REFUNDED}` | `admin_settle_deposit` | ปิดยอด (CREDIT ลง `bar_credit_ledger`) |
 | `POST reviews/:id/moderate` `{action: KEEP\|HIDE\|REMOVE\|RESTORE, reason?}` | `admin_moderate_review` | + `review_moderation_logs` |
 | `POST promotions/:id/review` `{approve, reason?}` | `admin_review_promotion` | ผ่าน → ACTIVE |
+| `POST users` `{email, display_name, account_type, bar_id?, birthdate, password?}` | Supabase Auth admin (สร้างบัญชี ยืนยันอีเมลแล้ว) → `admin_finish_new_user` (`…20261003000200`) | เพิ่มผู้ใช้: ลูกค้า / แอดมิน / เจ้าของ (MERCHANT + OWNER) / ผู้จัดการ (MERCHANT + MANAGER) / พนักงาน (STAFF) · อีเมลซ้ำ → 409 `EMAIL_EXISTS` · ขั้นที่ 2 พลาด = ลบบัญชีทิ้ง · ไม่ใส่รหัส = สุ่มแล้วตอบกลับครั้งเดียว |
 | `PATCH users/:id/role` `{role}` | `admin_set_user_role` | ลดสิทธิ์ตัวเองไม่ได้ |
 | `POST team-members` `{nickname, full_name?, roles, bio?, skills, photo_url?, contacts, active}` | `admin_save_team_member` (p_id = null) | เพิ่มทีมงาน (ต่อท้ายลำดับ) |
 | `PATCH team-members/:id` (ส่งเฉพาะ field ที่แก้) | `admin_save_team_member` | แก้ / ซ่อน-แสดง (`active`) · audit เก็บก่อน/หลัง |

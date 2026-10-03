@@ -63,6 +63,8 @@ pnpm --filter @nightlist/backend db:reset:remote   # = supabase db reset --linke
 
 ลูกค้าสมัครเองที่ `/register` ได้ · บัญชีแอดมิน/ร้านสร้างด้วยคำสั่งนี้ (ใช้ Secret key ใน `.env` — รันในเครื่องทีมเท่านั้น)
 
+> มีแอดมินคนแรกแล้ว เพิ่มบัญชีอื่นได้จาก Backoffice → **ผู้ใช้ → เพิ่มผู้ใช้** (ไม่ต้องรันสคริปต์) · สคริปต์ด้านล่างใช้สร้างแอดมินคนแรก หรือทำในเครื่องทีม
+
 ```bash
 # แอดมิน
 pnpm --filter @nightlist/backend user:create --email admin@nightlist.co --name "แอดมิน" --role ADMIN
